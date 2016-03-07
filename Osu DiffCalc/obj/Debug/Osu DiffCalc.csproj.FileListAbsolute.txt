@@ -1,0 +1,18 @@
+e:\windows\my documents\visual studio 2015\Projects\Osu DiffCalc\Osu DiffCalc\bin\Debug\Osu DiffCalc.exe.config
+e:\Windows\My Documents\Visual Studio 2015\Projects\Osu DiffCalc\Osu DiffCalc\obj\Debug\Osu DiffCalc.csprojResolveAssemblyReference.cache
+e:\Windows\My Documents\Visual Studio 2015\Projects\Osu DiffCalc\Osu DiffCalc\bin\Debug\Osu DiffCalc.exe
+e:\Windows\My Documents\Visual Studio 2015\Projects\Osu DiffCalc\Osu DiffCalc\bin\Debug\Osu DiffCalc.pdb
+e:\Windows\My Documents\Visual Studio 2015\Projects\Osu DiffCalc\Osu DiffCalc\obj\Debug\Osu DiffCalc.exe
+e:\Windows\My Documents\Visual Studio 2015\Projects\Osu DiffCalc\Osu DiffCalc\obj\Debug\Osu DiffCalc.pdb
+e:\windows\my documents\visual studio 2015\Projects\Osu DiffCalc\Osu DiffCalc\obj\Debug\Osu_DiffCalc.UserInterface.GUI.resources
+e:\windows\my documents\visual studio 2015\Projects\Osu DiffCalc\Osu DiffCalc\obj\Debug\Osu DiffCalc.csproj.GenerateResource.Cache
+e:\windows\my documents\visual studio 2015\Projects\Osu DiffCalc\Osu DiffCalc\obj\Debug\Osu_DiffCalc.Properties.Resources.resources
+C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Osu DiffCalc\Osu DiffCalc\bin\Debug\Osu DiffCalc.exe.config
+C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Osu DiffCalc\Osu DiffCalc\obj\Debug\Osu DiffCalc.exe
+C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Osu DiffCalc\Osu DiffCalc\obj\Debug\Osu DiffCalc.pdb
+C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Osu DiffCalc\Osu DiffCalc\bin\Debug\Osu DiffCalc.exe
+C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Osu DiffCalc\Osu DiffCalc\bin\Debug\Osu DiffCalc.pdb
+C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Osu DiffCalc\Osu DiffCalc\obj\Debug\Osu_DiffCalc.Properties.Resources.resources
+C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Osu DiffCalc\Osu DiffCalc\obj\Debug\Osu_DiffCalc.UserInterface.GUI.resources
+C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Osu DiffCalc\Osu DiffCalc\obj\Debug\Osu DiffCalc.csproj.GenerateResource.Cache
+C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Osu DiffCalc\Osu DiffCalc\obj\Debug\Osu DiffCalc.csprojResolveAssemblyReference.cache

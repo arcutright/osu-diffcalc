@@ -1,0 +1,77 @@
+﻿
+STYLE:
+	- change all methods to start with uppercase, change constants to all uppercase
+		done: gui.cs, savefilexmlmanager, finder, [analyzerobjects],
+			  [beatmapobjects]
+		todo: [filefinder], win32process
+			  [fileparserhelpers], analyzer, beatmap, mapset, mapsetmanager,
+			  parser
+
+
+FIX DIFFCALC: 
+	low cs increase
+	sometimes stops (console.log on threads to check if stopped)
+		transitioning from charted map -> taiko only -> normal map
+	be my friend - brokenarrow (taiko only)
+
+	preparing for te shakedown (search 'slider') - NO AUDIO HOOKS????
+		yuh oh - handle.exe also fails for these (very tiny files - caching issue?)
+		created a solution for this problem based on window titles and previous history
+
+
+	Finder.cs
+		- fix a max call time with thread.join
+
+"Main.cs"
+
+"win32processes"
+	- possible optimizations
+
+[FileProcessor]
+	[BeatmapObjects]
+		"Slider.cs"
+			- calculate slider endpoint properly (endpoint != last point in array, because of time snapping)
+			  for curved sliders, this will become expensive very quickly
+			- calculate the error margin due to the OD of the map to see whether a player has to move their cursor
+	[FileParserHelpers]
+		- change all parse() methods to bool for error-catching and verification in "Parser.cs"
+
+	"MapsetManager.cs"
+		- parallel execution of buildSet() and analyzeMapset()??
+
+	"Analyzer.cs"
+		- pattern difficulty
+			- squares
+			- line jumps (diff increases drastically with num notes)
+			- repeated patterns
+		- cs difficulty
+		- slider difficulty
+		- proper couplet difficulty
+
+[UserInterface]
+	"GUI.cs"
+		- change color theme for GUI (black bg)
+		- make GUI background translucent
+
+		- separate beatmap analyzer and window updater to their own cs files
+			- maybe in a background tasks directory
+
+
+OVERALL FLOW
+
+- find the path to the current mapset by analyzing hooks                   MapsetManager.getCurrentMapset() -> Finder.getOpenFiles...()
+- get mapset
+	- check xml for mapset                                                 SavefileXMLManager.doesMapsetExist()
+		- if so, check for completeness                                    SavefileXMLManager.getMissingDiffPaths()
+			- if not, analyze non-analyzed maps                            MapsetManager.analyzeMap()
+				- save mapset to XML                                       SavefileXMLManager.saveMapset()
+			- if so, do nothing                         
+		- if not, analyze all maps                                         iterate all on analyzeMap()
+			- save mapset to XML                                           SavefileXMLManager.saveMapset()
+- display mapset information on screen
+
+
+ANALYSIS FLOW
+
+
+

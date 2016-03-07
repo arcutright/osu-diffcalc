@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<root>
+  <mapset title="Bios Epic Edition" artist="Hiroyuki Sawano feat. Mika Kobayashi" creator="xChippy">
+    <map version="King" totalDiff="282.506503372079" jumpDiff="176.527853868931" streamDiff="48.2813679065478" burstDiff="36.0730535599447" coupletDiff="0" sliderDiff="21.624228036656" />
+  </mapset>
+  <mapset title="Sticks and Stones" artist="Shin Hae Chul" creator="Bikko">
+    <map version="Easy" totalDiff="22.2118162746205" jumpDiff="13.3618454308716" streamDiff="0.577551098837645" burstDiff="0.373539204336907" coupletDiff="0" sliderDiff="7.8988805405744" />
+    <map version="Hard" totalDiff="74.0967131506474" jumpDiff="48.4313269591769" streamDiff="12.1415491379419" burstDiff="6.86267122443932" coupletDiff="0" sliderDiff="6.66116582908924" />
+    <map version="Insane" totalDiff="210.221413049508" jumpDiff="147.394271087026" streamDiff="46.4687835378748" burstDiff="9.47843438837476" coupletDiff="0" sliderDiff="6.8799240362324" />
+    <map version="Madness" totalDiff="437.597937160645" jumpDiff="366.388564157264" streamDiff="46.9920185548519" burstDiff="16.40796276274" coupletDiff="0" sliderDiff="7.80939168578876" />
+    <map version="Normal" totalDiff="43.4595278765384" jumpDiff="24.9822115395496" streamDiff="1.68879617716478" burstDiff="4.20958347852988" coupletDiff="0" sliderDiff="12.5789366812941" />
+  </mapset>
+  <mapset title="No Reason" artist="Sum 41" creator="Strawberry">
+    <map version="Corruption" totalDiff="363.330569880872" jumpDiff="156.498987119" streamDiff="129.540918732601" burstDiff="53.1471976898607" coupletDiff="0" sliderDiff="24.1434663394109" />
+    <map version="True Reason" totalDiff="541.786765480723" jumpDiff="199.027128829028" streamDiff="193.365601076314" burstDiff="63.0702291814394" coupletDiff="0" sliderDiff="86.3238063939418" />
+  </mapset>
+  <mapset title="VALLISTA" artist="sakuzyo" creator="Shiirn">
+    <map version="Another" totalDiff="385.23530488191" jumpDiff="154.819458237624" streamDiff="146.195462174345" burstDiff="58.5147449302184" coupletDiff="0" sliderDiff="25.7056395397222" />
+    <map version="Odaril's Easy" totalDiff="14.3534487594276" jumpDiff="7.69577909075052" streamDiff="0.140965152756036" burstDiff="0.403012571475765" coupletDiff="0" sliderDiff="6.1136919444453" />
+    <map version="Zel's Hyper" totalDiff="143.012060091294" jumpDiff="38.3633632835519" streamDiff="32.8097541407827" burstDiff="56.9554998044837" coupletDiff="0" sliderDiff="14.8834428624759" />
+    <map version="ziin's Normal" totalDiff="20.8367306930217" jumpDiff="14.8201543331579" streamDiff="0.15872383170459" burstDiff="0.536002840962474" coupletDiff="0" sliderDiff="5.32184968719678" />
+  </mapset>
+  <mapset title="ChaiN De/structioN" artist="sakuzyo feat. Hatsune Miku" creator="Shiirn">
+    <map version="Loneliness" totalDiff="265.876510272099" jumpDiff="118.104800312151" streamDiff="81.84861013557" burstDiff="46.6906321499775" coupletDiff="0" sliderDiff="19.2324676744006" />
+  </mapset>
+  <mapset title="FUUUUUUU" artist="FUUUUUUU" creator="Swordman100">
+    <map version="Asian Niveau" totalDiff="121179340641.317" jumpDiff="111005.472567668" streamDiff="114840758675.886" burstDiff="6338470959.95879" coupletDiff="0" sliderDiff="0" />
+    <map version="Click skills" totalDiff="3872614512.26351" jumpDiff="6542.72032758218" streamDiff="6696.47093023453" burstDiff="3872601273.07226" coupletDiff="0" sliderDiff="0" />
+    <map version="FUUUUUAAAAAAACK!!!!!!" totalDiff="4792328242183.85" jumpDiff="33557.7557605354" streamDiff="4792328208626.09" burstDiff="0" coupletDiff="0" sliderDiff="0" />
+    <map version="FU" totalDiff="91264203.2556523" jumpDiff="18116.9807376436" streamDiff="91246086.2749146" burstDiff="0" coupletDiff="0" sliderDiff="0" />
+    <map version="Japan tutorial Level" totalDiff="22829173741.9716" jumpDiff="8245.40973817796" streamDiff="22829158237.8987" burstDiff="7258.66314817302" coupletDiff="0" sliderDiff="0" />
+    <map version="Slider" totalDiff="32960.6723282931" jumpDiff="35.1328923555072" streamDiff="201.68586002323" burstDiff="2703.29577465277" coupletDiff="0" sliderDiff="30020.5578012616" />
+    <map version="Spinner" totalDiff="0" jumpDiff="0" streamDiff="0" burstDiff="0" coupletDiff="0" sliderDiff="0" />
+    <map version="Stream" totalDiff="114851830.538879" jumpDiff="0" streamDiff="114851830.538879" burstDiff="0" coupletDiff="0" sliderDiff="0" />
+  </mapset>
+</root>
