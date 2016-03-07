@@ -33,4 +33,163 @@
     <map version="Spinner" totalDiff="0" jumpDiff="0" streamDiff="0" burstDiff="0" coupletDiff="0" sliderDiff="0" />
     <map version="Stream" totalDiff="114851830.538879" jumpDiff="0" streamDiff="114851830.538879" burstDiff="0" coupletDiff="0" sliderDiff="0" />
   </mapset>
+  <mapset title="Deep Space" artist="Eoin O' Broin" creator="galvenize">
+    <map version="Another" totalDiff="326.412855479973" jumpDiff="192.119798119046" streamDiff="74.0099336542697" burstDiff="52.5959263642077" coupletDiff="0" sliderDiff="7.68719734244987" />
+    <map version="Easy" totalDiff="18.0435650552476" jumpDiff="12.6302818228694" streamDiff="0.00317923117286007" burstDiff="0.482200974015078" coupletDiff="0" sliderDiff="4.92790302719022" />
+    <map version="Hyper" totalDiff="58.2756699177668" jumpDiff="33.8718934086998" streamDiff="6.49512432438756" burstDiff="11.0933715893213" coupletDiff="0" sliderDiff="6.81528059535819" />
+    <map version="Insane" totalDiff="199.281069304017" jumpDiff="96.4257174471587" streamDiff="28.1709495395168" burstDiff="53.0791824599218" coupletDiff="0" sliderDiff="21.60521985742" />
+    <map version="Normal" totalDiff="28.4272092352742" jumpDiff="19.7991427100015" streamDiff="0.374738306284021" burstDiff="0.928126687514239" coupletDiff="0" sliderDiff="7.3252015314744" />
+  </mapset>
+  <mapset title="Last Hope" artist="Apocalyptica" creator="pishifat">
+    <map version="Easy" totalDiff="15.1892943560026" jumpDiff="11.7728619339036" streamDiff="0" burstDiff="0.270119097247599" coupletDiff="0" sliderDiff="3.14631332485142" />
+    <map version="Extra" totalDiff="414.069276324127" jumpDiff="195.42947416944" streamDiff="120.932897003297" burstDiff="67.577712282644" coupletDiff="0" sliderDiff="30.1291928687455" />
+    <map version="Hard" totalDiff="81.359475315296" jumpDiff="53.8114400622423" streamDiff="0.215310345762729" burstDiff="15.6443363062916" coupletDiff="0" sliderDiff="11.6883886009994" />
+    <map version="Normal" totalDiff="22.0994065814312" jumpDiff="16.6863250045374" streamDiff="0.151426896233818" burstDiff="0.733619538049315" coupletDiff="0" sliderDiff="4.5280351426107" />
+    <map version="oko's Insane" totalDiff="192.170409332226" jumpDiff="80.336061569184" streamDiff="60.4701473298443" burstDiff="33.2385374309591" coupletDiff="0" sliderDiff="18.1256630022385" />
+  </mapset>
+  <mapset title="The Script For My Requiem" artist="Blind Guardian" creator="mastaa_p">
+    <map version="Break Stream" totalDiff="117.265216905785" jumpDiff="0" streamDiff="117.265216905785" burstDiff="0" coupletDiff="0" sliderDiff="0" />
+    <map version="demo" totalDiff="434.576512123847" jumpDiff="202.365280976792" streamDiff="134.136945859073" burstDiff="34.8322310841328" coupletDiff="0" sliderDiff="63.2420542038485" />
+    <map version="Pure Stream + Slow" totalDiff="226.699544256136" jumpDiff="7.83335961389567" streamDiff="218.86618464224" burstDiff="0" coupletDiff="0" sliderDiff="0" />
+    <map version="Pure stream" totalDiff="106.156446806276" jumpDiff="0" streamDiff="106.156446806276" burstDiff="0" coupletDiff="0" sliderDiff="0" />
+    <map version="Requiem" totalDiff="170.087831731097" jumpDiff="84.1650704814711" streamDiff="26.6647539247797" burstDiff="42.2222925928683" coupletDiff="0" sliderDiff="17.0357147319783" />
+  </mapset>
+  <mapset title="Possession" artist="CROW'SCLAW" creator="Faust">
+    <map version="Malevolence" totalDiff="528.712494898114" jumpDiff="212.850330045604" streamDiff="183.356807589111" burstDiff="59.7647823121842" coupletDiff="0" sliderDiff="72.7405749512145" />
+  </mapset>
+  <mapset title="Crimson Belvedere ~ Eastern Dream" artist="Demetori" creator="jonathanlfj">
+    <map version="Dream" totalDiff="280.551605002214" jumpDiff="129.650296223774" streamDiff="76.2879893535454" burstDiff="53.8798910138558" coupletDiff="0" sliderDiff="20.7334284110386" />
+  </mapset>
+  <mapset title="Emotional Skyscraper ~ World's End" artist="Demetori" creator="Lybydose">
+    <map version="Easy" totalDiff="50.7414412612396" jumpDiff="31.6754961264054" streamDiff="0.011899729247595" burstDiff="0.761502646012734" coupletDiff="0" sliderDiff="18.2925427595738" />
+    <map version="Hard" totalDiff="106.500358079007" jumpDiff="56.5444198390823" streamDiff="17.7720905059751" burstDiff="14.2722355170814" coupletDiff="0" sliderDiff="17.9116122168686" />
+    <map version="Lunatic" totalDiff="346.347643528061" jumpDiff="171.921430645566" streamDiff="86.3538595907158" burstDiff="53.4866740419285" coupletDiff="0" sliderDiff="34.5856792498504" />
+    <map version="Normal" totalDiff="77.0769272698569" jumpDiff="49.8633844513634" streamDiff="1.08999007445626" burstDiff="0.887970566567164" coupletDiff="0" sliderDiff="25.2355821774701" />
+    <map version="YGOkid8's Easy" totalDiff="28.6105835959754" jumpDiff="17.4938826339168" streamDiff="0.0040251582838052" burstDiff="0.143652720506986" coupletDiff="0" sliderDiff="10.9690230832678" />
+  </mapset>
+  <mapset title="Emotional Skyscraper ~ World's End" artist="Demetori" creator="happy30">
+    <map version="Extra Stage" totalDiff="275.465982633659" jumpDiff="127.023991249775" streamDiff="75.7193761896475" burstDiff="44.6887282195122" coupletDiff="0" sliderDiff="28.0338869747245" />
+    <map version="ignore's Hard" totalDiff="204.921370141527" jumpDiff="108.390993418371" streamDiff="14.3427112895481" burstDiff="56.2489838354052" coupletDiff="0" sliderDiff="25.9386815982027" />
+  </mapset>
+  <mapset title="Furuki Yuanxian ~ Death Echo" artist="Demetori" creator="jonathanlfj">
+    <map version="Advanced" totalDiff="62.6377613674388" jumpDiff="36.3310914530361" streamDiff="3.29979308917396" burstDiff="7.01194224700618" coupletDiff="0" sliderDiff="15.9949345782225" />
+    <map version="Extra Stage Collab" totalDiff="643.528294276326" jumpDiff="223.853181710074" streamDiff="303.55670399653" burstDiff="79.3813030935777" coupletDiff="0" sliderDiff="36.7371054761442" />
+    <map version="Lunatic" totalDiff="413.166718880204" jumpDiff="154.714042806808" streamDiff="161.199916980993" burstDiff="78.3536484382986" coupletDiff="0" sliderDiff="18.899110654105" />
+    <map version="Normal" totalDiff="40.7950619876291" jumpDiff="26.4115784457292" streamDiff="0.275341200492695" burstDiff="0.823367499137084" coupletDiff="0" sliderDiff="13.2847748422702" />
+    <map version="RLC's Hard" totalDiff="120.538235456273" jumpDiff="78.0732435183442" streamDiff="6.13576064072173" burstDiff="17.638073696441" coupletDiff="0" sliderDiff="18.6911576007665" />
+  </mapset>
+  <mapset title="Kanjou no Matenrou ~ World's End" artist="Demetori" creator="GoldenWolf">
+    <map version="Extra Stage" totalDiff="649.795874396454" jumpDiff="214.031440440219" streamDiff="348.825748483265" burstDiff="55.3233755260599" coupletDiff="0" sliderDiff="31.6153099469098" />
+  </mapset>
+  <mapset title="Silent Voyage to Eternity" artist="Demetori" creator="brikel">
+    <map version="BMix" totalDiff="571.729028894814" jumpDiff="275.14545019225" streamDiff="186.730038767254" burstDiff="60.6989264482654" coupletDiff="0" sliderDiff="49.1546134870438" />
+    <map version="Extra" totalDiff="225.131778268208" jumpDiff="87.2529134775582" streamDiff="66.3636380122317" burstDiff="47.1750501621214" coupletDiff="0" sliderDiff="24.3401766162969" />
+  </mapset>
+  <mapset title="Satori Maiden ~ Innumerable Eyes" artist="Demetori" creator="pieguy1372">
+    <map version="Easy" totalDiff="32.3031618062015" jumpDiff="21.7173465437199" streamDiff="0.00344581263884052" burstDiff="1.11787215202327" coupletDiff="0" sliderDiff="9.46449729781944" />
+    <map version="Hard" totalDiff="108.999447798852" jumpDiff="59.384297557921" streamDiff="17.4396263103714" burstDiff="13.0751985536035" coupletDiff="0" sliderDiff="19.1003253769559" />
+    <map version="Leyko's Normal" totalDiff="33.611937537645" jumpDiff="20.4247306288581" streamDiff="0.579132186466466" burstDiff="1.24798999102859" coupletDiff="0" sliderDiff="11.3600847312918" />
+    <map version="Lunatic" totalDiff="290.755176821159" jumpDiff="158.766143136635" streamDiff="41.0815252652377" burstDiff="65.87888497789" coupletDiff="0" sliderDiff="25.0286234413964" />
+  </mapset>
+  <mapset title="Wind God Girl" artist="Demetori" creator="lkp">
+    <map version="Extra" totalDiff="433.622274827549" jumpDiff="145.37676511882" streamDiff="181.814643066161" burstDiff="81.995105618646" coupletDiff="0" sliderDiff="24.4357610239213" />
+    <map version="Lunatic" totalDiff="161.381623960205" jumpDiff="63.4935019829209" streamDiff="20.9870761911016" burstDiff="57.2137773784512" coupletDiff="0" sliderDiff="19.6872684077309" />
+  </mapset>
+  <mapset title="Fury Of The Storm" artist="Dragonforce" creator="lesjuh">
+    <map version="Expert" totalDiff="406.770940791434" jumpDiff="185.148970269211" streamDiff="117.100287207072" burstDiff="73.166979585861" coupletDiff="0" sliderDiff="31.354703729289" />
+    <map version="Kingcobra's Expert" totalDiff="158.293175555145" jumpDiff="100.301739268251" streamDiff="28.821911995101" burstDiff="16.489125859563" coupletDiff="0" sliderDiff="12.6803984322297" />
+    <map version="Spin's Medium" totalDiff="83.9962361519118" jumpDiff="56.591726519271" streamDiff="2.08197414795392" burstDiff="3.48434856160611" coupletDiff="0" sliderDiff="21.8381869230807" />
+  </mapset>
+  <mapset title="Cry for Eternity" artist="DragonForce" creator="Lesjuh">
+    <map version="Legend" totalDiff="725.47525121822" jumpDiff="158.795664225816" streamDiff="426.295125503543" burstDiff="108.455170036213" coupletDiff="0" sliderDiff="31.9292914526473" />
+  </mapset>
+  <mapset title="Cry Thunder" artist="DragonForce" creator="Jenny">
+    <map version="Legend" totalDiff="1028.10271393203" jumpDiff="390.085968249777" streamDiff="506.712697566101" burstDiff="105.79968049112" coupletDiff="0" sliderDiff="25.5043676250269" />
+  </mapset>
+  <mapset title="Fallen World" artist="DragonForce" creator="Jenny">
+    <map version="Legend" totalDiff="832.903762027014" jumpDiff="99.7033448034334" streamDiff="541.008532999612" burstDiff="152.770401686894" coupletDiff="0" sliderDiff="39.4214825370745" />
+  </mapset>
+  <mapset title="Revolution Deathsquad" artist="DragonForce" creator="Lesjuh">
+    <map version="Legend" totalDiff="716.115380780194" jumpDiff="151.660240832129" streamDiff="419.192139187056" burstDiff="116.513862016165" coupletDiff="0" sliderDiff="28.7491387448446" />
+  </mapset>
+  <mapset title="Strike of the Ninja" artist="DragonForce" creator="Snepif">
+    <map version="Insane" totalDiff="201.366768914814" jumpDiff="118.385124142327" streamDiff="47.9913625144883" burstDiff="14.5033134374785" coupletDiff="0" sliderDiff="20.4869688205204" />
+    <map version="Kei's Hard" totalDiff="87.0230408586062" jumpDiff="49.2564849497284" streamDiff="4.04293979323199" burstDiff="4.61633614001528" coupletDiff="0" sliderDiff="29.1072799756305" />
+    <map version="Normal" totalDiff="24.9216997713485" jumpDiff="15.253522736225" streamDiff="0.00884382110043537" burstDiff="1.22865226650686" coupletDiff="0" sliderDiff="8.43068094751622" />
+    <map version="Winber1's Easy" totalDiff="26.3110349770498" jumpDiff="13.5468442534948" streamDiff="0.309580468547068" burstDiff="0.305523897181639" coupletDiff="0" sliderDiff="12.1490863578264" />
+  </mapset>
+  <mapset title="The Last Journey Home" artist="DragonForce" creator="Jenny">
+    <map version="Legend" totalDiff="741.433424378139" jumpDiff="208.535790747699" streamDiff="420.285411378174" burstDiff="81.81400105999" coupletDiff="0" sliderDiff="30.7982211922759" />
+    <map version="mastaa_p's Screw the Intro" totalDiff="775.105173219037" jumpDiff="219.878778354165" streamDiff="442.627349709767" burstDiff="85.4960057948607" coupletDiff="0" sliderDiff="27.103039360245" />
+  </mapset>
+  <mapset title="Through the Fire and Flames" artist="DragonForce" creator="Puffles">
+    <map version="Expert" totalDiff="130.480179230878" jumpDiff="54.9301242909777" streamDiff="22.4994048067849" burstDiff="12.7314015362043" coupletDiff="0" sliderDiff="40.3192485969116" />
+  </mapset>
+  <mapset title="Through The Fire And Flames" artist="DragonForce" creator="Lesjuh">
+    <map version="Hard" totalDiff="163.416461364285" jumpDiff="56.5642805834848" streamDiff="16.7468206507702" burstDiff="52.1563420764368" coupletDiff="0" sliderDiff="37.9490180535929" />
+    <map version="Legend" totalDiff="733.399641531936" jumpDiff="179.50458435774" streamDiff="430.371842852789" burstDiff="93.6611899959576" coupletDiff="0" sliderDiff="29.8620243254493" />
+    <map version="Medium" totalDiff="114.642310549834" jumpDiff="76.7747538182919" streamDiff="1.57429409502847" burstDiff="10.9055470383917" coupletDiff="0" sliderDiff="25.387715598122" />
+  </mapset>
+  <mapset title="A Rose for Epona" artist="Eluveitie" creator="DexFrild">
+    <map version="Easy" totalDiff="23.1175321476703" jumpDiff="12.8961231909444" streamDiff="0.0158748849066028" burstDiff="0.097791876484115" coupletDiff="0" sliderDiff="10.1077421953351" />
+    <map version="Insane" totalDiff="303.08217072437" jumpDiff="62.6875513907793" streamDiff="122.20029803256" burstDiff="105.820555540014" coupletDiff="0" sliderDiff="12.3737657610175" />
+    <map version="Normal" totalDiff="26.4596532513446" jumpDiff="14.6742494911626" streamDiff="0" burstDiff="1.13715120280042" coupletDiff="0" sliderDiff="10.6482525573816" />
+  </mapset>
+  <mapset title="Martyr of the Free Word" artist="Epica" creator="Sieg">
+    <map version="Wrath" totalDiff="779.052356159822" jumpDiff="134.22307304619" streamDiff="500.050283118403" burstDiff="126.572092984186" coupletDiff="0" sliderDiff="18.2069070110429" />
+  </mapset>
+  <mapset title="Future is Undefined" artist="IRON ATTACK!" creator="Kite">
+    <map version="Easy" totalDiff="7.67045217764641" jumpDiff="4.87488985713" streamDiff="0.0164328349697367" burstDiff="0.333570131929532" coupletDiff="0" sliderDiff="2.44555935361714" />
+    <map version="Insane" totalDiff="259.675376445538" jumpDiff="128.988903526405" streamDiff="93.0130276230328" burstDiff="25.730878109195" coupletDiff="0" sliderDiff="11.942567186906" />
+    <map version="Normal" totalDiff="21.7741071016695" jumpDiff="15.5049216646048" streamDiff="0" burstDiff="0.597177664036625" coupletDiff="0" sliderDiff="5.67200777302809" />
+    <map version="suraimu's Hard" totalDiff="60.6551273469992" jumpDiff="24.3028074438182" streamDiff="12.5962147096596" burstDiff="8.28505555560146" coupletDiff="0" sliderDiff="15.4710496379199" />
+  </mapset>
+  <mapset title="The Pretender" artist="Infected Mushroom" creator="RLC">
+    <map version="Pretender" totalDiff="470.053713273828" jumpDiff="191.463131899561" streamDiff="190.201617266128" burstDiff="73.9636112080759" coupletDiff="0" sliderDiff="14.4253529000636" />
+  </mapset>
+  <mapset title="Scarlet Rose" artist="Lily" creator="val0108">
+    <map version="0108 style" totalDiff="406.77346705327" jumpDiff="257.115340984635" streamDiff="37.9681123914673" burstDiff="68.9841826907663" coupletDiff="0" sliderDiff="42.7058309864016" />
+  </mapset>
+  <mapset title="The Big Black" artist="The Quick Brown Fox" creator="Blue Dragon">
+    <map version="WHO'S AFRAID OF THE BIG BLACK" totalDiff="762.026622639751" jumpDiff="359.894007815401" streamDiff="266.619106876572" burstDiff="92.5524442525016" coupletDiff="0" sliderDiff="42.961063695276" />
+  </mapset>
+  <mapset title="Adult's Toy" artist="utsuP" creator="SapphireGhost">
+    <map version="Desecration" totalDiff="664.243407799154" jumpDiff="274.063437694721" streamDiff="210.626478060645" burstDiff="49.7839097429865" coupletDiff="0" sliderDiff="129.7695823008" />
+  </mapset>
+  <mapset title="The Unforgiving" artist="Within Temptation" creator="Armin">
+    <map version="A Demon's Fate" totalDiff="240.570233324649" jumpDiff="108.551948074005" streamDiff="55.9334579841907" burstDiff="26.4579580751708" coupletDiff="0" sliderDiff="49.6268691912822" />
+    <map version="Faster" totalDiff="209.227813608015" jumpDiff="89.6769985027384" streamDiff="40.9342366651794" burstDiff="11.0709222966645" coupletDiff="0" sliderDiff="67.5456561434324" />
+    <map version="Fire and Ice" totalDiff="152.020416955422" jumpDiff="97.5914867863048" streamDiff="9.12940823390443" burstDiff="5.73230132639628" coupletDiff="0" sliderDiff="39.567220608816" />
+    <map version="In The Middle Of The Night" totalDiff="388.993504575429" jumpDiff="139.532507349289" streamDiff="94.6761498265641" burstDiff="48.8641288857885" coupletDiff="0" sliderDiff="105.920718513787" />
+    <map version="Iron" totalDiff="330.236921598731" jumpDiff="148.877993623801" streamDiff="40.279198833677" burstDiff="31.1899671137218" coupletDiff="0" sliderDiff="109.889762027531" />
+    <map version="Lost" totalDiff="149.565091085629" jumpDiff="61.6394263413932" streamDiff="12.9022149354093" burstDiff="7.35691135236996" coupletDiff="0" sliderDiff="67.6665384564561" />
+    <map version="Marathon" totalDiff="504.16393287937" jumpDiff="190.037076629314" streamDiff="108.094519345444" burstDiff="58.1951199769066" coupletDiff="0" sliderDiff="147.837216927706" />
+    <map version="mastaa_p's practice cut" totalDiff="328.001349966135" jumpDiff="118.004600418907" streamDiff="91.0966926392449" burstDiff="47.319525205612" coupletDiff="0" sliderDiff="71.5805317023711" />
+    <map version="Murder" totalDiff="98.446994552219" jumpDiff="62.1414641659926" streamDiff="9.20175331206628" burstDiff="6.0877248551189" coupletDiff="0" sliderDiff="21.0160522190412" />
+    <map version="Shot In The Dark" totalDiff="127.875025279716" jumpDiff="71.5681977944376" streamDiff="18.0776670793681" burstDiff="4.50818749964848" coupletDiff="0" sliderDiff="33.7209729062615" />
+    <map version="Sinead" totalDiff="120.860365661406" jumpDiff="61.9102223328723" streamDiff="29.7300972051572" burstDiff="10.9783700569953" coupletDiff="0" sliderDiff="18.2416760663817" />
+    <map version="Stairway to the Skies" totalDiff="160.501886732071" jumpDiff="59.0434868233325" streamDiff="2.46403972225712" burstDiff="6.35248418132959" coupletDiff="0" sliderDiff="92.6418760051518" />
+    <map version="Where Is The Edge" totalDiff="139.381034493543" jumpDiff="72.8042714722926" streamDiff="14.90640439474" burstDiff="25.3451348239698" coupletDiff="0" sliderDiff="26.3252238025402" />
+    <map version="Why Not Me" totalDiff="64.8571584060486" jumpDiff="46.5532738696327" streamDiff="1.41190165332558" burstDiff="1.92063399659267" coupletDiff="0" sliderDiff="14.9713488864976" />
+  </mapset>
+  <mapset title="Kokou no Sousei" artist="Yousei Teikoku" creator="Saten-san">
+    <map version="Chaos" totalDiff="800.145183407171" jumpDiff="344.967817965342" streamDiff="181.787442114756" burstDiff="138.299529065229" coupletDiff="0" sliderDiff="135.090394261844" />
+    <map version="Collab" totalDiff="725.846825516692" jumpDiff="379.142452923453" streamDiff="173.884379596543" burstDiff="136.85024347079" coupletDiff="0" sliderDiff="35.9697495259062" />
+    <map version="Hard" totalDiff="84.0433597483442" jumpDiff="42.2453600959323" streamDiff="7.28702175907836" burstDiff="5.89611168670986" coupletDiff="0" sliderDiff="28.6148662066237" />
+    <map version="Insane" totalDiff="276.361886050151" jumpDiff="146.351769276632" streamDiff="63.3428151216311" burstDiff="36.9815664706407" coupletDiff="0" sliderDiff="29.6857351812465" />
+  </mapset>
+  <mapset title="the lost dedicated" artist="yst" creator="spro">
+    <map version="jump" totalDiff="1608.3244010983" jumpDiff="727.107944815077" streamDiff="828.890905327888" burstDiff="52.3255509553364" coupletDiff="0" sliderDiff="0" />
+  </mapset>
+  <mapset title="caramel heaven" artist="yuikonnu" creator="sukiNathan">
+    <map version="Asphyxia's Easy" totalDiff="36.8143763938438" jumpDiff="26.5464061575476" streamDiff="0.0445183631624053" burstDiff="0.348979267329938" coupletDiff="0" sliderDiff="9.87447260580386" />
+    <map version="captin's Extra" totalDiff="443.157722896362" jumpDiff="206.001714350875" streamDiff="114.713083541379" burstDiff="105.007846439095" coupletDiff="0" sliderDiff="17.4350785650125" />
+    <map version="Extra" totalDiff="503.507691444638" jumpDiff="259.81614422787" streamDiff="114.437180789676" burstDiff="102.886507449774" coupletDiff="0" sliderDiff="26.3678589773179" />
+    <map version="Insane" totalDiff="230.020641708812" jumpDiff="72.6609967126416" streamDiff="76.9004960924662" burstDiff="66.6252917457347" coupletDiff="0" sliderDiff="13.8338571579693" />
+    <map version="Laurier's Insane" totalDiff="369.754775302111" jumpDiff="151.440310107214" streamDiff="112.703992112537" burstDiff="88.4362145862548" coupletDiff="0" sliderDiff="17.1742584961056" />
+    <map version="Normal" totalDiff="17.2285607012219" jumpDiff="12.5415653160413" streamDiff="1.65387535359477" burstDiff="1.53473217325248" coupletDiff="0" sliderDiff="1.49838785833341" />
+    <map version="pk's Hard" totalDiff="70.938912998121" jumpDiff="44.5889074161739" streamDiff="3.72702291197037" burstDiff="11.4061177258896" coupletDiff="0" sliderDiff="11.2168649440871" />
+    <map version="pritifat's Insane" totalDiff="362.500395243253" jumpDiff="146.57595617785" streamDiff="100.426641644785" burstDiff="88.5109761831514" coupletDiff="0" sliderDiff="26.9868212374668" />
+    <map version="Skystar's Caramel" totalDiff="850.61722621834" jumpDiff="493.344935305356" streamDiff="211.278211795891" burstDiff="98.2988981775819" coupletDiff="0" sliderDiff="47.6951809395102" />
+  </mapset>
 </root>

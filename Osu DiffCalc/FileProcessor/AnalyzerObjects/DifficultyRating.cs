@@ -30,7 +30,7 @@ namespace Osu_DiffCalc.FileProcessor.AnalyzerObjects
 
         public static double FamiliarizeRating(double rating)
         {
-            return 1.2 * Math.Pow(rating, 0.25);
+            return 1.1 * Math.Pow(rating, 0.25);
         }
 
         public void AddJump(double time, double difficulty)
