@@ -44,7 +44,7 @@ namespace Osu_DiffCalc.FileProcessor
             }
         }
 
-        public void sort(bool ascending=true)
+        public void sort(bool ascending = true)
         {
             if(ascending)
                 beatmaps.Sort((x, y) => x.diffRating.totalDifficulty.CompareTo(y.diffRating.totalDifficulty));

@@ -113,7 +113,7 @@
             // clearButton
             // 
             this.clearButton.Location = new System.Drawing.Point(278, 162);
-            this.clearButton.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.clearButton.Margin = new System.Windows.Forms.Padding(2);
             this.clearButton.Name = "clearButton";
             this.clearButton.Size = new System.Drawing.Size(40, 19);
             this.clearButton.TabIndex = 0;
@@ -146,7 +146,7 @@
             this.autoBeatmapCheckbox.Checked = true;
             this.autoBeatmapCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
             this.autoBeatmapCheckbox.Location = new System.Drawing.Point(276, 5);
-            this.autoBeatmapCheckbox.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.autoBeatmapCheckbox.Margin = new System.Windows.Forms.Padding(2);
             this.autoBeatmapCheckbox.Name = "autoBeatmapCheckbox";
             this.autoBeatmapCheckbox.Size = new System.Drawing.Size(93, 17);
             this.autoBeatmapCheckbox.TabIndex = 14;
@@ -159,7 +159,7 @@
             this.tabs.Controls.Add(this.tabPage1);
             this.tabs.Controls.Add(this.tabPage2);
             this.tabs.Location = new System.Drawing.Point(2, 2);
-            this.tabs.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tabs.Margin = new System.Windows.Forms.Padding(2);
             this.tabs.Name = "tabs";
             this.tabs.SelectedIndex = 0;
             this.tabs.Size = new System.Drawing.Size(383, 216);
@@ -177,9 +177,9 @@
             this.tabPage1.Controls.Add(this.timeDisplay2);
             this.tabPage1.Controls.Add(this.timeDescriptionLabel);
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
-            this.tabPage1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tabPage1.Margin = new System.Windows.Forms.Padding(2);
             this.tabPage1.Name = "tabPage1";
-            this.tabPage1.Padding = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tabPage1.Padding = new System.Windows.Forms.Padding(2);
             this.tabPage1.Size = new System.Drawing.Size(375, 190);
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "Results";
@@ -191,9 +191,9 @@
             this.tabPage2.Controls.Add(this.seriesSelect);
             this.tabPage2.Controls.Add(this.chart);
             this.tabPage2.Location = new System.Drawing.Point(4, 22);
-            this.tabPage2.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tabPage2.Margin = new System.Windows.Forms.Padding(2);
             this.tabPage2.Name = "tabPage2";
-            this.tabPage2.Padding = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tabPage2.Padding = new System.Windows.Forms.Padding(2);
             this.tabPage2.Size = new System.Drawing.Size(375, 190);
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "Graoh";
@@ -209,7 +209,7 @@
             "test2",
             "test3"});
             this.chartedMapChoice.Location = new System.Drawing.Point(286, 89);
-            this.chartedMapChoice.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.chartedMapChoice.Margin = new System.Windows.Forms.Padding(2);
             this.chartedMapChoice.Name = "chartedMapChoice";
             this.chartedMapChoice.Size = new System.Drawing.Size(92, 21);
             this.chartedMapChoice.TabIndex = 2;
@@ -228,7 +228,8 @@
             listViewItem2.StateImageIndex = 1;
             listViewItem3.Checked = true;
             listViewItem3.StateImageIndex = 1;
-            listViewItem4.StateImageIndex = 0;
+            listViewItem4.Checked = true;
+            listViewItem4.StateImageIndex = 1;
             listViewItem5.Checked = true;
             listViewItem5.StateImageIndex = 1;
             this.seriesSelect.Items.AddRange(new System.Windows.Forms.ListViewItem[] {
@@ -238,7 +239,7 @@
             listViewItem4,
             listViewItem5});
             this.seriesSelect.Location = new System.Drawing.Point(317, 114);
-            this.seriesSelect.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.seriesSelect.Margin = new System.Windows.Forms.Padding(2);
             this.seriesSelect.Name = "seriesSelect";
             this.seriesSelect.Scrollable = false;
             this.seriesSelect.Size = new System.Drawing.Size(63, 97);

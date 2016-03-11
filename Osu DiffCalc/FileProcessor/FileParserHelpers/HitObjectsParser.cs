@@ -7,7 +7,7 @@ namespace Osu_DiffCalc.FileProcessor.FileParserHelpers
     {
         public static bool parse(Beatmap beatmap, ref StreamReader reader)
         {
-            GeneralHelper.skipTo(ref reader, "[HitObjects]", false);
+            GeneralHelper.skipTo(ref reader, @"[HitObjects]", false);
             string line;
             string[] data;
             int x, y, time, type, repeat, endTime;
@@ -95,7 +95,7 @@ namespace Osu_DiffCalc.FileProcessor.FileParserHelpers
                 //???
                 else
                 {
-                    System.Console.WriteLine("fuckery:: {0}:  xy({1} {2})  type:{3}", TimingParser.getTimeStamp(time), x, y, type);
+                    System.Console.WriteLine("magic fuckery:: {0}:  xy({1} {2})  type:{3}", TimingParser.getTimeStamp(time), x, y, type);
                 }
             }
             if (beatmap.numHitObjects > 0)
