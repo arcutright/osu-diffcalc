@@ -11,6 +11,7 @@ This is an alternate difficulty calculator for [osu!](https://osu.ppy.sh/) maps.
 
 + Calculates difficulty of an osu! mapset based on what map is selected in-game, in the background
 + Difficulty graphs (as well as a familiarly-scaled rating system)
+    + currently, these graphs are difficulty (y) vs time (x)
 + Automatically hides itself when in-game (stops analyzing when hidden or minimized)
 + Logs all difficulty results to an easy-to-parse XML that may come in handy (and saves on calculations)
 ```
