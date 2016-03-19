@@ -33,10 +33,9 @@ Currently considered features: jumps, streams, triplets, bursts, sliders
 
 Planned considerations: patterns, couplets, weird timing, top ranked plays (ie a map where all the top plays are nomod vs doubletime, along with accuracy and combo. I think this is all available in the [osu! api](https://github.com/ppy/osu-api/wiki) but I admit that I have not looked into it)
 
-### Testing this diffcalc ###
+### Where can I get a copy? ###
 
-+ Grab the latest binary distribution from [Downloads](https://bitbucket.org/countcutright/osu-diffcalc/downloads)
-+ Compile from source
+Grab the latest binary distribution from [Downloads](https://bitbucket.org/countcutright/osu-diffcalc/downloads) or compile from source
 
 ### Reporting issues ###
 
