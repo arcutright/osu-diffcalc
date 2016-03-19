@@ -40,12 +40,6 @@ namespace Osu_DiffCalc.UserInterface
             if (Thread.CurrentThread.Name == null)
                 Thread.CurrentThread.Name = "GUIThread";
             InitializeComponent();
-
-            Task.Run(() => 
-            {
-                Console.WriteLine("paused:{0}", pauseGUI);
-                Thread.Sleep(2000);
-            });
         }
 
         public void GUI_Load(object sender, EventArgs eArgs)
@@ -543,7 +537,6 @@ namespace Osu_DiffCalc.UserInterface
                             }
                             else
                                 currentMapsetDirectory = MapsetManager.getCurrentMapsetDirectory();   //native calls lie ahead
-                            Console.WriteLine("current set: " + currentMapsetDirectory);
                             localwatch.Stop();
                             SetTime1(string.Format("{0} ms", localwatch.ElapsedMilliseconds));
 

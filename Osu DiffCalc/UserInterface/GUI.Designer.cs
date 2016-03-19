@@ -31,7 +31,6 @@
             System.Windows.Forms.ListViewItem listViewItem1 = new System.Windows.Forms.ListViewItem(new string[] {
             "Jumps",
             ""}, -1);
-            System.Windows.Forms.ListViewGroup listViewGroup1 = new System.Windows.Forms.ListViewGroup("ListViewGroup", System.Windows.Forms.HorizontalAlignment.Left);
             System.Windows.Forms.ListViewItem listViewItem2 = new System.Windows.Forms.ListViewItem("Streams");
             System.Windows.Forms.ListViewItem listViewItem3 = new System.Windows.Forms.ListViewItem("Bursts");
             System.Windows.Forms.ListViewItem listViewItem4 = new System.Windows.Forms.ListViewItem("Couplets");
@@ -207,8 +206,8 @@
             this.chartedMapChoice.Name = "chartedMapChoice";
             this.chartedMapChoice.Size = new System.Drawing.Size(121, 24);
             this.chartedMapChoice.TabIndex = 2;
-            this.chartedMapChoice.SelectedIndexChanged += new System.EventHandler(this.ChartedMapChoice_SelectedIndexChanged);
             this.chartedMapChoice.DropDown += new System.EventHandler(this.ChartedMapChoice_DropDown);
+            this.chartedMapChoice.SelectedIndexChanged += new System.EventHandler(this.ChartedMapChoice_SelectedIndexChanged);
             // 
             // seriesSelect
             // 
@@ -216,15 +215,15 @@
             this.seriesSelect.CheckBoxes = true;
             this.seriesSelect.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.column});
-            listViewGroup1.Header = "ListViewGroup";
-            listViewGroup1.Name = "listViewGroup1";
-            listViewItem1.Group = listViewGroup1;
-            listViewItem1.StateImageIndex = 0;
-            listViewItem2.StateImageIndex = 0;
-            listViewItem3.StateImageIndex = 0;
+            listViewItem1.Checked = true;
+            listViewItem1.StateImageIndex = 1;
+            listViewItem2.Checked = true;
+            listViewItem2.StateImageIndex = 1;
+            listViewItem3.Checked = true;
+            listViewItem3.StateImageIndex = 1;
             listViewItem4.StateImageIndex = 0;
-            listViewItem5.Group = listViewGroup1;
-            listViewItem5.StateImageIndex = 0;
+            listViewItem5.Checked = true;
+            listViewItem5.StateImageIndex = 1;
             this.seriesSelect.Items.AddRange(new System.Windows.Forms.ListViewItem[] {
             listViewItem1,
             listViewItem2,
@@ -252,7 +251,7 @@
             this.chart.ChartAreas.Add(chartArea1);
             legend1.Name = "Legend1";
             this.chart.Legends.Add(legend1);
-            this.chart.Location = new System.Drawing.Point(-19, -7);
+            this.chart.Location = new System.Drawing.Point(-28, -7);
             this.chart.Margin = new System.Windows.Forms.Padding(0);
             this.chart.Name = "chart";
             series1.ChartArea = "ChartArea";
@@ -260,7 +259,7 @@
             series1.Name = "Series1";
             series1.YValuesPerPoint = 6;
             this.chart.Series.Add(series1);
-            this.chart.Size = new System.Drawing.Size(526, 252);
+            this.chart.Size = new System.Drawing.Size(546, 252);
             this.chart.TabIndex = 0;
             this.chart.Text = "Graph";
             // 

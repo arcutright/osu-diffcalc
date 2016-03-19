@@ -143,7 +143,6 @@ namespace Osu_DiffCalc.FileProcessor
             //printDebug(triplets, "triplets");
             //printDebug(streams, "streams");
             */
-            
 
             if (clearLists)
             {
@@ -214,22 +213,22 @@ namespace Osu_DiffCalc.FileProcessor
             int timeGapMs;
             float timeDifferenceForTransition; //to measure how abrubt changing between shapes is
             float timeDifferenceForSpeeds; //similar to difference in BPM between streams, but in ms/tick
-            double coupleBPM, localDiff = 0;
-            foreach(Shape couple in couplets)
+            double coupletBPM, localDiff = 0;
+            foreach(Shape couplet in couplets)
             {
                 localDiff = 0;
-                timeGapMs = couple.startTime - couple.previous.endTime;
-                timeDifferenceForTransition = (float)Math.Abs(couple.avgTimeGapMs*2 - timeGapMs);
-                timeDifferenceForSpeeds = (float)Math.Abs(couple.avgTimeGapMs - couple.previous.avgTimeGapMs);
+                timeGapMs = couplet.startTime - couplet.previous.endTime;
+                timeDifferenceForTransition = (float)Math.Abs(couplet.avgTimeGapMs*2 - timeGapMs);
+                timeDifferenceForSpeeds = (float)Math.Abs(couplet.avgTimeGapMs - couplet.previous.avgTimeGapMs);
                 //let's define these parameters to make a couplet difiicult
-                if (timeGapMs > 0)
+                if (timeGapMs > 0 && couplet.avgTimeGapMs > 0)
                 {
-                    if (timeDifferenceForTransition <= 20 && timeDifferenceForSpeeds <= 1.5 * couple.avgTimeGapMs + 20)
+                    if (timeDifferenceForTransition <= 20 && timeDifferenceForSpeeds <= 1.5 * couplet.avgTimeGapMs + 20)
                     {
-                        coupleBPM = 15000 / couple.avgTimeGapMs;
-                        localDiff = Math.Pow(coupleBPM, 3.2) / 1000000000 * Math.Pow(couple.avgDistancePx + 1, 1.6);
+                        coupletBPM = 15000 / couplet.avgTimeGapMs;
+                        localDiff = Math.Pow(coupletBPM, 3.2) / 1000000000 * Math.Pow(couplet.avgDistancePx + 1, 1.6);
                     }
-                    map.diffRating.AddCouplet(couple.startTime, localDiff);
+                    map.diffRating.AddCouplet(couplet.startTime, localDiff);
                 }
             }
             return difficulty;
@@ -275,7 +274,7 @@ namespace Osu_DiffCalc.FileProcessor
                         //difficulty due to the speed of the jump
                         double speedDiff = Math.Pow(10 * distPx / distMs, 2);
                         //difficulty due to the distance
-                        double distDiff = speedDiff * 0.4 * distPx / (maxDistPx - map.circleSizePx / 2);
+                        double distDiff = speedDiff * 0.4 * distPx / (maxDistPx - map.circleSizePx / 2 + 1);
                         difficulty = speedDiff + distDiff;
                         //adjustment to make jumps vs streams more reasonable
                         difficulty *= 0.1;
@@ -299,10 +298,11 @@ namespace Osu_DiffCalc.FileProcessor
                 double px = slider.totalLength;
                 //adjust slider length to consider the margin allowed by od
                 px -= ((double)slider.repeat * (map.circleSizePx + map.accuracy));     //FIX ME (OD MARGIN)
+                double dtime = slider.endTime - slider.startTime;
                 
-                if (px > 0)
+                if (px > 0 && dtime > 0)
                 {
-                    difficulty += Math.Pow(px / (slider.endTime - slider.startTime), 1.5) * Math.Pow(px, 0.6) / 2;
+                    difficulty += Math.Pow(px / dtime, 1.5) * Math.Pow(px, 0.6) / 2;
 
                     //Console.WriteLine("slider {0} => {1}", FileParserHelpers.TimingParser.getTimeStamp(slider.startTime), difficulty);
                    /*
@@ -366,15 +366,19 @@ namespace Osu_DiffCalc.FileProcessor
 
         static double getStandardDeviation(List<double> list, double avg)
         {
-            double variance = 0;
-            foreach(double value in list)
+            if (list.Count > 1)
             {
-                //variance += Math.Pow(value - avg, 2);
-                variance += value * value;
+                double variance = 0;
+                foreach (double value in list)
+                {
+                    //variance += Math.Pow(value - avg, 2);
+                    variance += value * value;
+                }
+                variance -= list.Count * avg * avg; //
+                variance /= list.Count - 1;
+                return Math.Sqrt(variance);
             }
-            variance -= list.Count * avg * avg; //
-            variance /= list.Count;
-            return Math.Sqrt(variance);
+            return 0;
         }
 
         static double rollingAverage(double currentAvg, double toAdd, int currentNumValues)
