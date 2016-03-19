@@ -10,7 +10,19 @@ This is an alternate difficulty calculator for [osu!](https://osu.ppy.sh/) maps.
 + Difficulty graphs
 + **ADD SCREENSHOTS**
 + Logs all difficulty results to an easy-to-parse XML that may come in handy (and saves on calculations)
-+ **example xml**
+```
+#!xml
+<root>
+  <mapset title="Bios Epic Edition" artist="Hiroyuki Sawano feat. Mika Kobayashi" creator="xChippy">
+    <map version="King" totalDiff="282.506503372079" jumpDiff="176.527853868931" streamDiff="48.2813679065478"
+     burstDiff="36.0730535599447" coupletDiff="0" sliderDiff="21.624228036656" />
+  </mapset>
+  <mapset title="ChaiN De/structioN" artist="sakuzyo feat. Hatsune Miku" creator="Shiirn">
+    <map version="Loneliness" totalDiff="265.876510272099" jumpDiff="118.104800312151" streamDiff="81.84861013557"
+     burstDiff="46.6906321499775" coupletDiff="0" sliderDiff="19.2324676744006" />
+  </mapset>
+</root>
+```
 
 ### Difficulty calculation considerations ###
 
