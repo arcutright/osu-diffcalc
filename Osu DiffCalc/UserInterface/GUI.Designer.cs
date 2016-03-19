@@ -28,9 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.Windows.Forms.ListViewItem listViewItem1 = new System.Windows.Forms.ListViewItem(new string[] {
-            "Jumps",
-            ""}, -1);
+            System.Windows.Forms.ListViewItem listViewItem1 = new System.Windows.Forms.ListViewItem("Jumps");
             System.Windows.Forms.ListViewItem listViewItem2 = new System.Windows.Forms.ListViewItem("Streams");
             System.Windows.Forms.ListViewItem listViewItem3 = new System.Windows.Forms.ListViewItem("Bursts");
             System.Windows.Forms.ListViewItem listViewItem4 = new System.Windows.Forms.ListViewItem("Couplets");
@@ -62,9 +60,10 @@
             // 
             // openFromFile
             // 
-            this.openFromFile.Location = new System.Drawing.Point(5, 158);
+            this.openFromFile.Location = new System.Drawing.Point(7, 194);
+            this.openFromFile.Margin = new System.Windows.Forms.Padding(4);
             this.openFromFile.Name = "openFromFile";
-            this.openFromFile.Size = new System.Drawing.Size(94, 23);
+            this.openFromFile.Size = new System.Drawing.Size(125, 28);
             this.openFromFile.TabIndex = 3;
             this.openFromFile.Text = "Open From File";
             this.openFromFile.UseVisualStyleBackColor = true;
@@ -75,9 +74,10 @@
             this.scaleRatings.AutoSize = true;
             this.scaleRatings.Checked = true;
             this.scaleRatings.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.scaleRatings.Location = new System.Drawing.Point(117, 162);
+            this.scaleRatings.Location = new System.Drawing.Point(156, 199);
+            this.scaleRatings.Margin = new System.Windows.Forms.Padding(4);
             this.scaleRatings.Name = "scaleRatings";
-            this.scaleRatings.Size = new System.Drawing.Size(125, 17);
+            this.scaleRatings.Size = new System.Drawing.Size(163, 21);
             this.scaleRatings.TabIndex = 4;
             this.scaleRatings.Text = "Familiar Rating Scale";
             this.scaleRatings.UseVisualStyleBackColor = true;
@@ -86,36 +86,35 @@
             // difficultyDisplayPanel
             // 
             this.difficultyDisplayPanel.AutoScroll = true;
-            this.difficultyDisplayPanel.Location = new System.Drawing.Point(3, 3);
+            this.difficultyDisplayPanel.Location = new System.Drawing.Point(4, 4);
+            this.difficultyDisplayPanel.Margin = new System.Windows.Forms.Padding(4);
             this.difficultyDisplayPanel.Name = "difficultyDisplayPanel";
-            this.difficultyDisplayPanel.Size = new System.Drawing.Size(266, 153);
+            this.difficultyDisplayPanel.Size = new System.Drawing.Size(355, 188);
             this.difficultyDisplayPanel.TabIndex = 7;
             // 
             // timeDisplay2
             // 
             this.timeDisplay2.BackColor = System.Drawing.SystemColors.Control;
-            this.timeDisplay2.Location = new System.Drawing.Point(276, 137);
-            this.timeDisplay2.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.timeDisplay2.Location = new System.Drawing.Point(368, 169);
             this.timeDisplay2.Name = "timeDisplay2";
-            this.timeDisplay2.Size = new System.Drawing.Size(36, 19);
+            this.timeDisplay2.Size = new System.Drawing.Size(48, 23);
             this.timeDisplay2.TabIndex = 11;
             // 
             // timeDescriptionLabel
             // 
             this.timeDescriptionLabel.AutoSize = true;
-            this.timeDescriptionLabel.Location = new System.Drawing.Point(276, 116);
-            this.timeDescriptionLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.timeDescriptionLabel.Location = new System.Drawing.Point(368, 143);
             this.timeDescriptionLabel.Name = "timeDescriptionLabel";
-            this.timeDescriptionLabel.Size = new System.Drawing.Size(80, 13);
+            this.timeDescriptionLabel.Size = new System.Drawing.Size(107, 17);
             this.timeDescriptionLabel.TabIndex = 10;
             this.timeDescriptionLabel.Text = "Parse+Analyze:";
             // 
             // clearButton
             // 
-            this.clearButton.Location = new System.Drawing.Point(278, 162);
-            this.clearButton.Margin = new System.Windows.Forms.Padding(2);
+            this.clearButton.Location = new System.Drawing.Point(371, 199);
+            this.clearButton.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.clearButton.Name = "clearButton";
-            this.clearButton.Size = new System.Drawing.Size(40, 19);
+            this.clearButton.Size = new System.Drawing.Size(53, 23);
             this.clearButton.TabIndex = 0;
             this.clearButton.Text = "Clear";
             this.clearButton.UseVisualStyleBackColor = true;
@@ -124,19 +123,17 @@
             // timeDisplay1
             // 
             this.timeDisplay1.BackColor = System.Drawing.SystemColors.Control;
-            this.timeDisplay1.Location = new System.Drawing.Point(276, 98);
-            this.timeDisplay1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.timeDisplay1.Location = new System.Drawing.Point(368, 121);
             this.timeDisplay1.Name = "timeDisplay1";
-            this.timeDisplay1.Size = new System.Drawing.Size(36, 19);
+            this.timeDisplay1.Size = new System.Drawing.Size(48, 23);
             this.timeDisplay1.TabIndex = 12;
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(274, 76);
-            this.label2.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label2.Location = new System.Drawing.Point(365, 94);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(83, 13);
+            this.label2.Size = new System.Drawing.Size(110, 17);
             this.label2.TabIndex = 13;
             this.label2.Text = "getSetDirectory:";
             // 
@@ -145,10 +142,10 @@
             this.autoBeatmapCheckbox.AutoSize = true;
             this.autoBeatmapCheckbox.Checked = true;
             this.autoBeatmapCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.autoBeatmapCheckbox.Location = new System.Drawing.Point(276, 5);
-            this.autoBeatmapCheckbox.Margin = new System.Windows.Forms.Padding(2);
+            this.autoBeatmapCheckbox.Location = new System.Drawing.Point(368, 6);
+            this.autoBeatmapCheckbox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.autoBeatmapCheckbox.Name = "autoBeatmapCheckbox";
-            this.autoBeatmapCheckbox.Size = new System.Drawing.Size(93, 17);
+            this.autoBeatmapCheckbox.Size = new System.Drawing.Size(119, 21);
             this.autoBeatmapCheckbox.TabIndex = 14;
             this.autoBeatmapCheckbox.Text = "Auto Beatmap";
             this.autoBeatmapCheckbox.UseVisualStyleBackColor = true;
@@ -158,11 +155,11 @@
             // 
             this.tabs.Controls.Add(this.tabPage1);
             this.tabs.Controls.Add(this.tabPage2);
-            this.tabs.Location = new System.Drawing.Point(2, 2);
-            this.tabs.Margin = new System.Windows.Forms.Padding(2);
+            this.tabs.Location = new System.Drawing.Point(3, 2);
+            this.tabs.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.tabs.Name = "tabs";
             this.tabs.SelectedIndex = 0;
-            this.tabs.Size = new System.Drawing.Size(383, 216);
+            this.tabs.Size = new System.Drawing.Size(511, 264);
             this.tabs.TabIndex = 15;
             // 
             // tabPage1
@@ -176,11 +173,11 @@
             this.tabPage1.Controls.Add(this.clearButton);
             this.tabPage1.Controls.Add(this.timeDisplay2);
             this.tabPage1.Controls.Add(this.timeDescriptionLabel);
-            this.tabPage1.Location = new System.Drawing.Point(4, 22);
-            this.tabPage1.Margin = new System.Windows.Forms.Padding(2);
+            this.tabPage1.Location = new System.Drawing.Point(4, 25);
+            this.tabPage1.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.tabPage1.Name = "tabPage1";
-            this.tabPage1.Padding = new System.Windows.Forms.Padding(2);
-            this.tabPage1.Size = new System.Drawing.Size(375, 190);
+            this.tabPage1.Padding = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.tabPage1.Size = new System.Drawing.Size(503, 235);
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "Results";
             this.tabPage1.UseVisualStyleBackColor = true;
@@ -190,11 +187,11 @@
             this.tabPage2.Controls.Add(this.chartedMapChoice);
             this.tabPage2.Controls.Add(this.seriesSelect);
             this.tabPage2.Controls.Add(this.chart);
-            this.tabPage2.Location = new System.Drawing.Point(4, 22);
-            this.tabPage2.Margin = new System.Windows.Forms.Padding(2);
+            this.tabPage2.Location = new System.Drawing.Point(4, 25);
+            this.tabPage2.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.tabPage2.Name = "tabPage2";
-            this.tabPage2.Padding = new System.Windows.Forms.Padding(2);
-            this.tabPage2.Size = new System.Drawing.Size(375, 190);
+            this.tabPage2.Padding = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.tabPage2.Size = new System.Drawing.Size(503, 235);
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "Graoh";
             this.tabPage2.UseVisualStyleBackColor = true;
@@ -208,10 +205,10 @@
             "test",
             "test2",
             "test3"});
-            this.chartedMapChoice.Location = new System.Drawing.Point(286, 89);
-            this.chartedMapChoice.Margin = new System.Windows.Forms.Padding(2);
+            this.chartedMapChoice.Location = new System.Drawing.Point(381, 110);
+            this.chartedMapChoice.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.chartedMapChoice.Name = "chartedMapChoice";
-            this.chartedMapChoice.Size = new System.Drawing.Size(92, 21);
+            this.chartedMapChoice.Size = new System.Drawing.Size(121, 24);
             this.chartedMapChoice.TabIndex = 2;
             this.chartedMapChoice.DropDown += new System.EventHandler(this.ChartedMapChoice_DropDown);
             this.chartedMapChoice.SelectedIndexChanged += new System.EventHandler(this.ChartedMapChoice_SelectedIndexChanged);
@@ -228,12 +225,7 @@
             listViewItem2.StateImageIndex = 1;
             listViewItem3.Checked = true;
             listViewItem3.StateImageIndex = 1;
-<<<<<<< HEAD
             listViewItem4.StateImageIndex = 0;
-=======
-            listViewItem4.Checked = true;
-            listViewItem4.StateImageIndex = 1;
->>>>>>> f4a27c8881e29fcd42bb3b60cffdfa823bb8e4ed
             listViewItem5.Checked = true;
             listViewItem5.StateImageIndex = 1;
             this.seriesSelect.Items.AddRange(new System.Windows.Forms.ListViewItem[] {
@@ -242,11 +234,11 @@
             listViewItem3,
             listViewItem4,
             listViewItem5});
-            this.seriesSelect.Location = new System.Drawing.Point(317, 114);
-            this.seriesSelect.Margin = new System.Windows.Forms.Padding(2);
+            this.seriesSelect.Location = new System.Drawing.Point(405, 136);
+            this.seriesSelect.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.seriesSelect.Name = "seriesSelect";
             this.seriesSelect.Scrollable = false;
-            this.seriesSelect.Size = new System.Drawing.Size(63, 97);
+            this.seriesSelect.Size = new System.Drawing.Size(97, 119);
             this.seriesSelect.TabIndex = 1;
             this.seriesSelect.UseCompatibleStateImageBehavior = false;
             this.seriesSelect.View = System.Windows.Forms.View.List;
@@ -256,7 +248,7 @@
             // column
             // 
             this.column.Text = "Column";
-            this.column.Width = 100;
+            this.column.Width = 120;
             // 
             // chart
             // 
@@ -264,11 +256,7 @@
             this.chart.ChartAreas.Add(chartArea1);
             legend1.Name = "Legend1";
             this.chart.Legends.Add(legend1);
-<<<<<<< HEAD
-            this.chart.Location = new System.Drawing.Point(-28, -7);
-=======
-            this.chart.Location = new System.Drawing.Point(-24, -7);
->>>>>>> f4a27c8881e29fcd42bb3b60cffdfa823bb8e4ed
+            this.chart.Location = new System.Drawing.Point(-13, -9);
             this.chart.Margin = new System.Windows.Forms.Padding(0);
             this.chart.Name = "chart";
             series1.ChartArea = "ChartArea";
@@ -276,24 +264,21 @@
             series1.Name = "Series1";
             series1.YValuesPerPoint = 6;
             this.chart.Series.Add(series1);
-<<<<<<< HEAD
-            this.chart.Size = new System.Drawing.Size(546, 252);
-=======
-            this.chart.Size = new System.Drawing.Size(421, 209);
->>>>>>> f4a27c8881e29fcd42bb3b60cffdfa823bb8e4ed
+            this.chart.Size = new System.Drawing.Size(534, 250);
             this.chart.TabIndex = 0;
             this.chart.Text = "Graph";
             // 
             // GUI
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
             this.BackColor = System.Drawing.SystemColors.Control;
-            this.ClientSize = new System.Drawing.Size(386, 216);
+            this.ClientSize = new System.Drawing.Size(515, 266);
             this.Controls.Add(this.tabs);
             this.ForeColor = System.Drawing.SystemColors.ControlText;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "GUI";
             this.Text = "Diff Analyzer";
             this.TopMost = true;
