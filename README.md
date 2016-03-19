@@ -1,4 +1,4 @@
-# **About** #
+# **What is this?** #
 
 This is an alternate difficulty calculator for [osu!](https://osu.ppy.sh/) maps. It is meant to work as a companion application for players that might want to see a (hopefully) more accurate representation of a map's difficulty, as the one currently in the game has some oversights (some discussion [here](https://www.reddit.com/r/osugame/comments/2gzf9d/most_over_and_underrated_maps_star_difficultywise/).
 
