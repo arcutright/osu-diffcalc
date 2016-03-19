@@ -36,10 +36,7 @@ namespace Osu_DiffCalc.FileFinder
                         foreach (string filter in filetypeFilter)
                         {
                             if (file.EndsWith(filter, StringComparison.OrdinalIgnoreCase))
-                            {
-                                Console.WriteLine("\'{0}\'", file);
                                 return file;
-                            }
                         }
                     }
                 }
@@ -56,7 +53,6 @@ namespace Osu_DiffCalc.FileFinder
                 Process[] list = Process.GetProcessesByName(processName);
                 if (list.Length > 0)
                 {
-                    Console.WriteLine("---------------begin open files----------------");
                     foreach (Process p in list)
                     {
                         IEnumerable<string> openFiles = Win32Processes.DetectOpenFiles.GetOpenFilesEnumerator(p.Id);
@@ -64,16 +60,13 @@ namespace Osu_DiffCalc.FileFinder
                         {
                             foreach (string filter in filetypeFilter)
                             {
-                                Console.WriteLine("open\'{0}\'", file);
                                 if (file.EndsWith(filter, StringComparison.OrdinalIgnoreCase))
                                 {
-                                    //Console.WriteLine("\'{0}\'", file);
                                     filePaths.Add(file);
                                 }
                             }
                         }
                     }
-                    Console.WriteLine("---------------end open files----------------");
                 }
             }
             catch { }

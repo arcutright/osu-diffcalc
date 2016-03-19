@@ -29,6 +29,7 @@ namespace Osu_DiffCalc.FileProcessor
             return mapsetDirectory;
         }
 
+        //get mapset directory based on osu's window title (only works while user is playing a map)
         public static string getCurrentMapsetDirectory(string ingameWindowTitle, string prevMapsetDirectory)
         {
             string mapsetDirectory = null;
@@ -180,48 +181,48 @@ namespace Osu_DiffCalc.FileProcessor
         {
             bool save = true;
             int index = 0;
-            Console.Write("analyzing set...");
+            //Console.Write("analyzing set...");
             //check if the mapset has been analyzed
             if ((index = checkForMapset(set)) >= 0)
             {
-                Console.Write("mapset has been analyzed...");
+                //Console.Write("mapset has been analyzed...");
                 //check for missing versions (difficulties)
                 List<Beatmap> missingMaps = getMissingAnalyzedDiffs(set, index);
                 if (missingMaps.Count() > 0)
                 {
                     allMapsets[index].analyzed = false;
-                    Console.Write("some maps are missing...");
+                    //Console.Write("some maps are missing...");
                     
                     foreach(Beatmap map in missingMaps)
                     {
                         if (analyzeMap(map, clearLists))
                             allMapsets[index].add(map);
                     }
-                    Console.WriteLine("missing maps analyzed");
+                    //Console.WriteLine("missing maps analyzed");
                 }
                 else
                 {
-                    Console.WriteLine("no maps are missing");
+                    //Console.WriteLine("no maps are missing");
                     save = false;
                 }
                 set = allMapsets[index];
             }
             else
             {
-                Console.WriteLine("mapset not analyzed...");
+                //Console.WriteLine("mapset not analyzed...");
                 foreach (Beatmap map in set.beatmaps)
                     analyzeMap(map);
                 allMapsets.Add(set);
-                Console.WriteLine("analyzed");
+                //Console.WriteLine("analyzed");
             }
             set.analyzed = true;
             if (save)
             {
-                Console.Write("saving set...");
+                //Console.Write("saving set...");
                 if (set.saveToXML())
-                    Console.WriteLine("set saved");
+                { /*Console.WriteLine("set saved");*/ }
                 else
-                    Console.WriteLine("!! could not save");
+                { /*Console.WriteLine("!! could not save");*/ }
             }
             return set;
         }

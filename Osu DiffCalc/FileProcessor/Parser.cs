@@ -22,7 +22,7 @@ namespace Osu_DiffCalc.FileProcessor
 
                 if (!MetadataParser.parse(beatmap, ref reader))
                 {
-                    Console.WriteLine("\n\n!!!\nError parsing metadata\n!!!\n\n");
+                    Console.WriteLine("\n\n !!!\nError parsing metadata\n!!! \n\n");
                     return false;
                 }
 

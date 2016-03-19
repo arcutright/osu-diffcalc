@@ -6,7 +6,7 @@ namespace Osu_DiffCalc.FileProcessor.FileParserHelpers
     {
         public static bool parse(Beatmap beatmap, ref StreamReader reader)
         {
-            GeneralHelper.skipTo(ref reader, "[Metadata]", false);
+            GeneralHelper.skipTo(ref reader, @"[Metadata]", false);
 
             beatmap.title = GeneralHelper.getStringFromLine(GeneralHelper.skipTo(ref reader, "Title"), "Title");
             if (beatmap.title == null)
