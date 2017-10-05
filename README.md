@@ -15,7 +15,6 @@ This is an alternate difficulty calculator for [osu!](https://osu.ppy.sh/) maps.
 + Automatically hides itself when in-game (stops analyzing when hidden or minimized)
 + Logs all difficulty results to an easy-to-parse XML that may come in handy (and saves on calculations)
 ```
-#!xml
 <root>
   <mapset title="Bios Epic Edition" artist="Hiroyuki Sawano feat. Mika Kobayashi" creator="xChippy">
     <map version="King" totalDiff="282.506503372079" jumpDiff="176.527853868931" streamDiff="48.2813679065478"
@@ -40,7 +39,7 @@ Grab the latest binary distribution from [Downloads](https://bitbucket.org/count
 
 ### Reporting issues ###
 
-+ Create new issue in [Issues](https://bitbucket.org/countcutright/osu-diffcalc/issues) section
++ Create new issue in `Issues` section
 + Provide a copy of any output logs (right now it's shown in the console) 
 + Provide a link to any maps that may cause issues
 + Describe what the issue is, what problems it may be causing, etc
@@ -58,5 +57,4 @@ Grab the latest binary distribution from [Downloads](https://bitbucket.org/count
 
 ### Who do I talk to? ###
 
-+ Repo owner (through bitbucket or [message me on osu!](https://osu.ppy.sh/u/mastaa_p))
-+ Admins, if there are ever any
++ Repo owner (through github or [message me on osu!](https://osu.ppy.sh/u/mastaa_p), although I'm rarely online)
