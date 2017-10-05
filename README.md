@@ -4,8 +4,8 @@ This is an alternate difficulty calculator for [osu!](https://osu.ppy.sh/) maps.
 
 ### Screenshots ###
 
-![text diffs.jpg](https://bitbucket.org/repo/kdMXAb/images/3284327337-text%20diffs.jpg)
-![graph diff.jpg](https://bitbucket.org/repo/kdMXAb/images/3553689140-graph%20diff.jpg)
+![text diffs](/screenshots/text-diffs.jpg?raw=true)
+![graph diffs](/screenshots/graph-diffs.jpg?raw=true)
 
 ### Features ###
 
