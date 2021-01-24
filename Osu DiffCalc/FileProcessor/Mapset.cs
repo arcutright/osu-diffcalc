@@ -1,64 +1,54 @@
-﻿using System;
-using System.Collections.Generic;
+﻿namespace OsuDiffCalc.FileProcessor {
+	using System;
+	using System.Collections.Generic;
 
-namespace Osu_DiffCalc.FileProcessor
-{
-    class Mapset
-    {
-        // This is a mapset, a collection of different difficulties
-        public string title, artist, creator;
-        public List<Beatmap> beatmaps = new List<Beatmap>();
-        public bool analyzed = false;
+	class Mapset {
+		// This is a mapset, a collection of different difficulties
+		public string Title, Artist, Creator;
+		public List<Beatmap> Beatmaps = new List<Beatmap>();
+		public bool IsAnalyzed = false;
 
-        public Mapset(string title, string artist, string creator)
-        {
-            this.title = title;
-            this.artist = artist;
-            this.creator = creator;
-        }
+		public Mapset(string title, string artist, string creator) {
+			Title = title;
+			Artist = artist;
+			Creator = creator;
+		}
 
-        public Mapset(List<Beatmap> maps)
-        {
-            if (maps.Count > 0)
-            {
-                beatmaps = maps;
-                title = maps[0].title;
-                artist = maps[0].artist;
-                creator = maps[0].creator;
-            }
-        }
+		public Mapset(List<Beatmap> maps) {
+			if (maps.Count != 0) {
+				Beatmaps = maps;
+				Title = maps[0].Title;
+				Artist = maps[0].Artist;
+				Creator = maps[0].Creator;
+			}
+		}
 
-        public Mapset(Beatmap map)
-        {
-            add(map);
-        }
+		public Mapset(Beatmap map) {
+			Add(map);
+		}
 
-        public void add(Beatmap map)
-        {
-            beatmaps.Add(map);
-            if(title == null && artist == null && creator == null)
-            {
-                title = map.title;
-                artist = map.artist;
-                creator = map.creator;
-            }
-        }
+		public void Add(Beatmap map) {
+			Beatmaps.Add(map);
+			if (Title is null && Artist is null && Creator is null) {
+				Title = map.Title;
+				Artist = map.Artist;
+				Creator = map.Creator;
+			}
+		}
 
-        public void sort(bool ascending = true)
-        {
-            if(ascending)
-                beatmaps.Sort((x, y) => x.diffRating.totalDifficulty.CompareTo(y.diffRating.totalDifficulty));
-            else
-                beatmaps.Sort((x, y) => y.diffRating.totalDifficulty.CompareTo(x.diffRating.totalDifficulty));
-        }
+		public void Sort(bool ascending = true) {
+			if (ascending)
+				Beatmaps.Sort((x, y) => x.DiffRating.TotalDifficulty.CompareTo(y.DiffRating.TotalDifficulty));
+			else
+				Beatmaps.Sort((x, y) => y.DiffRating.TotalDifficulty.CompareTo(x.DiffRating.TotalDifficulty));
+		}
 
-        public bool saveToXML()
-        {
-            if (analyzed)
-                return SavefileXMLManager.SaveMapset(this);
-            else
-                return false;
-        }
+		public bool SaveToXML() {
+			if (IsAnalyzed)
+				return SavefileXMLManager.SaveMapset(this);
+			else
+				return false;
+		}
 
-    }
+	}
 }

@@ -1,23 +1,23 @@
-﻿using System.IO;
+﻿namespace OsuDiffCalc.FileProcessor.FileParserHelpers {
+	using System.IO;
 
-namespace Osu_DiffCalc.FileProcessor.FileParserHelpers
-{
-    class GeneralParser
-    {
-        public static bool parse(Beatmap beatmap, ref StreamReader reader)
-        {
-            GeneralHelper.skipTo(ref reader, @"[General]", false);
-            beatmap.mp3FileName = GeneralHelper.getStringFromLine(GeneralHelper.skipTo(ref reader, "AudioFile"), "AudioFile");
-            if (beatmap.format > 5)
-            {
-                int mode = (int)GeneralHelper.getFloatFromLine(GeneralHelper.skipTo(ref reader, "Mode"), "Mode");
-                if (mode == 0)
-                    return true;
-                else
-                    return false;
-            }
-            else
-                return true;
-        }
-    }
+	class GeneralParser : ParserBase {
+		/// <summary>
+		/// Try to parse the '[General]' beatmap region from the <paramref name="reader"/> and populate the <paramref name="beatmap"/>
+		/// </summary>
+		/// <returns> <see langword="true"/> if this was an 'osu!standard' file, otherwise <see langword="false"/> </returns>
+		public static bool TryParse(Beatmap beatmap, ref StreamReader reader) {
+			if (!TrySkipTo(ref reader, "[General]"))
+				return false;
+			beatmap.Mp3FileName = GetStringFromLine(ReadNext(ref reader, "AudioFile"), "AudioFile");
+			if (beatmap.Format > 5) {
+				int mode = (int)GetFloatFromLine(ReadNext(ref reader, "Mode"), "Mode");
+				return mode == 0;
+			}
+			else {
+				// old file formats were only osu!standard
+				return true;
+			}
+		}
+	}
 }

@@ -1,96 +1,80 @@
-﻿using System;
-using System.IO;
-using Osu_DiffCalc.FileProcessor.FileParserHelpers;
-using System.Threading;
+﻿namespace OsuDiffCalc.FileProcessor {
+	using System;
+	using System.IO;
+	using System.Threading;
+	using FileParserHelpers;
 
-namespace Osu_DiffCalc.FileProcessor
-{
-    class Parser
-    {
-        public static bool parse(Beatmap beatmap)
-        {
-            try
-            {
-                //note: order matters, because it is parsing sequentially (to avoid polynomial time search)
-                StreamReader reader = File.OpenText(beatmap.filepath);
+	class Parser {
+		/// <summary>
+		/// Try to parse an entire beatmap
+		/// </summary>
+		/// <returns> <see langword="true"/> if there were no errors, otherwise <see langword="false"/> </returns>
+		public static bool TryParse(Beatmap beatmap) {
+			if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
+				Thread.CurrentThread.Name = $"parse[{beatmap.Version}]";
 
-                if (!FormatParser.parse(beatmap, ref reader))
-                    return false;
+			StreamReader reader = null;
+			try {
+				//note: order matters, because it is parsing sequentially (to avoid polynomial time search)
+				reader = File.OpenText(beatmap.Filepath);
 
-                if (!GeneralParser.parse(beatmap, ref reader))
-                    return false;
+				if (!FormatParser.Parse(beatmap, ref reader))
+					return false;
+				if (!GeneralParser.TryParse(beatmap, ref reader))
+					return false;
+				if (!MetadataParser.TryParse(beatmap, ref reader)) {
+					Console.WriteLine("\n\n !!!\nError parsing metadata\n!!! \n\n");
+					return false;
+				}
+				if (!DifficultyParser.TryParse(beatmap, ref reader))
+					return false;
+				if (!EventsParser.TryParse(beatmap, ref reader))
+					return false;
+				if (!TimingParser.TryParse(beatmap, ref reader))
+					return false;
+				if (!HitObjectsParser.TryParse(beatmap, ref reader))
+					return false;
 
-                if (!MetadataParser.parse(beatmap, ref reader))
-                {
-                    Console.WriteLine("\n\n !!!\nError parsing metadata\n!!! \n\n");
-                    return false;
-                }
+				beatmap.IsParsed = true;
+				reader.Close();
+				return true;
+			}
+			catch (Exception e) {
+				Console.WriteLine($"!! -- Error parsing map at path '{beatmap.Filepath}'");
+				Console.WriteLine(e.GetBaseException());
+			}
+			finally {
+				reader?.Dispose();
+			}
+			return false;
+		}
 
-                if (Thread.CurrentThread.Name == null)
-                    Thread.CurrentThread.Name = string.Format("parse[{0}]", beatmap.version);
+		/// <summary>
+		/// Parse just the basic map metadata (format, file name/paths, mode, artist, title, creator, version)
+		/// </summary>
+		public static Beatmap ParseBasicMetadata(string mapPath) { 
+			StreamReader reader = null;
+			try {
+				reader = File.OpenText(mapPath);
+				var beatmap = new Beatmap(mapPath);
 
-                DifficultyParser.parse(beatmap, ref reader);
+				if (!FormatParser.Parse(beatmap, ref reader))
+					return null;
+				if (!GeneralParser.TryParse(beatmap, ref reader))
+					return null;
+				if (!MetadataParser.TryParse(beatmap, ref reader)) 
+					return null;
 
-                EventsParser.parse(beatmap, ref reader);
-
-                if (!TimingParser.parse(beatmap, ref reader))
-                    return false;
-
-                if (!HitObjectsParser.parse(beatmap, ref reader))
-                    return false;
-
-                beatmap.parsed = true;
-                reader.Close();
-                //timing
-                return true;
-            }
-            catch(Exception e)
-            {
-                Console.WriteLine("!! -- Error parsing map");
-                Console.WriteLine(e.GetBaseException());
-            }
-            return false;
-        }
-
-        //returns an absolute minimum amount of information about the map
-        public static Beatmap parseMapPath(string mapPath)
-        {
-            try
-            {
-                StreamReader reader = File.OpenText(mapPath);
-                Beatmap beatmap = new Beatmap();
-                string formatString;
-                while ((formatString = reader.ReadLine()) != null && !formatString.StartsWith("osu"));
-                if (formatString.Length > 0)
-                {
-                    formatString = System.Text.RegularExpressions.Regex.Replace(formatString, "[^0-9]+", string.Empty);
-                    if (formatString.Length > 0)
-                        beatmap.format = (int)double.Parse(formatString);
-                    else
-                        return null;
-                }
-                GeneralHelper.skipTo(ref reader, @"[General]", false);
-                beatmap.mp3FileName = GeneralHelper.getStringFromLine(GeneralHelper.skipTo(ref reader, "AudioFile"), "AudioFile");
-
-                if (beatmap.format > 5)
-                {
-                    int mode = (int)GeneralHelper.getFloatFromLine(GeneralHelper.skipTo(ref reader, "Mode"), "Mode");
-                    if (mode != 0)
-                        return null;
-                }
-                beatmap.title = GeneralHelper.getStringFromLine(GeneralHelper.skipTo(ref reader, "Title", false), "Title");
-                beatmap.artist = GeneralHelper.getStringFromLine(GeneralHelper.skipTo(ref reader, "Artist"), "Artist");
-                beatmap.creator = GeneralHelper.getStringFromLine(GeneralHelper.skipTo(ref reader, "Creator"), "Creator");
-                beatmap.version = GeneralHelper.getStringFromLine(GeneralHelper.skipTo(ref reader, "Version"), "Version");
-                beatmap.filepath = mapPath;
-                return beatmap;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("!! -- Error parsing map path: " + mapPath);
-                Console.WriteLine(e.GetBaseException());
-                return null;
-            }
-        }
-    }
+				return beatmap;
+			}
+			catch (Exception e) {
+				Console.WriteLine($"!! -- Error parsing map at path '{mapPath}'");
+				Console.WriteLine(e.GetBaseException());
+				return null;
+			}
+			finally {
+				reader?.Dispose();
+			}
+		}
+	}
 }

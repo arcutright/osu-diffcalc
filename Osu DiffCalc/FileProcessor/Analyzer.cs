@@ -1,399 +1,346 @@
-﻿using System.Collections.Generic;
-using Osu_DiffCalc.FileProcessor.BeatmapObjects;
-using Osu_DiffCalc.FileProcessor.AnalyzerObjects;
-using System;
-using System.Threading;
+﻿namespace OsuDiffCalc.FileProcessor {
+	using AnalyzerObjects;
+	using BeatmapObjects;
+	using System;
+	using System.Collections.Generic;
+	using System.Threading;
 
-namespace Osu_DiffCalc.FileProcessor
-{
-    class Analyzer
-    {
-        const int minBurstLength = 3;
-        const int minStreamLength = 6;
-        const double burstMultiplier = 0.75;
-        static double maxDistPx = Math.Sqrt((Beatmap.maxX * Beatmap.maxX) + (Beatmap.maxY * Beatmap.maxY));
+	class Analyzer {
+		const int MinBurstLength = 3;
+		const int MinStreamLength = 6;
+		const double BurstMultiplier = 0.75;
+		static readonly double MaxDistPx = Math.Sqrt((Beatmap.MaxX * Beatmap.MaxX) + (Beatmap.MaxY * Beatmap.MaxY));
 
-        public static void analyze(Beatmap beatmap, bool clearLists = true)
-        {
-            if (Thread.CurrentThread.Name == null)
-                Thread.CurrentThread.Name = string.Format("analyze[{0}]", beatmap.version);
-            
-            //analysis variables
-            List<Shape> streams = new List<Shape>();
-            double minStreamAvgMs = -1;
+		public static void Analyze(Beatmap beatmap, bool clearLists = true) {
+			if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
+				Thread.CurrentThread.Name = $"analyze[{beatmap.Version}]";
 
-            List<Shape> couplets = new List<Shape>();
-            double minCoupletAvgMs = -1;
+			//analysis variables
+			var streams = new List<Shape>();
+			double minStreamAvgMs = -1;
 
-            List<Shape> triplets = new List<Shape>();
-            double minTripletAvgMs = -1;
+			var couplets = new List<Shape>();
+			double minCoupletAvgMs = -1;
 
-            List<Shape> bursts = new List<Shape>();
-            double minBurstAvgMs = -1;
+			var triplets = new List<Shape>();
+			double minTripletAvgMs = -1;
 
-            Shape shape = new Shape();
-            Shape lastShape = new Shape();
-            BeatmapObject lastHitObject = null;
-            BeatmapObject lastObject = null;
-            bool shapeAdded = false;
+			var bursts = new List<Shape>();
+			double minBurstAvgMs = -1;
 
-            List<double> jumpDifficultyList = new List<double>();
-            List<double> sliderDifficultyList = new List<double>();
+			var shape = new Shape();
+			var lastShape = new Shape();
+			HitObject lastHitObject = null;
+			bool shapeAdded = false;
 
-            //macro to make life easier
-            Action addShapeToAppropriateList = () =>
-            {
-                shape.previous = lastShape;
-                if (shape.numObjects == 2)
-                {
-                    shape.type = Shape.Type.COUPLET;
-                    couplets.Add(shape);
-                    updateMin(ref minCoupletAvgMs, shape.avgTimeGapMs);
-                }
-                else if (shape.numObjects < minBurstLength)
-                {
-                    shape.type = Shape.Type.TRIPLET;
-                    triplets.Add(shape);
-                    updateMin(ref minTripletAvgMs, shape.avgTimeGapMs);
-                }
-                else if (shape.numObjects < minStreamLength)
-                {
-                    shape.type = Shape.Type.BURST;
-                    bursts.Add(shape);
-                    updateMin(ref minBurstAvgMs, shape.avgTimeGapMs);
-                }
-                else if (shape.numObjects >= minStreamLength)
-                {
-                    shape.type = Shape.Type.STREAM;
-                    streams.Add(shape);
-                    updateMin(ref minStreamAvgMs, shape.avgTimeGapMs);
-                }
-                lastShape = shape;
-                shapeAdded = true;
-            };
+			var jumpDifficultyList = new List<double>();
+			var sliderDifficultyList = new List<double>();
 
-            foreach (BeatmapObject obj in beatmap.beatmapObjects)
-            {
-                shapeAdded = false;
+			//macro to make life easier
+			void addShapeToAppropriateList() {
+				shape.PrevShape = lastShape;
+				if (shape.NumObjects == 2) {
+					shape.Type = Shape.ShapeType.COUPLET;
+					couplets.Add(shape);
+					UpdateMin(ref minCoupletAvgMs, shape.AvgTimeGapMs);
+				}
+				else if (shape.NumObjects < MinBurstLength) {
+					shape.Type = Shape.ShapeType.TRIPLET;
+					triplets.Add(shape);
+					UpdateMin(ref minTripletAvgMs, shape.AvgTimeGapMs);
+				}
+				else if (shape.NumObjects < MinStreamLength) {
+					shape.Type = Shape.ShapeType.BURST;
+					bursts.Add(shape);
+					UpdateMin(ref minBurstAvgMs, shape.AvgTimeGapMs);
+				}
+				else if (shape.NumObjects >= MinStreamLength) {
+					shape.Type = Shape.ShapeType.STREAM;
+					streams.Add(shape);
+					UpdateMin(ref minStreamAvgMs, shape.AvgTimeGapMs);
+				}
+				lastShape = shape;
+				shapeAdded = true;
+			}
 
-                if (obj.IsCircle() || obj.IsSlider())
-                {
-                    if (lastHitObject != null)
-                    {
-                        //second object
-                        if (shape.numObjects == 1)
-                            shape.Add(obj);
-                        //third, fourth, etc. 
-                        else if (shape.numObjects >= 2)
-                        {
-                            //continuing stream
-                            if (shape.CompareTiming(obj.startTime) == 0)
-                                shape.Add(obj);
-                            //end of stream, start of new stream
-                            else
-                            {
-                                addShapeToAppropriateList();
-                                shape = new Shape(lastHitObject, obj);
-                            }
-                        }
-                    }
-                    //first hit object
-                    else
-                        shape.Add(obj);
-                    //calculate jump and slider diffs
-                    if (obj.IsSlider())
-                        sliderDifficultyList.Add(getSliderDifficulty(obj, beatmap));
-                    if (lastHitObject != null)
-                        jumpDifficultyList.Add(getJumpDifficulty(obj, lastObject, beatmap));
+			foreach (var obj in beatmap.BeatmapObjects) {
+				shapeAdded = false;
+				if (obj is Slider or Hitcircle) {
+					var hitObj = obj as HitObject;
+					// shape analysis for triplet, streams, etc
+					if (lastHitObject is not null) {
+						//second object
+						if (shape.NumObjects == 1)
+							shape.Add(hitObj);
+						//third, fourth, etc. 
+						else if (shape.NumObjects >= 2) {
+							//continuing stream
+							if (shape.CompareTiming(hitObj.StartTime) == 0)
+								shape.Add(hitObj);
+							//end of stream, start of new stream
+							else {
+								addShapeToAppropriateList();
+								shape = new Shape(lastHitObject, hitObj);
+							}
+						}
+					}
+					//first hit object
+					else
+						shape.Add(hitObj);
+					// slider difficulty
+					if (hitObj is Slider slider)
+						sliderDifficultyList.Add(GetSliderDifficulty(slider, beatmap));
+					// jump difficulty
+					if (lastHitObject is not null)
+						jumpDifficultyList.Add(GetJumpDifficulty(hitObj, lastHitObject, beatmap));
 
-                    lastHitObject = obj;
-                }
-                //obj is not a hit object
-                else
-                     addShapeToAppropriateList();
-                lastObject = obj;
-            }
-            if (!shapeAdded)
-                addShapeToAppropriateList();
+					lastHitObject = hitObj;
+				}
+				//obj is not a hit object
+				else
+					addShapeToAppropriateList();
+			}
+			if (!shapeAdded)
+				addShapeToAppropriateList();
 
-            double streamsDifficulty = getStreamsDifficulty(streams, minStreamAvgMs, beatmap);
-            double coupletsDifficulty = getCoupletsDifficulty(couplets, minCoupletAvgMs, beatmap);
-            double burstsDifficulty = getStreamsDifficulty(bursts, minBurstAvgMs, beatmap);
-            //Console.Write("jump ");
-            double jumpsDifficulty = getWeightedSumOfList(jumpDifficultyList, 1.5);
-            //Console.Write("slider ");
-            double slidersDifficulty = getWeightedSumOfList(sliderDifficultyList, 1.5);
-            double totalDifficulty = streamsDifficulty + burstsDifficulty + coupletsDifficulty + jumpsDifficulty + slidersDifficulty;
+			double streamsDifficulty = GetStreamsDifficulty(streams, minStreamAvgMs, beatmap);
+			double coupletsDifficulty = GetCoupletsDifficulty(couplets, minCoupletAvgMs, beatmap);
+			double burstsDifficulty = GetStreamsDifficulty(bursts, minBurstAvgMs, beatmap);
+			//Console.Write("jump ");
+			double jumpsDifficulty = GetWeightedSumOfList(jumpDifficultyList, 1.5);
+			//Console.Write("slider ");
+			double slidersDifficulty = GetWeightedSumOfList(sliderDifficultyList, 1.5);
+			double totalDifficulty = streamsDifficulty + burstsDifficulty + coupletsDifficulty + jumpsDifficulty + slidersDifficulty;
 
-            beatmap.diffRating.jumpDifficulty = jumpsDifficulty;
-            beatmap.diffRating.streamDifficulty = streamsDifficulty;
-            beatmap.diffRating.burstDifficulty = burstsDifficulty;
-            beatmap.diffRating.coupletDifficulty = coupletsDifficulty;
-            beatmap.diffRating.sliderDifficulty = slidersDifficulty;
-            beatmap.diffRating.totalDifficulty = totalDifficulty;
-            beatmap.analyzed = true;
-            /*
-            Console.WriteLine("\n{1:000} jumps diff    = {0:0.0}", jumpsDifficulty, jumpDifficultyList.Count);
-            Console.WriteLine("{1:000} streams diff  = {0:0.0}", streamsDifficulty, streams.Count);
-            Console.WriteLine("{1:000} bursts diff   = {0:0.0}", burstsDifficulty, bursts.Count);
-            Console.WriteLine("{1:000} couplets diff = {0:0.0}", coupletsDifficulty, couplets.Count);
-            Console.WriteLine("{1:000} sliders diff  = {0:0.0}", slidersDifficulty, sliderDifficultyList.Count);
-            Console.WriteLine("* total diff  = {0:0.0}", beatmap.diffRating.totalDifficulty);
-            //printDebug(couplets, "couplets");
-            //printDebug(triplets, "triplets");
-            //printDebug(streams, "streams");
-            */
-            
+			beatmap.DiffRating.JumpDifficulty = jumpsDifficulty;
+			beatmap.DiffRating.StreamDifficulty = streamsDifficulty;
+			beatmap.DiffRating.BurstDifficulty = burstsDifficulty;
+			beatmap.DiffRating.CoupletDifficulty = coupletsDifficulty;
+			beatmap.DiffRating.SliderDifficulty = slidersDifficulty;
+			beatmap.DiffRating.TotalDifficulty = totalDifficulty;
+			beatmap.IsAnalyzed = true;
+			/*
+			Console.WriteLine("\n{1:000} jumps diff    = {0:0.0}", jumpsDifficulty, jumpDifficultyList.Count);
+			Console.WriteLine("{1:000} streams diff  = {0:0.0}", streamsDifficulty, streams.Count);
+			Console.WriteLine("{1:000} bursts diff   = {0:0.0}", burstsDifficulty, bursts.Count);
+			Console.WriteLine("{1:000} couplets diff = {0:0.0}", coupletsDifficulty, couplets.Count);
+			Console.WriteLine("{1:000} sliders diff  = {0:0.0}", slidersDifficulty, sliderDifficultyList.Count);
+			Console.WriteLine("* total diff  = {0:0.0}", beatmap.diffRating.totalDifficulty);
+			//printDebug(couplets, "couplets");
+			//printDebug(triplets, "triplets");
+			//printDebug(streams, "streams");
+			*/
 
-            if (clearLists)
-            {
-                beatmap.beatmapObjects.Clear();
-                beatmap.timingPoints.Clear();
-                beatmap.breakSections.Clear();
-            }
-        }
+			if (clearLists) {
+				beatmap.BeatmapObjects.Clear();
+				beatmap.TimingPoints.Clear();
+				beatmap.BreakSections.Clear();
+			}
+		}
 
-        #region Difficulty calculations
+		#region Difficulty calculations
 
-        static double getStreamsDifficulty(List<Shape> streams, double minStreamMs, Beatmap map)
-        {
-            double difficulty = 0;
-            double avgObjects = 0;
-            double avgBPM = 0;
-            double avgDistancePx = 0;
-            int numShapes = 0;
-            double localDiff;
+		static double GetStreamsDifficulty(List<Shape> streams, double minStreamMs, Beatmap map) {
+			if (map is null || streams is null || streams.Count == 0)
+				return 0;
 
-            List<double> diffs = new List<double>();
+			double avgObjects = 0;
+			double avgBPM = 0;
+			double avgDistancePx = 0;
+			int numShapes = 0;
+			var diffs = new List<double>();
+			foreach (var stream in streams) {
+				double streamDiff = 0;
+				if (stream.NumObjects >= MinBurstLength && stream.AvgTimeGapMs > 0) {
+					double streamBPM = 15000 / stream.AvgTimeGapMs;
+					//calculate the difficulty of the stream
+					streamDiff = Math.Pow(stream.NumObjects, 0.8) * Math.Pow(streamBPM, 3.4) / 1000000000 * (stream.AvgDistancePx + 1);
+					//addition for OD. Maxes ~10%
+					streamDiff += streamDiff * 1000 / (stream.AvgTimeGapMs * map.MarginOfErrorMs300);
+					//multiplier to represent that bursts are significantly easier
+					if (stream.NumObjects < MinStreamLength) {
+						streamDiff *= BurstMultiplier;
+						map.DiffRating.AddBurst(stream.StartTime, streamDiff);
+					}
+					else //a stream, not a burst
+						map.DiffRating.AddStream(stream.StartTime, streamDiff);
+					diffs.Add(streamDiff);
 
-            foreach (Shape stream in streams)
-            {
-                localDiff = 0;
-                if (stream.numObjects >= minBurstLength && stream.avgTimeGapMs > 0)
-                {
-                    double streamBPM = 15000 / stream.avgTimeGapMs;
-                    //calculate the difficulty of the stream
-                    localDiff = Math.Pow(stream.numObjects, 0.8) * Math.Pow(streamBPM, 3.4) / 1000000000 * (stream.avgDistancePx + 1);
-                    //addition for OD. Maxes ~10%
-                    localDiff += localDiff * 1000 / (stream.avgTimeGapMs * map.marginOfErrorMs300);
-                    //multiplier to represent that bursts are significantly easier
-                    if (stream.numObjects < minStreamLength)
-                    {
-                        localDiff *= burstMultiplier;
-                        map.diffRating.AddBurst(stream.startTime, localDiff);
-                    }
-                    else //a stream, not a burst
-                    {
-                        map.diffRating.AddStream(stream.startTime, localDiff);
-                    }
-                    diffs.Add(localDiff);
+					//Console.WriteLine("s({0}) {1}  bpm:{2:0.0}   avgDist:{3:0.0}  localDiff:{4:0.00}", 
+					//   stream.numObjects, FileParserHelpers.TimingParser.getTimeStamp(stream.startTime), streamBPM, stream.avgDistancePx, localDiff);
+					avgObjects = RollingAverage(avgObjects, stream.NumObjects, numShapes);
+					avgBPM = RollingAverage(avgBPM, streamBPM, numShapes);
+					avgDistancePx = RollingAverage(avgDistancePx, stream.AvgDistancePx, numShapes);
+					numShapes++;
+				}
+			}
+			//Console.WriteLine("\ntypical stream len:{0:0.0}  bpm:{1:0.0}  dist:{2:0.0}  diff:{3:0.0}", avgObjects, avgBPM, avgDistancePx,
+			//   Math.Pow(avgObjects, 0.6) * Math.Pow(avgBPM, 3.2) / 1000000000 * Math.Pow(avgDistancePx, 1.6));
 
-                    //Console.WriteLine("s({0}) {1}  bpm:{2:0.0}   avgDist:{3:0.0}  localDiff:{4:0.00}", 
-                    //   stream.numObjects, FileParserHelpers.TimingParser.getTimeStamp(stream.startTime), streamBPM, stream.avgDistancePx, localDiff);
-                    avgObjects = rollingAverage(avgObjects, stream.numObjects, numShapes);
-                    avgBPM = rollingAverage(avgBPM, streamBPM, numShapes);
-                    avgDistancePx = rollingAverage(avgDistancePx, stream.avgDistancePx, numShapes);
-                    numShapes++;
-                }
-            }
-            //Console.WriteLine("\ntypical stream len:{0:0.0}  bpm:{1:0.0}  dist:{2:0.0}  diff:{3:0.0}", avgObjects, avgBPM, avgDistancePx,
-             //   Math.Pow(avgObjects, 0.6) * Math.Pow(avgBPM, 3.2) / 1000000000 * Math.Pow(avgDistancePx, 1.6));
+			//Console.Write("stream ");
+			double difficulty = 0;
+			if (diffs.Count > 0)
+				difficulty += GetWeightedSumOfList(diffs, 1.5);
 
-            //Console.Write("stream ");
-            if(diffs.Count > 0)
-                difficulty += getWeightedSumOfList(diffs, 1.5);
+			return difficulty;
+		}
 
-            return difficulty;
-        }
+		static double GetCoupletsDifficulty(List<Shape> couplets, double minCoupletsMs, Beatmap map) {
+			double difficulty = 0;
+			//are dependent on the spacing between couplets... ie, closely timed couplets are harder to hit than far-timed ones
+			//track with a shape.previous
+			double timeDifferenceForTransition; //to measure how abrubt changing between shapes is
+			double timeDifferenceForSpeeds; //similar to difference in BPM between streams, but in ms/tick
+			double coupleBPM;
+			foreach (var couple in couplets) {
+				double coupletDiff = 0;
+				int timeGapMs = couple.StartTime - couple.PrevShape.EndTime;
+				timeDifferenceForTransition = Math.Abs(couple.AvgTimeGapMs * 2 - timeGapMs);
+				timeDifferenceForSpeeds = Math.Abs(couple.AvgTimeGapMs - couple.PrevShape.AvgTimeGapMs);
+				//let's define these parameters to make a couplet difiicult
+				if (timeGapMs > 0) {
+					if (timeDifferenceForTransition <= 20 && timeDifferenceForSpeeds <= 1.5 * couple.AvgTimeGapMs + 20) {
+						coupleBPM = 15000 / couple.AvgTimeGapMs;
+						coupletDiff = Math.Pow(coupleBPM, 3.2) / 1000000000 * Math.Pow(couple.AvgDistancePx + 1, 1.6);
+					}
+					map.DiffRating.AddCouplet(couple.StartTime, coupletDiff);
+				}
+			}
+			return difficulty;
+		}
 
-        static double getCoupletsDifficulty(List<Shape> couplets, double minCoupletsMs, Beatmap map)
-        {
-            double difficulty = 0;
-            //are dependent on the spacing between couplets... ie, closely timed couplets are harder to hit than far-timed ones
-            //track with a shape.previous
-            int timeGapMs;
-            float timeDifferenceForTransition; //to measure how abrubt changing between shapes is
-            float timeDifferenceForSpeeds; //similar to difference in BPM between streams, but in ms/tick
-            double coupleBPM, localDiff = 0;
-            foreach(Shape couple in couplets)
-            {
-                localDiff = 0;
-                timeGapMs = couple.startTime - couple.previous.endTime;
-                timeDifferenceForTransition = (float)Math.Abs(couple.avgTimeGapMs*2 - timeGapMs);
-                timeDifferenceForSpeeds = (float)Math.Abs(couple.avgTimeGapMs - couple.previous.avgTimeGapMs);
-                //let's define these parameters to make a couplet difiicult
-                if (timeGapMs > 0)
-                {
-                    if (timeDifferenceForTransition <= 20 && timeDifferenceForSpeeds <= 1.5 * couple.avgTimeGapMs + 20)
-                    {
-                        coupleBPM = 15000 / couple.avgTimeGapMs;
-                        localDiff = Math.Pow(coupleBPM, 3.2) / 1000000000 * Math.Pow(couple.avgDistancePx + 1, 1.6);
-                    }
-                    map.diffRating.AddCouplet(couple.startTime, localDiff);
-                }
-            }
-            return difficulty;
-        }
+		static double GetJumpDifficulty(HitObject current, HitObject prev, Beatmap map) {
+			if (prev is not (Hitcircle or Slider))
+				return 0;
 
-        static double getJumpDifficulty(BeatmapObject hitObject, BeatmapObject prevObject, Beatmap map)
-        {
-            double difficulty = 0;
-            if (prevObject.IsCircle() || prevObject.IsSlider())
-            {
-                int dx = hitObject.x;
-                int dy = hitObject.y;
-                if (prevObject.IsSlider())
-                {
-                    dx -= ((Slider)prevObject).x2;
-                    dy -= ((Slider)prevObject).y2;
-                }
-                else
-                {
-                    dx -= prevObject.x;
-                    dy -= prevObject.y;
-                }
-                double distPx = Math.Sqrt((dx * dx) + (dy * dy));
-                double distMs = hitObject.startTime - prevObject.endTime;
-                if (distMs > 0)
-                {
-                    //adjust distance based on CS
-                    distPx -= map.circleSizePx / 2;
-                    if (distPx < 0)
-                        distPx = 0;
-                    else if (distPx > 0)
-                    {
-                        //adjust time based on OD
-                        if (hitObject.IsSlider())
-                            distMs += map.marginOfErrorMs50 / 2;
-                        else
-                            distMs += map.marginOfErrorMs300 / 2;
-                        if (prevObject.IsSlider())
-                            distMs += map.marginOfErrorMs50 / 2;
-                        else
-                            distMs += map.marginOfErrorMs300 / 2;
+			double difficulty = 0;
+			int dx = current.X;
+			int dy = current.Y;
+			if (prev is Slider prevSlider) {
+				dx -= prevSlider.X2;
+				dy -= prevSlider.Y2;
+			}
+			else {
+				dx -= prev.X;
+				dy -= prev.Y;
+			}
 
-                        //difficulty due to the speed of the jump
-                        double speedDiff = Math.Pow(10 * distPx / distMs, 2);
-                        //difficulty due to the distance
-                        double distDiff = speedDiff * 0.4 * distPx / (maxDistPx - map.circleSizePx / 2);
-                        difficulty = speedDiff + distDiff;
-                        //adjustment to make jumps vs streams more reasonable
-                        difficulty *= 0.1;
-                        map.diffRating.AddJump(prevObject.endTime, difficulty);
+			double distance = Math.Sqrt((dx * dx) + (dy * dy));
+			double time = current.StartTime - prev.EndTime;
+			if (time > 0) {
+				//adjust distance based on CS
+				distance -= map.CircleSizePx / 2;
+				if (distance > 0) {
+					//adjust time based on OD
+					double timeOffsetFromOD(HitObject obj) => obj is Slider ? (map.MarginOfErrorMs50 / 2) : (map.MarginOfErrorMs300 / 2);
+					time += timeOffsetFromOD(current);
+					time += timeOffsetFromOD(prev);
 
-                        //Console.WriteLine("jump {0}  {1}  spDiff:{2:0.0}  dstDiff:{3:0.0}  dist:{5:0.0}  bpm:{6:0.0}  ={4:0.00}",  FileParserHelpers.TimingParser.getTimeStamp(prevObject.endTime), FileParserHelpers.TimingParser.getTimeStamp(hitObject.startTime), speedDiff, distDiff, difficulty, distPx, 15000 / distMs);
-                    }
-                }
-            }
-            return difficulty;
-        }
+					//difficulty due to the speed of the jump
+					double speedDiff = Math.Pow(10 * distance / time, 2);
+					//difficulty due to the distance
+					double distDiff = speedDiff * 0.4 * distance / (MaxDistPx - map.CircleSizePx / 2);
+					difficulty = speedDiff + distDiff;
+					//adjustment to make jumps vs streams more reasonable
+					difficulty *= 0.1;
+					map.DiffRating.AddJump(prev.EndTime, difficulty);
 
-        static double getSliderDifficulty(BeatmapObject sliderObject, Beatmap map)
-        {
-            double difficulty = 0;
-            
-            //check to make sure timegapms > 0
-            if (sliderObject.IsSlider())
-            {
-                Slider slider = (Slider)sliderObject;
-                double px = slider.totalLength;
-                //adjust slider length to consider the margin allowed by od
-                px -= ((double)slider.repeat * (map.circleSizePx + map.accuracy));     //FIX ME (OD MARGIN)
-                
-                if (px > 0)
-                {
-                    difficulty += Math.Pow(px / (slider.endTime - slider.startTime), 1.5) * Math.Pow(px, 0.6) / 2;
+					//Console.WriteLine("jump {0}  {1}  spDiff:{2:0.0}  dstDiff:{3:0.0}  dist:{5:0.0}  bpm:{6:0.0}  ={4:0.00}",  FileParserHelpers.TimingParser.getTimeStamp(prevObject.endTime), FileParserHelpers.TimingParser.getTimeStamp(hitObject.startTime), speedDiff, distDiff, difficulty, distPx, 15000 / distMs);
+				}
+			}
+			return difficulty;
+		}
 
-                    //Console.WriteLine("slider {0} => {1}", FileParserHelpers.TimingParser.getTimeStamp(slider.startTime), difficulty);
-                   /*
-                   //adjust for tickrate
-                   double msPerTick = map.sliderTickRate * slider.msPerBeat; //may have to correct this (what are units for tickrate?)
-                   double pxPerTick = slider.pxPerSecond / 1000.0 * msPerTick;
-                   //difficulty *= (precisionDelta - 1);
-                   */
-                    map.diffRating.AddSlider(slider.startTime, difficulty);
-                }
-            }
+		static double GetSliderDifficulty(Slider slider, Beatmap map) {
+			if (slider is null || map is null)
+				return 0;
+			// TODO: check to make sure timegapms > 0
+			double difficulty = 0;
+			double distance = slider.TotalLength;
+			//adjust slider length to consider the margin allowed by od
+			distance -= ((double)slider.Repeat * (map.CircleSizePx + map.Accuracy)); // TODO: FIX ME (OD MARGIN)
+			if (distance > 0) {
+				double time = Math.Max(slider.EndTime - slider.StartTime, 1);
+				difficulty += Math.Pow(distance / time, 1.5) * Math.Pow(distance, 0.6) / 2;
 
-            return difficulty;
-        }
+				//Console.WriteLine("slider {0} => {1}", FileParserHelpers.TimingParser.getTimeStamp(slider.startTime), difficulty);
+				/*
+				//adjust for tickrate
+				double msPerTick = map.sliderTickRate * slider.msPerBeat; //may have to correct this (what are units for tickrate?)
+				double pxPerTick = slider.pxPerSecond / 1000.0 * msPerTick;
+				//difficulty *= (precisionDelta - 1);
+				*/
+				map.DiffRating.AddSlider(slider.StartTime, difficulty);
+			}
 
-        #endregion
+			return difficulty;
+		}
 
-        #region Helper functions
+		#endregion
 
-        static void updateMin(ref double min, double toCompare)
-        {
-            if (min < 0 || toCompare < min)
-                min = toCompare;
-        }
+		#region Helper functions
 
-        static double getWeightedSumOfList(List<double> list, double addMeanAndDeviations = 0, double weightFactor= 0.9)
-        {
-            double difficulty = 0;
-            double localDiff = 0;
-            int numItems = list.Count;
-            if (numItems > 1)
-            {
-                list.Sort();
-                //Console.WriteLine("max: {0:0.0}", list[numItems - 1]);
+		static void UpdateMin(ref double min, double toCompare) {
+			if (min < 0 || toCompare < min)
+				min = toCompare;
+		}
 
-                //weight the highest difficulties the greatest, decrease by weightFactor each time
-                double weight = 1;
-                double average = 0;
-                for (int i = numItems - 1; i >= 0; i--)
-                {
-                    localDiff = list[i] * weight;
-                    difficulty += localDiff;
-                    if (addMeanAndDeviations > 0)
-                        average = rollingAverage(average, localDiff, numItems - i);
-                    weight *= weightFactor;
+		static double GetWeightedSumOfList(List<double> list, double addMeanAndDeviations = 0, double weightFactor = 0.9) {
+			double difficulty = 0;
+			int numItems = list.Count;
+			if (numItems > 1) {
+				list.Sort();
+				//Console.WriteLine("max: {0:0.0}", list[numItems - 1]);
 
-                }
-                if (addMeanAndDeviations > 0)
-                {
-                    double bonus = average + addMeanAndDeviations * getStandardDeviation(list, average);
-                    difficulty += bonus;
-                    //Console.WriteLine("bonus: {0:0.0}", bonus);
-                }
-            }
-            else if (numItems == 1)
-                difficulty = list[0];
-            else
-                difficulty = 0;
-            return difficulty;
-        }
+				//weight the highest difficulties the greatest, decrease by weightFactor each time
+				double weight = 1;
+				double average = 0;
+				for (int i = numItems - 1; i >= 0; i--) {
+					double localDiff = list[i] * weight;
+					difficulty += localDiff;
+					if (addMeanAndDeviations > 0)
+						average = RollingAverage(average, localDiff, numItems - i);
+					weight *= weightFactor;
 
-        static double getStandardDeviation(List<double> list, double avg)
-        {
-            double variance = 0;
-            foreach(double value in list)
-            {
-                //variance += Math.Pow(value - avg, 2);
-                variance += value * value;
-            }
-            variance -= list.Count * avg * avg; //
-            variance /= list.Count;
-            return Math.Sqrt(variance);
-        }
+				}
+				if (addMeanAndDeviations > 0) {
+					double bonus = average + addMeanAndDeviations * GetStandardDeviation(list, average);
+					difficulty += bonus;
+					//Console.WriteLine("bonus: {0:0.0}", bonus);
+				}
+			}
+			else if (numItems == 1)
+				difficulty = list[0];
+			else
+				difficulty = 0;
+			return difficulty;
+		}
 
-        static double rollingAverage(double currentAvg, double toAdd, int currentNumValues)
-        {
-            return (currentAvg * currentNumValues + toAdd) / (currentNumValues + 1);
-        }
+		static double GetStandardDeviation(List<double> list, double avg) {
+			double variance = 0;
+			foreach (double value in list) {
+				//variance += Math.Pow(value - avg, 2);
+				variance += value * value;
+			}
+			variance -= list.Count * avg * avg; //
+			variance /= list.Count;
+			return Math.Sqrt(variance);
+		}
 
-        #endregion
+		static double RollingAverage(double currentAvg, double toAdd, int currentNumValues) {
+			return (currentAvg * currentNumValues + toAdd) / (currentNumValues + 1);
+		}
 
-        //DEBUG
-        static void printDebug(List<Shape> shapeList, string phrase = "streams")
-        {
-            Console.WriteLine("\n---------------{0}-------------------", phrase);
-            Console.WriteLine("       (time)               (bpm)  (dist)  (avgdist)");
-            foreach (Shape shape in shapeList)
-            {
-                shape.PrintDebug();
-            }
-        }
+		#endregion
 
-    }
+		//DEBUG
+		static void PrintDebug(List<Shape> shapeList, string phrase = "streams") {
+			Console.WriteLine("\n---------------{0}-------------------", phrase);
+			Console.WriteLine("       (time)               (bpm)  (dist)  (avgdist)");
+			foreach (Shape shape in shapeList) {
+				shape.PrintDebug();
+			}
+		}
+
+	}
 }

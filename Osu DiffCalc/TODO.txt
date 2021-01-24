@@ -1,15 +1,26 @@
 ﻿
 STYLE:
-	- change all methods to start with uppercase, change constants to all uppercase
-		done: gui.cs, savefilexmlmanager, finder, [analyzerobjects],
-			  [beatmapobjects]
-		todo: [filefinder], win32process
-			  [fileparserhelpers], analyzer, beatmap, mapset, mapsetmanager,
-			  parser
+	- couplet -> double (?)
+	- if osu is fullscreen and user has multi-monitors, open on secondary monitor
+	-- or find a way to stay on top despite fullscreen
+	- comments should be '// text here' not '//text here'
+	- replace command line output with actual logging
 
+BUGS:
+	- does not show graphs if it has cached difficulty data
+		- need to re-analyze to generate graph
+	- sometimes fails to find song if osu already open and playing song
+	- UI has weird scaling, text looks cut off in several places
+	- after a while failed to analyze maps, UI was responsive but it stopped updating mapset
+
+FEATURES:
+	- understand sliders
+
+OVERHAULS:
+	- xml -> actual database schema
+	- winforms hacks -> WPF + MVVM
 
 FIX DIFFCALC: 
-	low cs increase
 	sometimes stops (console.log on threads to check if stopped)
 		transitioning from charted map -> taiko only -> normal map
 	be my friend - brokenarrow (taiko only)
@@ -17,7 +28,6 @@ FIX DIFFCALC:
 	preparing for te shakedown (search 'slider') - NO AUDIO HOOKS????
 		yuh oh - handle.exe also fails for these (very tiny files - caching issue?)
 		created a solution for this problem based on window titles and previous history
-
 
 	Finder.cs
 		- fix a max call time with thread.join
@@ -44,9 +54,15 @@ FIX DIFFCALC:
 			- squares
 			- line jumps (diff increases drastically with num notes)
 			- repeated patterns
-		- cs difficulty
+		- cs, od, hp difficulty
 		- slider difficulty
-		- proper couplet difficulty
+			- does not understand slider shapes, look at lazer source code if needed
+			- does not understand slider end times (related to shape)
+			- does not consider 'margin of error' around slider (does OD affect this?)
+		- spinners difficulty
+			- figure out 'required speed to get 300' (does OD affect this?)
+			- make some assumption like 1/2 note to reach spinner, 1/2 to leave
+		- proper doubles difficulty
 
 [UserInterface]
 	"GUI.cs"

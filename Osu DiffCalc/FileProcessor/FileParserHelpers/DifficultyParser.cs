@@ -1,27 +1,29 @@
-﻿using System.IO;
+﻿namespace OsuDiffCalc.FileProcessor.FileParserHelpers {
+	using System.IO;
 
-namespace Osu_DiffCalc.FileProcessor.FileParserHelpers
-{
-    class DifficultyParser
-    {
-        public static void parse(Beatmap beatmap, ref StreamReader reader)
-        {
-            GeneralHelper.skipTo(ref reader, @"[Difficulty]", false);
-            beatmap.hpDrain = GeneralHelper.getFloatFromNextLine(ref reader, "HPDrain");
-            beatmap.circleSize = GeneralHelper.getFloatFromNextLine(ref reader, "CircleSize");
-            beatmap.accuracy = GeneralHelper.getFloatFromNextLine(ref reader, "OverallDiff");
+	class DifficultyParser : ParserBase {
+		/// <summary>
+		/// Try to parse the '[Difficulty]' beatmap region from the <paramref name="reader"/> and populate the <paramref name="beatmap"/>
+		/// </summary>
+		/// <returns> <see langword="true"/> if the difficulty info was parsed, otherwise <see langword="false"/> </returns>
+		public static bool TryParse(Beatmap beatmap, ref StreamReader reader) {
+			if (!TrySkipTo(ref reader, "[Difficulty]"))
+				return false;
+			beatmap.HpDrain = GetFloatFromNextLine(ref reader, "HPDrain");
+			beatmap.CircleSize = GetFloatFromNextLine(ref reader, "CircleSize");
+			beatmap.Accuracy = GetFloatFromNextLine(ref reader, "OverallDiff");
 
-            beatmap.circleSizePx = (float)(-8.28127 * beatmap.circleSize + 100.597); //empirically determined
-            beatmap.marginOfErrorMs300 = (float)(-6 * beatmap.accuracy + 79.5);
-            beatmap.marginOfErrorMs50 = (float)(-10 * beatmap.accuracy + 199.5);
+			beatmap.CircleSizePx = (float)(-8.28127 * beatmap.CircleSize + 100.597); //empirically determined
+			beatmap.MarginOfErrorMs300 = (float)(-6 * beatmap.Accuracy + 79.5);
+			beatmap.MarginOfErrorMs50 = (float)(-10 * beatmap.Accuracy + 199.5);
 
-            if (beatmap.format > 7)
-                beatmap.approachRate = GeneralHelper.getFloatFromNextLine(ref reader, "Approach");
-            else //back when ar and od were tied
-                beatmap.approachRate = beatmap.accuracy;
-            beatmap.sliderMultiplier = GeneralHelper.getFloatFromNextLine(ref reader, "SliderMult");
-            beatmap.sliderTickRate = GeneralHelper.getFloatFromNextLine(ref reader, "SliderTick");
-        }
-
-    }
+			if (beatmap.Format > 7)
+				beatmap.ApproachRate = GetFloatFromNextLine(ref reader, "Approach");
+			else //back when ar and od were tied
+				beatmap.ApproachRate = beatmap.Accuracy;
+			beatmap.SliderMultiplier = GetFloatFromNextLine(ref reader, "SliderMult");
+			beatmap.SliderTickRate = GetFloatFromNextLine(ref reader, "SliderTick");
+			return true;
+		}
+	}
 }

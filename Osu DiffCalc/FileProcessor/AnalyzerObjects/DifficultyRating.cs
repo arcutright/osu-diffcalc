@@ -1,68 +1,40 @@
-﻿using System;
-using System.Windows.Forms.DataVisualization.Charting;
+﻿namespace OsuDiffCalc.FileProcessor.AnalyzerObjects {
+	using System;
+	using System.Windows.Forms.DataVisualization.Charting;
 
-namespace Osu_DiffCalc.FileProcessor.AnalyzerObjects
-{
-    class DifficultyRating
-    {
-        public const SeriesChartType DEFAULT_CHART_TYPE = SeriesChartType.Column;
+	class DifficultyRating {
+		public const SeriesChartType DEFAULT_CHART_TYPE = SeriesChartType.Column;
 
-        public double jumpDifficulty, streamDifficulty, burstDifficulty, coupletDifficulty, sliderDifficulty;
-        public double totalDifficulty;
-        public Series jumps, streams, bursts, couplets, sliders;
+		public double JumpDifficulty, StreamDifficulty, BurstDifficulty, CoupletDifficulty, SliderDifficulty;
+		public double TotalDifficulty;
 
-        public DifficultyRating()
-        {
-            InitSeries(ref jumps, "Jumps");
-            InitSeries(ref streams, "Streams");
-            InitSeries(ref bursts, "Bursts");
-            InitSeries(ref couplets, "Couplets");
-            InitSeries(ref sliders, "Sliders");
-        }
+		public Series Jumps { get; } = BuildSeries("Jumps");
+		public Series Streams { get; } = BuildSeries("Streams");
+		public Series Bursts { get; } = BuildSeries("Bursts");
+		public Series Couplets { get; } = BuildSeries("Couplets");
+		public Series Sliders { get; } = BuildSeries("Sliders");
 
-        private void InitSeries(ref Series s, string legend)
-        {
-            s = new Series();
-            s.LegendText = legend;
-            s.Name = legend;
-            s.ChartType = DEFAULT_CHART_TYPE;
-        }
+		public static double FamiliarizeRating(double rating) {
+			//return 1.1 * Math.Pow(rating, 0.25);
+			return 0.5 * Math.Pow(rating, 0.4);
+		}
 
-        public static double FamiliarizeRating(double rating)
-        {
-            //return 1.1 * Math.Pow(rating, 0.25);
-            return 0.5 * Math.Pow(rating, 0.4);
-        }
+		public void AddJump(double time, double difficulty) => Add(time, difficulty, Jumps);
+		public void AddStream(double time, double difficulty) => Add(time, difficulty, Streams);
+		public void AddBurst(double time, double difficulty) => Add(time, difficulty, Bursts);
+		public void AddCouplet(double time, double difficulty) => Add(time, difficulty, Couplets);
+		public void AddSlider(double time, double difficulty) => Add(time, difficulty, Sliders);
 
-        public void AddJump(double time, double difficulty)
-        {
-            Add(time, difficulty, jumps);
-        }
+		private void Add(double ms, double diff, Series dest) {
+			dest.Points.AddXY(ms / 1000, diff);
+		}
 
-        public void AddStream(double time, double difficulty)
-        {
-            Add(time, difficulty, streams);
-        }
-
-        public void AddBurst(double time, double difficulty)
-        {
-            Add(time, difficulty, bursts);
-        }
-
-        public void AddCouplet(double time, double difficulty)
-        {
-            Add(time, difficulty, couplets);
-        }
-
-        public void AddSlider(double time, double difficulty)
-        {
-            Add(time, difficulty, sliders);
-        }
-
-        private void Add(double ms, double diff, Series dest)
-        {
-            dest.Points.AddXY(ms/1000, diff);
-        }
-
-    }
+		private static Series BuildSeries(string legend) {
+			return new Series {
+				LegendText = legend,
+				Name = legend,
+				ChartType = DEFAULT_CHART_TYPE
+			};
+		}
+	}
 }

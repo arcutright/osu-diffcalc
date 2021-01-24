@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Osu DiffCalc")]
 [assembly: AssemblyDescription("Difficulty Calculator for Osu!")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Conjuring Sammiches, LLC")]
+[assembly: AssemblyCompany("Conjuring Sammiches")]
 [assembly: AssemblyProduct("Osu DiffCalc")]
-[assembly: AssemblyCopyright("Copyright ©  2015")]
+[assembly: AssemblyCopyright("Copyright © 2021")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

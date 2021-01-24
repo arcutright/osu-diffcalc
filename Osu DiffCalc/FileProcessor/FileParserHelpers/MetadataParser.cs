@@ -1,27 +1,29 @@
-﻿using System.IO;
+﻿namespace OsuDiffCalc.FileProcessor.FileParserHelpers {
+	using System.IO;
 
-namespace Osu_DiffCalc.FileProcessor.FileParserHelpers
-{
-    class MetadataParser
-    {
-        public static bool parse(Beatmap beatmap, ref StreamReader reader)
-        {
-            GeneralHelper.skipTo(ref reader, @"[Metadata]", false);
+	class MetadataParser : ParserBase {
+		/// <summary>
+		/// Try to parse the '[Metadata]' beatmap region from the <paramref name="reader"/> and populate the <paramref name="beatmap"/>
+		/// </summary>
+		/// <returns> <see langword="true"/> if all the metadata was read, otherwise <see langword="false"/> </returns>
+		public static bool TryParse(Beatmap beatmap, ref StreamReader reader) {
+			if (!TrySkipTo(ref reader, "[Metadata]"))
+				return false;
 
-            beatmap.title = GeneralHelper.getStringFromLine(GeneralHelper.skipTo(ref reader, "Title"), "Title");
-            if (beatmap.title == null)
-                return false;
-            beatmap.artist = GeneralHelper.getStringFromLine(GeneralHelper.skipTo(ref reader, "Artist"), "Artist");
-            if (beatmap.artist == null)
-                return false;
-            beatmap.creator = GeneralHelper.getStringFromLine(GeneralHelper.skipTo(ref reader, "Creator"), "Creator");
-            if (beatmap.creator == null)
-                return false;
-            beatmap.version = GeneralHelper.getStringFromLine(GeneralHelper.skipTo(ref reader, "Version"), "Version");
-            if (beatmap.version == null)
-                return false;
-            return true;
-        }
+			beatmap.Title = GetStringFromLine(ReadNext(ref reader, "Title"), "Title");
+			if (beatmap.Title is null)
+				return false;
+			beatmap.Artist = GetStringFromLine(ReadNext(ref reader, "Artist"), "Artist");
+			if (beatmap.Artist is null)
+				return false;
+			beatmap.Creator = GetStringFromLine(ReadNext(ref reader, "Creator"), "Creator");
+			if (beatmap.Creator is null)
+				return false;
+			beatmap.Version = GetStringFromLine(ReadNext(ref reader, "Version"), "Version");
+			if (beatmap.Version is null)
+				return false;
+			return true;
+		}
 
-    }
+	}
 }

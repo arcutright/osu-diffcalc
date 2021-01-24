@@ -1,40 +1,34 @@
-﻿using System;
-using System.Windows.Forms;
+﻿namespace OsuDiffCalc.UserInterface {
+	using System;
+	using System.Windows.Forms;
 
-namespace Osu_DiffCalc.UserInterface
-{
-    class UX
-    {
-        public static string getFilenameFromDialog()
-        {
-            string filename = null;
-            OpenFileDialog dialog = new OpenFileDialog();
-            dialog.Title = "Open Osu Beatmap File";
-            dialog.Filter = "OSU files|*.osu";
-            dialog.InitialDirectory = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), @"osu file examples");
-            dialog.Multiselect = false;
-            try
-            {
-                if (dialog.ShowDialog() == DialogResult.OK)
-                    filename = dialog.FileName;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.GetBaseException());
-            }
-            dialog.Dispose();
+	class UX {
+		public static string GetFilenameFromDialog() {
+			string filename = null;
+			var dialog = new OpenFileDialog {
+				Title = "Open Osu Beatmap File",
+				Filter = "OSU files|*.osu",
+				InitialDirectory = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), @"osu file examples"),
+				Multiselect = false
+			};
+			try {
+				if (dialog.ShowDialog() == DialogResult.OK)
+					filename = dialog.FileName;
+			}
+			catch (Exception e) {
+				Console.WriteLine(e.GetBaseException());
+			}
+			dialog.Dispose();
 
-            return filename;
-        }
+			return filename;
+		}
 
-        public static string getFilenameFromDialog(GUI gui)
-        {
-            string filename = null;
-            gui.Invoke((MethodInvoker)delegate
-            {
-                filename = getFilenameFromDialog();
-            });
-            return filename;
-        }
-    }
+		public static string GetFilenameFromDialog(GUI gui) {
+			string filename = null;
+			gui.Invoke((MethodInvoker)delegate {
+				filename = GetFilenameFromDialog();
+			});
+			return filename;
+		}
+	}
 }
