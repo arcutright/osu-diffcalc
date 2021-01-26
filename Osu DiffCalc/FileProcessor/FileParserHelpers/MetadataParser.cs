@@ -9,17 +9,17 @@
 		public static bool TryParse(Beatmap beatmap, ref StreamReader reader) {
 			if (!TrySkipTo(ref reader, "[Metadata]"))
 				return false;
-
-			beatmap.Title = GetStringFromLine(ReadNext(ref reader, "Title"), "Title");
+			// TODO: these do not need to be in-order based on the spec
+			beatmap.Title = GetStringFromNextLine(ref reader, "Title");
 			if (beatmap.Title is null)
 				return false;
-			beatmap.Artist = GetStringFromLine(ReadNext(ref reader, "Artist"), "Artist");
+			beatmap.Artist = GetStringFromNextLine(ref reader, "Artist");
 			if (beatmap.Artist is null)
 				return false;
-			beatmap.Creator = GetStringFromLine(ReadNext(ref reader, "Creator"), "Creator");
+			beatmap.Creator = GetStringFromNextLine(ref reader, "Creator");
 			if (beatmap.Creator is null)
 				return false;
-			beatmap.Version = GetStringFromLine(ReadNext(ref reader, "Version"), "Version");
+			beatmap.Version = GetStringFromNextLine(ref reader, "Version");
 			if (beatmap.Version is null)
 				return false;
 			return true;

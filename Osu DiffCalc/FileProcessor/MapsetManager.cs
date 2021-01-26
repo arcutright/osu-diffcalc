@@ -93,7 +93,7 @@
 			var totwatch = Stopwatch.StartNew();
 			var localwatch = Stopwatch.StartNew();
 			//parse map if needed
-			if (!map.IsParsed && !Parser.TryParse(map))
+			if (!map.IsParsed && !Parser.TryParse(ref map))
 				return false;
 			localwatch.Stop();
 			Console.WriteLine($"parse [{map.Version}]: {localwatch.ElapsedMilliseconds}ms");
@@ -119,7 +119,7 @@
 				set.IsAnalyzed = true;
 			//check if the mapset has been saved
 			int index = CheckForMapset(set);
-			if (index >= 0) {
+			if (index != -1) {
 				//check if the map has been saved
 				var storedSet = _allMapsets[index];
 				bool found = false;
@@ -158,7 +158,7 @@
 			int index = CheckForMapset(set);
 			//Console.Write("analyzing set...");
 			//check if the mapset has been analyzed
-			if (index >= 0) {
+			if (index != -1) {
 				//Console.Write("mapset has been analyzed...");
 				//check for missing versions (difficulties)
 				List<Beatmap> missingMaps = GetMissingAnalyzedDiffs(set, index);

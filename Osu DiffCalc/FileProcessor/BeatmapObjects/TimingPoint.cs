@@ -3,30 +3,31 @@
 	using OsuDiffCalc.FileProcessor.FileParserHelpers;
 
 	class TimingPoint : BeatmapElement {
-		public int Offset = -1;
-		public int InheritedOffset = -1;
-		public double Bpm = -1;
-		public double EffectiveSliderBPM = -1;
-		public double MsPerBeat = -1;
-
-		public TimingPoint(TimingPoint lastRootPoint, int offset, double msPerBeat) {
+		public TimingPoint(int offset, double beatLength, bool isInherited, TimingPoint prevTimingPoint, double beatmapSliderMultiplier) {
 			Offset = offset;
 
-			//new timing point
-			if (msPerBeat >= 0) {
-				MsPerBeat = msPerBeat;
-				EffectiveSliderBPM = TimingParser.GetBPM(msPerBeat);
-				Bpm = EffectiveSliderBPM;
-				InheritedOffset = offset;
+			// new timing point
+			if (!isInherited || prevTimingPoint is null) {
+				MsPerBeat = beatLength;
+				Bpm = TimingParser.GetBPM(beatLength);
+				EffectiveSliderBPM = Bpm * beatmapSliderMultiplier;
 			}
-			//inherited timing point
-			else if (lastRootPoint is not null) {
-				Bpm = lastRootPoint.Bpm;
-				InheritedOffset = lastRootPoint.InheritedOffset;
-				EffectiveSliderBPM = TimingParser.GetEffectiveBPM(Bpm, msPerBeat);
-				MsPerBeat = lastRootPoint.MsPerBeat;
+			// inherited timing point
+			else {
+				MsPerBeat = prevTimingPoint.MsPerBeat;
+				Bpm = prevTimingPoint.Bpm;
+				// from the updated osu!wiki on `beatLength`, for inherited timing points:
+				// "A negative inverse slider velocity multiplier, as a percentage. 
+				//  For example, -50 would make all sliders in this section twice as fast as SliderMultiplier"
+				double timingSliderMultiplier = -100.0 / beatLength;
+				EffectiveSliderBPM = TimingParser.GetEffectiveBPM(Bpm, MsPerBeat) * beatmapSliderMultiplier * timingSliderMultiplier;
 			}
 		}
+
+		public int Offset { get; protected init; } = -1;
+		public double Bpm { get; protected init; } = -1;
+		public double EffectiveSliderBPM { get; protected init; } = -1;
+		public double MsPerBeat { get; protected init; } = -1;
 
 		public override void PrintDebug(string prepend = "", string append = "") {
 			Console.Write(prepend);

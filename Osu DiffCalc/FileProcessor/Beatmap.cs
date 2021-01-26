@@ -10,13 +10,14 @@
 
 		public string Title, Artist, Creator, Version;
 		public string Filepath, Mp3FileName;
-		public float ApproachRate, CircleSize, HpDrain, SliderMultiplier, SliderTickRate, Accuracy;
-		public float MarginOfErrorMs300; //time window for a 300
-		public float MarginOfErrorMs50; //time window for a 50
-		public float CircleSizePx; //actual circle size
+		public double ApproachRate, CircleSize, HpDrain, SliderMultiplier, SliderTickRate, Accuracy;
+		public double MarginOfErrorMs300; //time window for a 300
+		public double MarginOfErrorMs50; //time window for a 50
+		public double CircleSizePx; //actual circle size
 		public int Format = -1;
 		public bool IsAnalyzed;
 		public bool IsParsed;
+		public bool IsMetadataParsed;
 		public bool IsOfficiallySupported;
 
 		public DifficultyRating DiffRating = new();
@@ -80,16 +81,12 @@
 		}
 
 		public string GetFamiliarizedDisplayString() {
-			return GetDiffDisplayString(DifficultyRating.FamiliarizeRating);
-		}
-
-		public string GetDiffDisplayString(Func<double, double> diffFunction) {
-			var diff = diffFunction(DiffRating.TotalDifficulty);
+			var diff = DifficultyRating.FamiliarizeRating(DiffRating.TotalDifficulty);
 			return $"[{Version}]  {diff:0.###}";
 		}
 
 		public string GetDiffDisplayString(double scalingFactor = 1) {
-			var diff = DiffRating.TotalDifficulty/scalingFactor;
+			var diff = DiffRating.TotalDifficulty / scalingFactor;
 			return $"[{Version}]  {diff:0.###}";
 		}
 

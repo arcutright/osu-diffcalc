@@ -191,7 +191,7 @@
 			this.tabPage2.Padding = new System.Windows.Forms.Padding(2);
 			this.tabPage2.Size = new System.Drawing.Size(375, 190);
 			this.tabPage2.TabIndex = 1;
-			this.tabPage2.Text = "Graoh";
+			this.tabPage2.Text = "Graph";
 			this.tabPage2.UseVisualStyleBackColor = true;
 			// 
 			// chartedMapChoice

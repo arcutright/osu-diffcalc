@@ -15,6 +15,7 @@ BUGS:
 
 FEATURES:
 	- understand sliders
+	- add 'open folder in explorer'
 
 OVERHAULS:
 	- xml -> actual database schema

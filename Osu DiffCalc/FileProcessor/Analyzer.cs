@@ -3,8 +3,9 @@
 	using BeatmapObjects;
 	using System;
 	using System.Collections.Generic;
+	using System.Linq;
 	using System.Threading;
-
+	
 	class Analyzer {
 		const int MinBurstLength = 3;
 		const int MinStreamLength = 6;
@@ -40,22 +41,22 @@
 			void addShapeToAppropriateList() {
 				shape.PrevShape = lastShape;
 				if (shape.NumObjects == 2) {
-					shape.Type = Shape.ShapeType.COUPLET;
+					shape.Type = Shape.ShapeType.Couplet;
 					couplets.Add(shape);
 					UpdateMin(ref minCoupletAvgMs, shape.AvgTimeGapMs);
 				}
 				else if (shape.NumObjects < MinBurstLength) {
-					shape.Type = Shape.ShapeType.TRIPLET;
+					shape.Type = Shape.ShapeType.Triplet;
 					triplets.Add(shape);
 					UpdateMin(ref minTripletAvgMs, shape.AvgTimeGapMs);
 				}
 				else if (shape.NumObjects < MinStreamLength) {
-					shape.Type = Shape.ShapeType.BURST;
+					shape.Type = Shape.ShapeType.Burst;
 					bursts.Add(shape);
 					UpdateMin(ref minBurstAvgMs, shape.AvgTimeGapMs);
 				}
 				else if (shape.NumObjects >= MinStreamLength) {
-					shape.Type = Shape.ShapeType.STREAM;
+					shape.Type = Shape.ShapeType.Stream;
 					streams.Add(shape);
 					UpdateMin(ref minStreamAvgMs, shape.AvgTimeGapMs);
 				}
@@ -65,6 +66,7 @@
 
 			foreach (var obj in beatmap.BeatmapObjects) {
 				shapeAdded = false;
+				// TODO: fast spinners can act like jumps
 				if (obj is Slider or Hitcircle) {
 					var hitObj = obj as HitObject;
 					// shape analysis for triplet, streams, etc
@@ -147,14 +149,14 @@
 			double avgObjects = 0;
 			double avgBPM = 0;
 			double avgDistancePx = 0;
-			int numShapes = 0;
-			var diffs = new List<double>();
+			double numStreams = 0; // double for fewer type casts
+			var streamDiffs = new List<double>();
 			foreach (var stream in streams) {
 				double streamDiff = 0;
 				if (stream.NumObjects >= MinBurstLength && stream.AvgTimeGapMs > 0) {
 					double streamBPM = 15000 / stream.AvgTimeGapMs;
 					//calculate the difficulty of the stream
-					streamDiff = Math.Pow(stream.NumObjects, 0.8) * Math.Pow(streamBPM, 3.4) / 1000000000 * (stream.AvgDistancePx + 1);
+					streamDiff = Math.Pow(stream.NumObjects, 0.8) * Math.Pow(streamBPM, 3.4) / 1e9 * (stream.AvgDistancePx + 1);
 					//addition for OD. Maxes ~10%
 					streamDiff += streamDiff * 1000 / (stream.AvgTimeGapMs * map.MarginOfErrorMs300);
 					//multiplier to represent that bursts are significantly easier
@@ -164,46 +166,55 @@
 					}
 					else //a stream, not a burst
 						map.DiffRating.AddStream(stream.StartTime, streamDiff);
-					diffs.Add(streamDiff);
+					streamDiffs.Add(streamDiff);
 
 					//Console.WriteLine("s({0}) {1}  bpm:{2:0.0}   avgDist:{3:0.0}  localDiff:{4:0.00}", 
 					//   stream.numObjects, FileParserHelpers.TimingParser.getTimeStamp(stream.startTime), streamBPM, stream.avgDistancePx, localDiff);
-					avgObjects = RollingAverage(avgObjects, stream.NumObjects, numShapes);
-					avgBPM = RollingAverage(avgBPM, streamBPM, numShapes);
-					avgDistancePx = RollingAverage(avgDistancePx, stream.AvgDistancePx, numShapes);
-					numShapes++;
+					avgObjects = RollingAverage(avgObjects, stream.NumObjects, numStreams);
+					avgBPM = RollingAverage(avgBPM, streamBPM, numStreams);
+					avgDistancePx = RollingAverage(avgDistancePx, stream.AvgDistancePx, numStreams);
+					numStreams++;
 				}
 			}
 			//Console.WriteLine("\ntypical stream len:{0:0.0}  bpm:{1:0.0}  dist:{2:0.0}  diff:{3:0.0}", avgObjects, avgBPM, avgDistancePx,
 			//   Math.Pow(avgObjects, 0.6) * Math.Pow(avgBPM, 3.2) / 1000000000 * Math.Pow(avgDistancePx, 1.6));
 
 			//Console.Write("stream ");
-			double difficulty = 0;
-			if (diffs.Count > 0)
-				difficulty += GetWeightedSumOfList(diffs, 1.5);
-
-			return difficulty;
+			if (streamDiffs.Count != 0)
+				return GetWeightedSumOfList(streamDiffs, 1.5);
+			else
+				return 0;
 		}
 
 		static double GetCoupletsDifficulty(List<Shape> couplets, double minCoupletsMs, Beatmap map) {
+			if (couplets.Count == 0)
+				return 0;
+
+			// TODO: actually include the couplets difficulty (their difficulty is still poorly-defined)
+
+			// difficulty is also dependent on the spacing between couplets... ie, closely timed objects are harder to hit than far-timed ones
+			// TODO: introduce extra scaling for tongue-twisters
 			double difficulty = 0;
-			//are dependent on the spacing between couplets... ie, closely timed couplets are harder to hit than far-timed ones
-			//track with a shape.previous
-			double timeDifferenceForTransition; //to measure how abrubt changing between shapes is
-			double timeDifferenceForSpeeds; //similar to difference in BPM between streams, but in ms/tick
-			double coupleBPM;
-			foreach (var couple in couplets) {
+			double coupletBPM;
+			for (int i = 0; i < couplets.Count; ++i) {
+				var couplet = couplets[i];
 				double coupletDiff = 0;
-				int timeGapMs = couple.StartTime - couple.PrevShape.EndTime;
-				timeDifferenceForTransition = Math.Abs(couple.AvgTimeGapMs * 2 - timeGapMs);
-				timeDifferenceForSpeeds = Math.Abs(couple.AvgTimeGapMs - couple.PrevShape.AvgTimeGapMs);
-				//let's define these parameters to make a couplet difiicult
+				int timeGapMs = couplet.StartTime - couplet.PrevShape.EndTime;
+
+				// measure how abrubt changing between shapes is
+				double timeDifferenceForTransition = Math.Abs(couplet.AvgTimeGapMs * 2 - timeGapMs);
+
+				// similar to difference in BPM between streams, but in ms/tick
+				double timeDifferenceForSpeeds = Math.Abs(couplet.AvgTimeGapMs - couplet.PrevShape.AvgTimeGapMs);
+
+				// let's define these parameters to make a couplet difiicult
 				if (timeGapMs > 0) {
-					if (timeDifferenceForTransition <= 20 && timeDifferenceForSpeeds <= 1.5 * couple.AvgTimeGapMs + 20) {
-						coupleBPM = 15000 / couple.AvgTimeGapMs;
-						coupletDiff = Math.Pow(coupleBPM, 3.2) / 1000000000 * Math.Pow(couple.AvgDistancePx + 1, 1.6);
+					if (timeDifferenceForTransition <= 20 && timeDifferenceForSpeeds <= 1.5 * couplet.AvgTimeGapMs + 20) {
+						coupletBPM = 15000 / couplet.AvgTimeGapMs;
+						coupletDiff = Math.Pow(coupletBPM, 3.2) / 1e9 * Math.Pow(couplet.AvgDistancePx + 1, 1.6);
 					}
-					map.DiffRating.AddCouplet(couple.StartTime, coupletDiff);
+					// difficulty += coupletDiff; // once balancing with other map features is determined
+					map.DiffRating.AddCouplet(couplet.StartTime, coupletDiff);
 				}
 			}
 			return difficulty;
@@ -228,23 +239,26 @@
 			double distance = Math.Sqrt((dx * dx) + (dy * dy));
 			double time = current.StartTime - prev.EndTime;
 			if (time > 0) {
-				//adjust distance based on CS
+				// adjust distance based on CS
 				distance -= map.CircleSizePx / 2;
 				if (distance > 0) {
-					//adjust time based on OD
-					double timeOffsetFromOD(HitObject obj) => obj is Slider ? (map.MarginOfErrorMs50 / 2) : (map.MarginOfErrorMs300 / 2);
-					time += timeOffsetFromOD(current);
-					time += timeOffsetFromOD(prev);
+					// increase time window based on OD (more time = slower jump)
+					double timeWindowFromOD(HitObject obj) => obj is Slider ? (map.MarginOfErrorMs50 / 2) : (map.MarginOfErrorMs300 / 2);
+					time += timeWindowFromOD(current);
+					time += timeWindowFromOD(prev);
 
-					//difficulty due to the speed of the jump
-					double speedDiff = Math.Pow(10 * distance / time, 2);
-					//difficulty due to the distance
+					// difficulty due to the speed of the jump
+					double speedDiff = (10 * distance / time);
+					speedDiff *= speedDiff; // square is faster than Math.Pow
+
+					// difficulty due to the distance
 					double distDiff = speedDiff * 0.4 * distance / (MaxDistPx - map.CircleSizePx / 2);
 					difficulty = speedDiff + distDiff;
+
 					//adjustment to make jumps vs streams more reasonable
 					difficulty *= 0.1;
-					map.DiffRating.AddJump(prev.EndTime, difficulty);
 
+					map.DiffRating.AddJump(prev.EndTime, difficulty);
 					//Console.WriteLine("jump {0}  {1}  spDiff:{2:0.0}  dstDiff:{3:0.0}  dist:{5:0.0}  bpm:{6:0.0}  ={4:0.00}",  FileParserHelpers.TimingParser.getTimeStamp(prevObject.endTime), FileParserHelpers.TimingParser.getTimeStamp(hitObject.startTime), speedDiff, distDiff, difficulty, distPx, 15000 / distMs);
 				}
 			}
@@ -258,7 +272,7 @@
 			double difficulty = 0;
 			double distance = slider.TotalLength;
 			//adjust slider length to consider the margin allowed by od
-			distance -= ((double)slider.Repeat * (map.CircleSizePx + map.Accuracy)); // TODO: FIX ME (OD MARGIN)
+			distance -= slider.NumSlides * (map.CircleSizePx + map.Accuracy); // TODO: FIX ME (OD MARGIN)
 			if (distance > 0) {
 				double time = Math.Max(slider.EndTime - slider.StartTime, 1);
 				difficulty += Math.Pow(distance / time, 1.5) * Math.Pow(distance, 0.6) / 2;
@@ -285,49 +299,46 @@
 				min = toCompare;
 		}
 
-		static double GetWeightedSumOfList(List<double> list, double addMeanAndDeviations = 0, double weightFactor = 0.9) {
-			double difficulty = 0;
-			int numItems = list.Count;
-			if (numItems > 1) {
-				list.Sort();
-				//Console.WriteLine("max: {0:0.0}", list[numItems - 1]);
+		static double GetWeightedSumOfList(List<double> list, double stdevWeight = 1.5, double weightFactor = 0.9) {
+			int n = list.Count;
+			if (n == 0)
+				return 0;
+			else if (n == 1)
+				return list[0];
+			
+			double weightedSum = 0;
+			list.Sort();
+			//Console.WriteLine("max: {0:0.0}", list[numItems - 1]);
 
-				//weight the highest difficulties the greatest, decrease by weightFactor each time
-				double weight = 1;
-				double average = 0;
-				for (int i = numItems - 1; i >= 0; i--) {
-					double localDiff = list[i] * weight;
-					difficulty += localDiff;
-					if (addMeanAndDeviations > 0)
-						average = RollingAverage(average, localDiff, numItems - i);
-					weight *= weightFactor;
-
+			// weight the highest difficulties the most, decrease by weightFactor each time
+			// note that stdev is calculated using Welford's algorithm
+			double weight = 1;
+			double count = 0; // double for fewer type casts
+			double mean = 0;
+			double m2 = 0;
+			double delta, x;
+			for (int i = n - 1; i >= 0; --i) {
+				x = list[i] * weight;
+				weightedSum += x;
+				if (stdevWeight != 0) {
+					count += 1;
+					delta = x - mean;
+					mean += delta / count;
+					m2 += delta * (x - mean);
 				}
-				if (addMeanAndDeviations > 0) {
-					double bonus = average + addMeanAndDeviations * GetStandardDeviation(list, average);
-					difficulty += bonus;
-					//Console.WriteLine("bonus: {0:0.0}", bonus);
-				}
+				weight *= weightFactor;
 			}
-			else if (numItems == 1)
-				difficulty = list[0];
-			else
-				difficulty = 0;
-			return difficulty;
+
+			if (stdevWeight != 0) {
+				double stdev = Math.Sqrt(m2 / count);
+				double bonus = mean + (stdevWeight * stdev);
+				weightedSum += bonus;
+				//Console.WriteLine("bonus: {0:0.0}", bonus);
+			}
+			return weightedSum;
 		}
 
-		static double GetStandardDeviation(List<double> list, double avg) {
-			double variance = 0;
-			foreach (double value in list) {
-				//variance += Math.Pow(value - avg, 2);
-				variance += value * value;
-			}
-			variance -= list.Count * avg * avg; //
-			variance /= list.Count;
-			return Math.Sqrt(variance);
-		}
-
-		static double RollingAverage(double currentAvg, double toAdd, int currentNumValues) {
+		static double RollingAverage(double currentAvg, double toAdd, double currentNumValues) {
 			return (currentAvg * currentNumValues + toAdd) / (currentNumValues + 1);
 		}
 

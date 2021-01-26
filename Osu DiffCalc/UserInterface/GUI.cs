@@ -178,15 +178,15 @@
 		}
 
 		private void DisplayMapset(Mapset set) {
-			if (set.Beatmaps.Count > 0) {
-				//sort by difficulty
+			if (set.Beatmaps.Count  != 0) {
+				// sort by difficulty
 				set.Sort(false);
-				//display all maps
+				// display all maps
 				foreach (Beatmap map in set.Beatmaps) {
 					AddBeatmapToDisplay(map);
 				}
 				_displayedMapset = set;
-				_chartedBeatmap = set.Beatmaps.First();
+				_chartedBeatmap = set.Beatmaps[0];
 				UpdateChartOptions(true);
 			}
 		}
@@ -197,7 +197,7 @@
 				AutoSize = true
 			};
 			label.Font = new Font(label.Font.FontFamily, fontSize);
-			if (toolTipStr != "") {
+			if (!string.IsNullOrEmpty(toolTipStr)) {
 				var tip = new ToolTip {
 					ShowAlways = true
 				};
@@ -235,7 +235,7 @@
 		private void ClearChart() {
 			Invoke((MethodInvoker)delegate {
 				chart.Series.Clear();
-				if (chart.ChartAreas.Count > 0) {
+				if (chart.ChartAreas.Count != 0) {
 					chart.ChartAreas[0].AxisX.MajorGrid.Enabled = false;
 					chart.ChartAreas[0].AxisX.MinorGrid.Enabled = false;
 					chart.ChartAreas[0].AxisX.LabelStyle.Format = "#";

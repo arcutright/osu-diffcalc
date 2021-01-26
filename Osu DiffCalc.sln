@@ -1,22 +1,41 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30907.101
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Osu DiffCalc", "Osu DiffCalc\Osu DiffCalc.csproj", "{615BCB15-B9D0-49FC-8BD0-A91EA763F0E9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{43956320-A055-44E9-ADB9-2671C8541804}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{615BCB15-B9D0-49FC-8BD0-A91EA763F0E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{615BCB15-B9D0-49FC-8BD0-A91EA763F0E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{615BCB15-B9D0-49FC-8BD0-A91EA763F0E9}.Debug|x64.ActiveCfg = Debug|x64
+		{615BCB15-B9D0-49FC-8BD0-A91EA763F0E9}.Debug|x64.Build.0 = Debug|x64
 		{615BCB15-B9D0-49FC-8BD0-A91EA763F0E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{615BCB15-B9D0-49FC-8BD0-A91EA763F0E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{615BCB15-B9D0-49FC-8BD0-A91EA763F0E9}.Release|x64.ActiveCfg = Release|x64
+		{615BCB15-B9D0-49FC-8BD0-A91EA763F0E9}.Release|x64.Build.0 = Release|x64
+		{43956320-A055-44E9-ADB9-2671C8541804}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43956320-A055-44E9-ADB9-2671C8541804}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43956320-A055-44E9-ADB9-2671C8541804}.Debug|x64.ActiveCfg = Debug|x64
+		{43956320-A055-44E9-ADB9-2671C8541804}.Debug|x64.Build.0 = Debug|x64
+		{43956320-A055-44E9-ADB9-2671C8541804}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43956320-A055-44E9-ADB9-2671C8541804}.Release|Any CPU.Build.0 = Release|Any CPU
+		{43956320-A055-44E9-ADB9-2671C8541804}.Release|x64.ActiveCfg = Release|x64
+		{43956320-A055-44E9-ADB9-2671C8541804}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2B394D46-C670-41D1-A744-C469345FEB32}
 	EndGlobalSection
 EndGlobal

@@ -1,7 +1,6 @@
 ﻿namespace OsuDiffCalc.FileProcessor.AnalyzerObjects {
 	using System;
 	using System.Collections.Generic;
-	using System.Linq;
 	using BeatmapObjects;
 	using FileParserHelpers;
 
@@ -28,16 +27,16 @@
 		}
 
 		public enum ShapeType {
-			UNDEFINED = 0,
-			COUPLET,
-			TRIPLET,
-			BURST,
-			STREAM,
-			LINE,
-			TRIANGLE,
-			SQUARE,
-			REGULAR_POLYGON,
-			POLYGON,
+			Unknown = 0,
+			Couplet,
+			Triplet,
+			Burst,
+			Stream,
+			Line,
+			Triangle,
+			Square,
+			RegularPolygon,
+			Polygon,
 		}
 
 		public void Add(HitObject obj) {

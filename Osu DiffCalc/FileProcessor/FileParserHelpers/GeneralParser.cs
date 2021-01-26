@@ -9,9 +9,9 @@
 		public static bool TryParse(Beatmap beatmap, ref StreamReader reader) {
 			if (!TrySkipTo(ref reader, "[General]"))
 				return false;
-			beatmap.Mp3FileName = GetStringFromLine(ReadNext(ref reader, "AudioFile"), "AudioFile");
+			beatmap.Mp3FileName = GetStringFromNextLine(ref reader, "AudioFile");
 			if (beatmap.Format > 5) {
-				int mode = (int)GetFloatFromLine(ReadNext(ref reader, "Mode"), "Mode");
+				int mode = (int)GetDoubleFromNextLine(ref reader, "Mode");
 				return mode == 0;
 			}
 			else {

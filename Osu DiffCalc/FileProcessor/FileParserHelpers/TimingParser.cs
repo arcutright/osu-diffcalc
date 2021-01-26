@@ -26,14 +26,25 @@
 			TimingPoint lastTimingPoint = beatmap.TimingPoints.Count != 0 ? beatmap.TimingPoints[^1] : null;
 
 			string line;
-			while ((line = reader.ReadLine()) is not null) {
+			while ((line = reader.ReadLine()?.Trim()) is not null) {
+				if (line.Length == 0 || line.StartsWith("//"))
+					continue;
 				string[] data = line.Split(',');
 				if (data.Length >= 2) {
-					//Offset, Milliseconds per Beat, Meter, Sample Type, Sample Set, Volume, Inherited, Kiai Mode
-					//old maps only have   offset,msPerBeat
-					int offset = (int)double.Parse(data[0]);
-					double msPerBeat = double.Parse(data[1]);
-					var timingPoint = new TimingPoint(lastTimingPoint, offset, msPerBeat);
+					//Offset, beatLength, Meter, Sample Type, Sample Set, Volume, Inherited, Kiai Mode
+					//old maps only have  offset,msPerBeat
+					int offset = int.Parse(data[0]);
+					double beatLength = double.Parse(data[1]);
+					double msPerBeat;
+					bool isInherited;
+					if (data.Length < 6) {
+						msPerBeat = beatLength;
+						isInherited = msPerBeat < 0;
+					}
+					else {
+						isInherited = int.Parse(data[6]) == 1;
+					}
+					var timingPoint = new TimingPoint(offset, beatLength, isInherited, lastTimingPoint, beatmap.SliderMultiplier);
 					beatmap.AddTiming(timingPoint);
 					lastTimingPoint = timingPoint;
 				}
@@ -47,10 +58,10 @@
 		}
 
 		public static double GetEffectiveBPM(double bpm, double msPerBeat) {
-			//inherited timing point
+			// inherited timing point
 			if (msPerBeat < 0)
 				return bpm * (-100.0) / msPerBeat;
-			//independent timing point
+			// independent timing point
 			else
 				return bpm;
 		}
