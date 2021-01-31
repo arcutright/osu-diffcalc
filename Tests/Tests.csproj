@@ -68,7 +68,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Osu DiffCalc\Osu DiffCalc.csproj">
+    <ProjectReference Include="..\OsuDiffCalc\OsuDiffCalc.csproj">
       <Project>{615bcb15-b9d0-49fc-8bd0-a91ea763f0e9}</Project>
       <Name>Osu DiffCalc</Name>
     </ProjectReference>
