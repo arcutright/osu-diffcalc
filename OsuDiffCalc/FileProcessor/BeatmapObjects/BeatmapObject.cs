@@ -14,7 +14,7 @@
 		/// <summary> Start time for the object </summary>
 		public int StartTime { get; protected init; }
 		/// <summary> End time for the object </summary>
-		public int EndTime { get; protected init; }
+		public int EndTime { get; protected set; }
 
 		public override void PrintDebug(string prepend = "", string append = "") {
 			Console.Write(prepend);

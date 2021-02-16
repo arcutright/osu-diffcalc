@@ -4,14 +4,15 @@
 	using System.IO;
 
 	abstract class ParserBase {
-		//public static abstract bool Parse(Beatmap beatmap, ref StreamReader reader);
-
 		/// <summary>
 		/// Try to skip to the next line that starts with <paramref name="prefix"/>. Will consume the line that contains it.
 		/// </summary>
-		protected static bool TrySkipTo(ref StreamReader reader, string prefix) {
-			if (reader.EndOfStream)
+		protected static bool TrySkipTo(ref StreamReader reader, string prefix, out string failureMessage) {
+			if (reader.EndOfStream) {
+				failureMessage = $"Could not skip to '{prefix}': End of stream";
 				return false;
+			}
+			failureMessage = "";
 			string line;
 			while ((line = reader.ReadLine()?.Trim()) is not null) {
 				if (line.Length == 0 || line.StartsWith("//"))
@@ -19,6 +20,7 @@
 				if (line.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
 					return true;
 			}
+			failureMessage = $"Could not skip to '{prefix}': Not found in remaining stream";
 			return false;
 		}
 
@@ -42,10 +44,10 @@
 			return null;
 		}
 
-		protected static double GetDoubleFromLine(string line, string startsWith, char delimiter = ':') {
+		protected static double? GetDoubleFromLine(string line, string startsWith, char delimiter = ':') {
 			try {
 				if (!line.StartsWith(startsWith, StringComparison.OrdinalIgnoreCase))
-					return double.NaN;
+					return null;
 				int index = line.IndexOf(delimiter);
 				if (index != -1)
 					return double.Parse(line[(index + 1)..], CultureInfo.InvariantCulture);
@@ -54,10 +56,10 @@
 				Console.WriteLine("!! -- Error pulling float from line");
 				Console.WriteLine(e.GetBaseException());
 			}
-			return double.NaN;
+			return null;
 		}
 
-		protected static double GetDoubleFromNextLine(ref StreamReader reader, string startsWith, char delimiter = ':') {
+		protected static double? GetDoubleFromNextLine(ref StreamReader reader, string startsWith, char delimiter = ':') {
 			try {
 				string line = reader.ReadLine()?.Trim();
 				if (!string.IsNullOrEmpty(line)) 
@@ -67,7 +69,7 @@
 				Console.WriteLine("!! -- Error using reader to get float from next line");
 				Console.WriteLine(e.GetBaseException());
 			}
-			return double.NaN;
+			return null;
 		}
 
 		protected static string GetStringFromLine(string line, string startsWith, char delimiter = ':') {
@@ -96,6 +98,87 @@
 				Console.WriteLine(e.GetBaseException());
 			}
 			return null;
+		}
+
+		protected static bool TryAssignStringFromLine(string line, string startsWith, out string result, char delimeter = ':') {
+			var rawResult = GetStringFromLine(line, startsWith, delimeter);
+			if (rawResult is not null) {
+				result = rawResult;
+				return true;
+			}
+			result = null;
+			return false;
+		}
+
+		protected static bool TryAssignDoubleFromLine(string line, string startsWith, out double result, char delimeter = ':') {
+			var rawResult = GetDoubleFromLine(line, startsWith, delimeter);
+			if (rawResult.HasValue) {
+				result = rawResult.Value;
+				return true;
+			}
+			result = double.NaN;
+			return false;
+		}
+
+		protected static bool TryAssignIntFromLine(string line, string startsWith, out int result, char delimeter = ':') {
+			if (TryAssignDoubleFromLine(line, startsWith, out double dresult, delimeter)) {
+				result = (int)(Math.Round(dresult));
+				return true;
+			}
+			result = int.MinValue;
+			return false;
+		}
+
+		protected static bool TryProcessSection(ref StreamReader reader, string sectionHeader, ref string failureMessage, Func<string, bool> tryProcessLine) {
+			string line;
+			if (reader.EndOfStream) {
+				failureMessage = $"Could not reach section '{sectionHeader}': End of stream";
+				return false;
+			}
+
+			bool anyLinesProcessed = false;
+			bool foundSectionHeader = false;
+			var prevPos = reader.BaseStream.Position;
+			while ((line = reader.ReadLine()?.Trim()) is not null) {
+				// continue past empty lines
+				if (line.Length == 0 || line.StartsWith("//"))
+					continue;
+				// handle section headers
+				else if (line[0] == '[') {
+					if (line.StartsWith(sectionHeader, StringComparison.OrdinalIgnoreCase)) {
+						// skip over expected section header, now we will process lines
+						foundSectionHeader = true;
+						continue;
+					}
+					else {
+						// move back, exit before next section header
+						reader.BaseStream.Seek(prevPos, SeekOrigin.Begin);
+						break;
+					}
+				}
+				if (foundSectionHeader) {
+					if (!tryProcessLine(line)) {
+						if (string.IsNullOrEmpty(failureMessage))
+							failureMessage = $"Failed to process line '{line}' in section '{sectionHeader}'";
+						return false;
+					}
+					anyLinesProcessed = true;
+				}
+				// exit before end of stream or next section header if we know it is coming
+				if (!reader.EndOfStream && reader.Peek() == '[')
+					break;
+				prevPos = reader.BaseStream.Position;
+			}
+			if (!foundSectionHeader) {
+				failureMessage = $"Did not find section '{sectionHeader}'";
+				return false;
+			}
+			else if (!anyLinesProcessed) {
+				if (string.IsNullOrEmpty(failureMessage))
+					failureMessage = $"Did not find any lines in section '{sectionHeader}'";
+				return false;
+			}
+			return true;
 		}
 	}
 }

@@ -272,7 +272,7 @@
 			double difficulty = 0;
 			double distance = slider.TotalLength;
 			//adjust slider length to consider the margin allowed by od
-			distance -= slider.NumSlides * (map.CircleSizePx + map.Accuracy); // TODO: FIX ME (OD MARGIN)
+			distance -= slider.NumSlides * (map.CircleSizePx + map.OverallDifficulty); // TODO: FIX ME (OD MARGIN)
 			if (distance > 0) {
 				double time = Math.Max(slider.EndTime - slider.StartTime, 1);
 				difficulty += Math.Pow(distance / time, 1.5) * Math.Pow(distance, 0.6) / 2;

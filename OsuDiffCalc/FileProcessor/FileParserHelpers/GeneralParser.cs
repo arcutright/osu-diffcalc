@@ -3,21 +3,25 @@
 
 	class GeneralParser : ParserBase {
 		/// <summary>
-		/// Try to parse the '[General]' beatmap region from the <paramref name="reader"/> and populate the <paramref name="beatmap"/>
+		/// Try to parse a line from the '[General]' beatmap region and populate the <paramref name="beatmap"/>
 		/// </summary>
 		/// <returns> <see langword="true"/> if this was an 'osu!standard' file, otherwise <see langword="false"/> </returns>
-		public static bool TryParse(Beatmap beatmap, ref StreamReader reader) {
-			if (!TrySkipTo(ref reader, "[General]"))
-				return false;
-			beatmap.Mp3FileName = GetStringFromNextLine(ref reader, "AudioFile");
-			if (beatmap.Format > 5) {
-				int mode = (int)GetDoubleFromNextLine(ref reader, "Mode");
-				return mode == 0;
+		public static bool TryProcessLine(int lineNumber, string line, Beatmap beatmap, out string failureMessage) {
+			failureMessage = "";
+			if (string.IsNullOrEmpty(beatmap.Mp3FileName)) {
+				if (TryAssignStringFromLine(line, "AudioFile", out string fn))
+					beatmap.Mp3FileName = fn;
 			}
-			else {
-				// old file formats were only osu!standard
-				return true;
+			else if (beatmap.Format > 5 && TryAssignIntFromLine(line, "Mode", out int mode)) {
+				if (mode == 0)
+					return true;
+				else {
+					failureMessage = $"Mode not supported, not an osu!standard map. Mode = {mode}";
+					return false;
+				}
 			}
+			// old file formats were only osu!standard
+			return true;
 		}
 	}
 }

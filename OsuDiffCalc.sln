@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.30907.101
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OsuDiffCalc", "OsuDiffCalc\OsuDiffCalc.csproj", "{615BCB15-B9D0-49FC-8BD0-A91EA763F0E9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{43956320-A055-44E9-ADB9-2671C8541804}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OsuDiffCalc.Tests", "OsuDiffCalc.Tests\OsuDiffCalc.Tests.csproj", "{43956320-A055-44E9-ADB9-2671C8541804}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

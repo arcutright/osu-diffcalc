@@ -5,56 +5,47 @@
 	using BeatmapObjects;
 
 	class TimingParser : ParserBase {
-		/* the general form of timing points are x,x,x,x,x,x,x,x
-		1st x means the offset
-		2nd x (positive) means the BPM but in the other format, the BPM in Edit is equal to 60,000/x
-		2nd x (negative) means the BPM multiplier - kind of, BPM multiplier in Edit is equal to -100/x
-		3rd x is related to metronome, 3 means 3/4 beat, 4 means 4/4 beats
-		4th x is about hitsounds set: soft/normal...etc
-		5th x is custom hitsounds: 0 means no custom hitsound, 1 means set 1, 2 means set 2
-		6th x is volume
-		7th x means if it's inherit timing point
-		8th x is kiai time */
-
 		/// <summary>
-		/// Try to parse the '[TimingPoints]' beatmap region from the <paramref name="reader"/> and populate the <paramref name="beatmap"/>
+		/// Try to parse a line from the '[TimingPoints]' beatmap region and populate the <paramref name="beatmap"/>
 		/// </summary>
-		/// <returns> <see langword="true"/> if any timing points were parsed, otherwise <see langword="false"/> </returns>
-		public static bool TryParse(Beatmap beatmap, ref StreamReader reader) {
-			if (!TrySkipTo(ref reader, "[TimingPoints]"))
+		/// <returns> <see langword="true"/> if there were errors parsing the line, otherwise <see langword="false"/> </returns>
+		public static bool TryProcessLine(int lineNumber, string line, Beatmap beatmap, out string failureMessage) {
+			/* the general form of timing points are x,x,x,x,x,x,x,x
+			 * 1st x means the offset
+			 * 2nd x (positive) means the BPM but in the other format, the BPM in Edit is equal to 60,000/x
+			 * 2nd x (negative) means the BPM multiplier - kind of, BPM multiplier in Edit is equal to -100/x
+			 * 3rd x is related to metronome, 3 means 3/4 beat, 4 means 4/4 beats
+			 * 4th x is about hitsounds set: soft/normal...etc
+			 * 5th x is custom hitsounds: 0 means no custom hitsound, 1 means set 1, 2 means set 2
+			 * 6th x is volume
+			 * 7th x means if it's inherit timing point
+			 * 8th x is kiai time */
+			// modern maps: [offset, beatLength, Meter, Sample Type, Sample Set, Volume, Inherited, Kiai Mode]
+			// old maps:    [offset, msPerBeat]
+			failureMessage = "";
+			string[] data = line.Split(',');
+			if (data.Length < 2) {
+				failureMessage = $"Incomplete timing point at line {lineNumber}";
 				return false;
-			TimingPoint lastTimingPoint = beatmap.TimingPoints.Count != 0 ? beatmap.TimingPoints[^1] : null;
-
-			string line;
-			while ((line = reader.ReadLine()?.Trim()) is not null) {
-				if (line.Length == 0 || line.StartsWith("//"))
-					continue;
-				string[] data = line.Split(',');
-				if (data.Length >= 2) {
-					//Offset, beatLength, Meter, Sample Type, Sample Set, Volume, Inherited, Kiai Mode
-					//old maps only have  offset,msPerBeat
-					int offset = int.Parse(data[0]);
-					double beatLength = double.Parse(data[1]);
-					double msPerBeat;
-					bool isInherited;
-					if (data.Length < 6) {
-						msPerBeat = beatLength;
-						isInherited = msPerBeat < 0;
-					}
-					else {
-						isInherited = int.Parse(data[6]) == 1;
-					}
-					var timingPoint = new TimingPoint(offset, beatLength, isInherited, lastTimingPoint, beatmap.SliderMultiplier);
-					beatmap.AddTiming(timingPoint);
-					lastTimingPoint = timingPoint;
-				}
-				if (!reader.EndOfStream && reader.Peek() == '[')
-					break;
 			}
-			if (beatmap.NumTimingPoints > 0)
-				return true;
-			else
+			if (!int.TryParse(data[0], out int offset)) {
+				failureMessage = $"Could not parse offset for timing point at line {lineNumber}";
 				return false;
+			}
+			if (!double.TryParse(data[1], out double beatLength)) {
+				failureMessage = $"Could not parse beat length for timing point at line {lineNumber}";
+				return false;
+			}
+			// NOTE: the .osu file format requires timing points to be in chronological order
+			TimingPoint lastTimingPoint = beatmap.TimingPoints.Count != 0 ? beatmap.TimingPoints[^1] : null;
+			bool isInherited;
+			if (data.Length > 6 && int.TryParse(data[6], out int uninherited))
+				isInherited = uninherited == 0 || (beatLength < 0 && lastTimingPoint is not null);
+			else
+				isInherited = beatLength < 0;
+			var timingPoint = new TimingPoint(offset, beatLength, isInherited, lastTimingPoint, beatmap.SliderMultiplier);
+			beatmap.AddTiming(timingPoint);
+			return true;
 		}
 
 		public static double GetEffectiveBPM(double bpm, double msPerBeat) {
@@ -76,7 +67,7 @@
 
 		public static string GetTimeStamp(long ms, bool hours = false) {
 			var ts = TimeSpan.FromMilliseconds(ms);
-			return hours 
+			return ts.Hours != 0 
 				? $"{ts.Hours:00}:{ts.Minutes:00}:{ts.Seconds:00}.{ts.Milliseconds:000}"
 				: $"{ts.Minutes:00}:{ts.Seconds:00}.{ts.Milliseconds:000}";
 		}

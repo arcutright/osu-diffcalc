@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Osu DiffCalc")]
-[assembly: AssemblyDescription("Difficulty Calculator for Osu!")]
+[assembly: AssemblyDescription("Difficulty Calculator for osu!")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Conjuring Sammiches")]
+[assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Osu DiffCalc")]
 [assembly: AssemblyCopyright("Copyright © 2021")]
 [assembly: AssemblyTrademark("")]
@@ -38,7 +38,7 @@ using System.Runtime.InteropServices;
 
 #if DEBUG
 
-[assembly: InternalsVisibleTo("Tests")]
+[assembly: InternalsVisibleTo("OsuDiffCalc.Tests")]
 
 #endif
 

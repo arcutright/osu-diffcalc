@@ -10,11 +10,13 @@
 
 		public string Title, Artist, Creator, Version;
 		public string Filepath, Mp3FileName;
-		public double ApproachRate, CircleSize, HpDrain, SliderMultiplier, SliderTickRate, Accuracy;
-		public double MarginOfErrorMs300; //time window for a 300
-		public double MarginOfErrorMs50; //time window for a 50
-		public double CircleSizePx; //actual circle size
-		public int Format = -1;
+		public string BackgroundImage;
+		public double ApproachRate = -1, CircleSize = -1, HpDrain = -1, OverallDifficulty = -1;
+		public double SliderMultiplier = -1, SliderTickRate = -1;
+		public double MarginOfErrorMs300; // time window for a 300
+		public double MarginOfErrorMs50; // time window for a 50
+		public double CircleSizePx; // actual circle size
+		public int Format = -1; // osu file format version
 		public bool IsAnalyzed;
 		public bool IsParsed;
 		public bool IsMetadataParsed;
@@ -120,7 +122,7 @@
 			Console.WriteLine($"artist: {Artist}");
 			Console.WriteLine($"creator: {Creator}\n");
 
-			Console.WriteLine($"ar: {ApproachRate}  hp: {HpDrain}  cs: {CircleSize}  od: {Accuracy}");
+			Console.WriteLine($"ar: {ApproachRate}  hp: {HpDrain}  cs: {CircleSize}  od: {OverallDifficulty}");
 			Console.WriteLine($"slidermult: {SliderMultiplier}  tickrate: {SliderTickRate}");
 			Console.WriteLine($"difficulty rating: {DiffRating.TotalDifficulty:0.0}\n");
 
