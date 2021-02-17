@@ -16,18 +16,32 @@
 			if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 				Thread.CurrentThread.Name = $"analyze[{beatmap.Version}]";
 
-			//analysis variables
+			// sort objects and timing points by time (ascending)
+			beatmap.TimingPoints.Sort();
+			beatmap.BreakSections.Sort();
+			beatmap.BeatmapObjects.Sort();
+
+			// analyze slider shape and speed (requires timing points)
+			int timingPointIndex = 0;
+			TimingPoint timingPoint = beatmap.TimingPoints[0];
+			foreach (BeatmapObject obj in beatmap.BeatmapObjects) {
+				if (obj is not Slider slider) continue;
+				// find current timing point
+				if (timingPointIndex < beatmap.NumTimingPoints) {
+					while (timingPointIndex < beatmap.NumTimingPoints - 1 && slider.StartTime > beatmap.TimingPoints[timingPointIndex].Offset) {
+						timingPointIndex++;
+					}
+					timingPoint = beatmap.TimingPoints[timingPointIndex];
+				}
+				slider.AnalyzeShape(timingPoint, beatmap.SliderMultiplier);
+			}
+
+			// analysis variables
+			double minStreamAvgMs = -1, minCoupletAvgMs = -1, minTripletAvgMs = -1, minBurstAvgMs = -1;
 			var streams = new List<Shape>();
-			double minStreamAvgMs = -1;
-
 			var couplets = new List<Shape>();
-			double minCoupletAvgMs = -1;
-
 			var triplets = new List<Shape>();
-			double minTripletAvgMs = -1;
-
 			var bursts = new List<Shape>();
-			double minBurstAvgMs = -1;
 
 			var shape = new Shape();
 			var lastShape = new Shape();
@@ -37,8 +51,9 @@
 			var jumpDifficultyList = new List<double>();
 			var sliderDifficultyList = new List<double>();
 
-			//macro to make life easier
+			// macro to make life easier
 			void addShapeToAppropriateList() {
+				shape.Analyze();
 				shape.PrevShape = lastShape;
 				if (shape.NumObjects == 2) {
 					shape.Type = Shape.ShapeType.Couplet;
@@ -199,7 +214,7 @@
 			for (int i = 0; i < couplets.Count; ++i) {
 				var couplet = couplets[i];
 				double coupletDiff = 0;
-				int timeGapMs = couplet.StartTime - couplet.PrevShape.EndTime;
+				double timeGapMs = couplet.StartTime - couplet.PrevShape.EndTime;
 
 				// measure how abrubt changing between shapes is
 				double timeDifferenceForTransition = Math.Abs(couplet.AvgTimeGapMs * 2 - timeGapMs);
@@ -225,8 +240,8 @@
 				return 0;
 
 			double difficulty = 0;
-			int dx = current.X;
-			int dy = current.Y;
+			double dx = current.X;
+			double dy = current.Y;
 			if (prev is Slider prevSlider) {
 				dx -= prevSlider.X2;
 				dy -= prevSlider.Y2;
@@ -268,7 +283,6 @@
 		static double GetSliderDifficulty(Slider slider, Beatmap map) {
 			if (slider is null || map is null)
 				return 0;
-			// TODO: check to make sure timegapms > 0
 			double difficulty = 0;
 			double distance = slider.TotalLength;
 			//adjust slider length to consider the margin allowed by od

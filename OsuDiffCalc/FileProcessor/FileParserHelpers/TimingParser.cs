@@ -28,7 +28,7 @@
 				failureMessage = $"Incomplete timing point at line {lineNumber}";
 				return false;
 			}
-			if (!int.TryParse(data[0], out int offset)) {
+			if (!double.TryParse(data[0], out double offset)) {
 				failureMessage = $"Could not parse offset for timing point at line {lineNumber}";
 				return false;
 			}
@@ -39,8 +39,8 @@
 			// NOTE: the .osu file format requires timing points to be in chronological order
 			TimingPoint lastTimingPoint = beatmap.TimingPoints.Count != 0 ? beatmap.TimingPoints[^1] : null;
 			bool isInherited;
-			if (data.Length > 6 && int.TryParse(data[6], out int uninherited))
-				isInherited = uninherited == 0 || (beatLength < 0 && lastTimingPoint is not null);
+			if (data.Length > 6 && double.TryParse(data[6], out double uninherited))
+				isInherited = (int)Math.Round(uninherited) == 0 || (beatLength < 0 && lastTimingPoint is not null);
 			else
 				isInherited = beatLength < 0;
 			var timingPoint = new TimingPoint(offset, beatLength, isInherited, lastTimingPoint, beatmap.SliderMultiplier);
@@ -65,7 +65,7 @@
 			return 60000.0 / bpm;
 		}
 
-		public static string GetTimeStamp(long ms, bool hours = false) {
+		public static string GetTimeStamp(double ms, bool hours = false) {
 			var ts = TimeSpan.FromMilliseconds(ms);
 			return ts.Hours != 0 
 				? $"{ts.Hours:00}:{ts.Minutes:00}:{ts.Seconds:00}.{ts.Milliseconds:000}"

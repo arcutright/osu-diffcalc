@@ -4,17 +4,17 @@
 	using System.Linq;
 
 	class Slider : HitObject {
-		public Slider(int x, int y, int startTime, string sliderType, double pixelLength, int repeat, 
+		public Slider(double x, double y, double startTime, string sliderType, double pixelLength, double numSlides, 
 			            List<Point> points)
 			     : base(x, y, startTime, startTime) {
 			Points = points;
-			NumSlides = repeat;
+			NumSlides = numSlides;
 			PixelLength = pixelLength;
-			TotalLength = pixelLength * repeat;
+			TotalLength = pixelLength * numSlides;
 
 			// slider type
-			sliderType = sliderType?.Trim().ToLower();
-			char sliderChar = !string.IsNullOrEmpty(sliderType) ? sliderType[0] : ' ';
+			sliderType = sliderType?.Trim().ToLower() ?? " ";
+			char sliderChar = sliderType.Length != 0 ? sliderType[0] : ' ';
 			CurveType = sliderChar switch {
 				'B' => SliderCurveType.Bezier,
 				'C' => SliderCurveType.CentripetalCatmullRom,
@@ -22,9 +22,9 @@
 				'P' => SliderCurveType.PerfectCircle,
 				_ => SliderCurveType.Bezier, // TODO: is this the default for old osu maps?
 			};
-			if (points.Count == 2)
+			if (points.Count == 2) // 2 points can only define a line
 				CurveType = SliderCurveType.Linear;
-			else if (CurveType == SliderCurveType.PerfectCircle && points.Count != 3) 
+			else if (CurveType == SliderCurveType.PerfectCircle && points.Count != 3) // perfect circle must be 3 points
 				CurveType = SliderCurveType.Bezier;
 		}
 
@@ -32,7 +32,7 @@
 		/// Amount of times the player has to follow the slider's curve back-and-forth before the slider is complete.
 		/// It can also be interpreted as the repeat count plus one.
 		/// </summary>
-		public int NumSlides { get; }
+		public double NumSlides { get; }
 		/// <summary> Visual length of the slider in osupixels </summary>
 		public double PixelLength { get; }
 		/// <summary> Total length of the slider in osupixels, accounting for repeats </summary>
@@ -44,9 +44,9 @@
 		/// <summary> Speed of the slider in in osupixels/second </summary>
 		public double PxPerSecond { get; private set; }
 		/// <summary> X end position in osupixels </summary>
-		public int X2 { get; private set; }
+		public double X2 { get; private set; }
 		/// <summary> Y end position in osupixels </summary>
-		public int Y2 { get; private set; }
+		public double Y2 { get; private set; }
 
 		/// <summary>
 		/// Find the end point and end time for the slider (requires timing information)
@@ -92,9 +92,9 @@
 	}
 
 	public struct Point {
-		public readonly int X, Y;
+		public readonly double X, Y;
 
-		public Point(int x, int y) {
+		public Point(double x, double y) {
 			X = x;
 			Y = y;
 		}

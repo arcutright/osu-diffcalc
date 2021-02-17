@@ -93,7 +93,7 @@
 			var totwatch = Stopwatch.StartNew();
 			var localwatch = Stopwatch.StartNew();
 			//parse map if needed
-			if (!map.IsParsed && !Parser.TryParse(ref map))
+			if (!map.IsParsed && !Parser.TryParse(ref map, out _))
 				return false;
 			localwatch.Stop();
 			Console.WriteLine($"parse [{map.Version}]: {localwatch.ElapsedMilliseconds}ms");
@@ -143,9 +143,10 @@
 
 		#region Private helpers
 
-		private static Mapset BuildSet(IEnumerable<string> mapPaths) {
+		public static Mapset BuildSet(IEnumerable<string> mapPaths) {
 			var allMaps = new List<Beatmap>();
 			foreach (string mapPath in mapPaths) {
+				if (string.IsNullOrEmpty(mapPath)) continue;
 				Beatmap map = Parser.ParseBasicMetadata(mapPath);
 				if (map is not null)
 					allMaps.Add(map);

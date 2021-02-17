@@ -12,12 +12,12 @@
 				beatmap.HpDrain = hp;
 			else if (beatmap.CircleSize < 0 && TryAssignDoubleFromLine(line, "CircleSize", out var cs)) {
 				beatmap.CircleSize = cs;
-				beatmap.CircleSizePx = -8.28127 * cs + 100.597; // empirically determined
+				beatmap.CircleSizePx = -8.28127 * cs + 100.597; // TODO: empirically determined, try to validate
 			}
 			else if (beatmap.OverallDifficulty < 0 && TryAssignDoubleFromLine(line, "OverallDiff", out var od)) {
 				beatmap.OverallDifficulty = od;
-				beatmap.MarginOfErrorMs300 = -6 * od + 79.5; // empirically determined
-				beatmap.MarginOfErrorMs50 = -10 * od + 199.5;
+				beatmap.MarginOfErrorMs300 = -6 * od + 79.5; // TODO: empirically determined, try to validate
+				beatmap.MarginOfErrorMs50 = -10 * od + 199.5; // TODO: empirically determined, try to validate
 			}
 			else if (beatmap.ApproachRate < 0 && TryAssignDoubleFromLine(line, "Approach", out var ar))
 				beatmap.ApproachRate = ar;

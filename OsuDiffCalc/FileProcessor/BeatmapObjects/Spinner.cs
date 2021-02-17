@@ -1,7 +1,7 @@
 ﻿
 namespace OsuDiffCalc.FileProcessor.BeatmapObjects {
 	class Spinner : HitObject {
-		public Spinner(int x, int y, int startTime, int endTime) : base(x, y, startTime, endTime) {
+		public Spinner(double x, double y, double startTime, double endTime) : base(x, y, startTime, endTime) {
 			// TODO: calculate spinner properties (speed, OD, etc)
 		}
 	}

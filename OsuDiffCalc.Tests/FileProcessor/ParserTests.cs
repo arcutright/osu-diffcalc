@@ -12,7 +12,7 @@
 	[TestFixture]
 	class ParserTests {
 		[Test]
-		public void InvalidMap() {
+		public void MapWithNoTimingPoints() {
 
 		}
 
@@ -56,17 +56,17 @@
 
 		}
 
-		[TestCase("v8", 57, 70, 1, 4, 6, 6, 7)]
-		[TestCase("v4", 255, 1, 0, 5, 9, 9, 9)]
 		[TestCase("v3", 270, 67, 4, 5, 4, 4, 4)]
-		[TestCase("v6", 313, 78, 6, 4, 8, 8, 7)]
-		[TestCase("v13", 409, 192, 1, 4, 8, 7, 6)]
+		[TestCase("v4", 255, 1, 0, 5, 9, 9, 9)]
 		[TestCase("v5", 278, 76, 1, 6, 7, 7, 5)]
-		[TestCase("v12", 575, 255, 3, 4, 9, 7, 7)]
-		[TestCase("v11", 352, 247, 0, 4, 9, 7, 7)]
+		[TestCase("v6", 313, 78, 6, 4, 8, 8, 7)]
 		[TestCase("v7", 544, 155, 2, 4, 8, 8, 6)]
-		[TestCase("v10", 483, 276, 3, 4, 9, 7, 7)]
+		[TestCase("v8", 57, 70, 1, 4, 6, 6, 7)]
 		[TestCase("v9", 1413, 245, 1, 4, 9, 8, 4)]
+		[TestCase("v10", 483, 276, 3, 4, 9, 7, 7)]
+		[TestCase("v11", 352, 247, 0, 4, 9, 7, 7)]
+		[TestCase("v12", 575, 255, 3, 4, 9, 7, 7)]
+		[TestCase("v13", 409, 192, 1, 4, 8, 7, 6)]
 		[TestCase("v14", 924, 474, 1, 4.2, 9.3, 9, 6)]
 		public void FileFormatVersions(string filename, int numCircles, int numSliders, int numSpinners, double cs, double ar, double od, double hp) {
 			var map = LoadMap(Path.Combine($"FileFormatVersions", $"{filename}.osu"));

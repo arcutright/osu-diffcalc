@@ -6,7 +6,6 @@
 
 	class Shape {
 		protected List<HitObject> HitObjects = new();
-		public int NumObjects = 0;
 		protected double Effective1_4bpm = -1; //bpm when mapped at 1/4 time-spacing for 4/4 timing
 		public double AvgTimeGapMs = 0;
 		public double TotalDistancePx = 0;
@@ -14,7 +13,9 @@
 		public double MinDistancePx = -1, MaxDistancePx = -1;
 		public ShapeType Type;
 
-		public int StartTime = -1, EndTime = -1;
+		public int NumObjects => HitObjects.Count;
+
+		public double StartTime = -1, EndTime = -1;
 		public Shape PrevShape = null;
 
 		public Shape() {
@@ -24,29 +25,42 @@
 			foreach (HitObject obj in objs) {
 				Add(obj);
 			}
-		}
-
-		public enum ShapeType {
-			Unknown = 0,
-			Couplet,
-			Triplet,
-			Burst,
-			Stream,
-			Line,
-			Triangle,
-			Square,
-			RegularPolygon,
-			Polygon,
+			Analyze();
 		}
 
 		public void Add(HitObject obj) {
 			HitObjects.Add(obj);
-			NumObjects++;
-			UpdateAvgMsPerBeat();
-			UpdateDistances();
-			EndTime = obj.EndTime;
-			if (StartTime < 0)
-				StartTime = obj.StartTime;
+		}
+
+		/// <summary>
+		/// Analyze timing and distance between shape objects 
+		/// </summary>
+		public void Analyze() {
+			// TODO: actual shape-analysis logic (will also want to be able to analyze non-constant-timing shapes)
+			if (HitObjects.Count == 0)
+				return;
+
+			StartTime = HitObjects[0].StartTime;
+			EndTime = HitObjects[^1].EndTime;
+
+			if (HitObjects.Count >= 2) {
+				// update avg time gap
+				// if the second to last uses endTime instead of startTime, stream detection will consider ends of sliders as continuing the stream
+				double lastTimeGapMs = HitObjects[NumObjects - 1].StartTime - HitObjects[NumObjects - 2].StartTime;
+				AvgTimeGapMs = (AvgTimeGapMs * (NumObjects - 2) + lastTimeGapMs) / (NumObjects - 1);
+
+				// update distances
+				double lastDistanceX = HitObjects[NumObjects - 1].X - HitObjects[NumObjects - 2].X;
+				double lastDistanceY = HitObjects[NumObjects - 1].Y - HitObjects[NumObjects - 2].Y;
+				double lastDistance = Math.Sqrt((lastDistanceX * lastDistanceX) + (lastDistanceY * lastDistanceY));
+				AvgDistancePx = (AvgDistancePx * (NumObjects - 2) + lastDistance) / (NumObjects - 1);
+				TotalDistancePx += lastDistance;
+
+				if (MinDistancePx < 0 || lastDistance < MinDistancePx)
+					MinDistancePx = lastDistance;
+				if (MaxDistancePx < 0 || lastDistance > MaxDistancePx)
+					MaxDistancePx = lastDistance;
+			}
 		}
 
 		public double GetEffectiveBPM() {
@@ -55,18 +69,17 @@
 		}
 
 		//check if next object has constant timing with the current stream
-		public int CompareTiming(int nextObjectStartTime) {
-			if (NumObjects > 0) {
-				int timeGap = nextObjectStartTime - HitObjects[^1].StartTime;
-				double difference = timeGap - AvgTimeGapMs;
-				if (Math.Abs(difference) <= 20) //20ms margin of error = spacing for 3000bpm stream at 1/4 mapping
-					return 0;
-				else if (difference < 0)
-					return -1;
-				else
-					return 1;
-			}
-			return -2;
+		public int CompareTiming(double nextObjectStartTime) {
+			if (HitObjects.Count == 0)
+				return -2;
+			double timeGap = nextObjectStartTime - HitObjects[^1].StartTime;
+			double difference = timeGap - AvgTimeGapMs;
+			if (Math.Abs(difference) <= 20) //20ms margin of error = spacing for 3000bpm stream at 1/4 mapping
+				return 0;
+			else if (difference < 0)
+				return -1;
+			else
+				return 1;
 		}
 
 		public void Clear() {
@@ -88,30 +101,17 @@
 			Console.WriteLine(append);
 		}
 
-		//private helpers
-
-		void UpdateAvgMsPerBeat() {
-			if (HitObjects.Count >= 2) {
-				//if the second to last uses endTime instead of startTime, stream detection will consider ends of sliders as continuing the stream
-				int lastTimeGapMs = HitObjects[NumObjects - 1].StartTime - HitObjects[NumObjects - 2].StartTime;
-				AvgTimeGapMs = (AvgTimeGapMs * (NumObjects - 2) + lastTimeGapMs) / (NumObjects - 1);
-			}
+		public enum ShapeType {
+			Unknown = 0,
+			Couplet,
+			Triplet,
+			Burst,
+			Stream,
+			Line,
+			Triangle,
+			Square,
+			RegularPolygon,
+			Polygon,
 		}
-
-		void UpdateDistances() {
-			if (HitObjects.Count >= 2) {
-				int lastDistanceX = HitObjects[NumObjects - 1].X - HitObjects[NumObjects - 2].X;
-				int lastDistanceY = HitObjects[NumObjects - 1].Y - HitObjects[NumObjects - 2].Y;
-				double lastDistance = Math.Sqrt((lastDistanceX * lastDistanceX) + (lastDistanceY * lastDistanceY));
-				AvgDistancePx = (AvgDistancePx * (NumObjects - 2) + lastDistance) / (NumObjects - 1);
-				TotalDistancePx += lastDistance;
-
-				if (MinDistancePx < 0 || lastDistance < MinDistancePx)
-					MinDistancePx = lastDistance;
-				if (MaxDistancePx < 0 || lastDistance > MaxDistancePx)
-					MaxDistancePx = lastDistance;
-			}
-		}
-
 	}
 }

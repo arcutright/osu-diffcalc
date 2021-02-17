@@ -1,7 +1,7 @@
 ﻿
 namespace OsuDiffCalc.FileProcessor.BeatmapObjects {
 	class Hitcircle : HitObject {
-		public Hitcircle(int x, int y, int startTime) : base(x, y, startTime, startTime) {
+		public Hitcircle(double x, double y, double startTime) : base(x, y, startTime, startTime) {
 		}
 	}
 }

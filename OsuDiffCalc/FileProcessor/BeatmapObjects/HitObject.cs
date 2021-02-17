@@ -6,15 +6,15 @@
 	/// An interactable object in a beatmap with a time and position (eg. everything but a break section)
 	/// </summary>
 	abstract class HitObject : BeatmapObject {
-		public HitObject(int x, int y, int startTime, int endTime) : base(startTime, endTime) {
+		public HitObject(double x, double y, double startTime, double endTime) : base(startTime, endTime) {
 			X = x;
 			Y = y;
 		}
 
 		/// <summary> X initial position of the HitObject in osupixels </summary>
-		public int X { get; protected init; }
+		public double X { get; protected init; }
 		/// <summary> Y initial position of the HitObject in osupixels </summary>
-		public int Y { get; protected init; }
+		public double Y { get; protected init; }
 
 		public override void PrintDebug(string prepend = "", string append = "") {
 			Console.Write(prepend);

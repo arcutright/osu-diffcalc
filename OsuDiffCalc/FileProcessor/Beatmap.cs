@@ -66,7 +66,7 @@
 		}
 
 		public TimingPoint GetTiming(HitObject obj, bool startTime = true) {
-			int time = startTime ? obj.StartTime : obj.EndTime;
+			double time = startTime ? obj.StartTime : obj.EndTime;
 			int maxIndex = -1;
 			int numTimingPoints = TimingPoints.Count;
 			for (int i = 0; i < numTimingPoints; i++) {

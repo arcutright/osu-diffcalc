@@ -33,8 +33,8 @@
 				// ex: 'osu file format v14'
 				try {
 					var match = _fileFormatRegex.Match(line);
-					if (match.Success && int.TryParse(match.Groups[1].Value, out var format)) {
-						beatmap.Format = format;
+					if (match.Success && double.TryParse(match.Groups[1].Value, out var format)) {
+						beatmap.Format = (int)Math.Round(format);
 						//if (officiallySupportedFormats.Contains(format))
 						//    beatmap.isOfficiallySupported = true;
 						failureMessage = "";

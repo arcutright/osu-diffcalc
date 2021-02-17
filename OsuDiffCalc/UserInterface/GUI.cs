@@ -178,7 +178,7 @@
 		}
 
 		private void DisplayMapset(Mapset set) {
-			if (set.Beatmaps.Count  != 0) {
+			if (set.Beatmaps.Count != 0) {
 				// sort by difficulty
 				set.Sort(false);
 				// display all maps
@@ -285,22 +285,31 @@
 			if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 				Thread.CurrentThread.Name = "ManualBeatmapAnalyzerWorkerThread";
 			try {
-				string filename = UX.GetFilenameFromDialog(this);
-				if (filename is not null) {
-					var beatmap = new Beatmap(filename);
-					MapsetManager.AnalyzeMap(beatmap, true);
-					MapsetManager.SaveMap(beatmap);
-
+				Mapset set = MapsetManager.BuildSet(UX.GetFilenamesFromDialog(this));
+				Console.WriteLine("set built");
+				MapsetManager.Clear();
+				if (set.Beatmaps.Count == 0) {
 					Invoke((MethodInvoker)delegate {
 						ClearBeatmapDisplay();
-						//display text results
-						AddBeatmapToDisplay(beatmap);
-						//display graph results
-						_chartedBeatmap = beatmap;
-						SeriesSelect_SelectedIndexChanged(null, null);
-						UpdateChartOptions(false);
 					});
+					return;
 				}
+
+				foreach (var beatmap in set.Beatmaps) {
+					MapsetManager.AnalyzeMap(beatmap);
+					MapsetManager.SaveMap(beatmap);
+				}
+
+				var selectedMap = set.Beatmaps.First();
+				Invoke((MethodInvoker)delegate {
+					ClearBeatmapDisplay();
+					//display text results
+					AddBeatmapToDisplay(selectedMap);
+					//display graph results
+					_chartedBeatmap = selectedMap;
+					SeriesSelect_SelectedIndexChanged(null, null);
+					UpdateChartOptions(false);
+				});
 			}
 			catch { }
 		}

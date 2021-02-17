@@ -2,8 +2,8 @@
 	using System;
 	using OsuDiffCalc.FileProcessor.FileParserHelpers;
 
-	class TimingPoint : BeatmapElement {
-		public TimingPoint(int offset, double beatLength, bool isInherited, TimingPoint prevTimingPoint, double beatmapSliderMultiplier) {
+	class TimingPoint : BeatmapElement, IComparable<TimingPoint> {
+		public TimingPoint(double offset, double beatLength, bool isInherited, TimingPoint prevTimingPoint, double beatmapSliderMultiplier) {
 			Offset = offset;
 
 			// new timing point
@@ -24,16 +24,20 @@
 			}
 		}
 
-		public int Offset { get; protected init; } = -1;
+		public double Offset { get; protected init; } = -1;
 		public double Bpm { get; protected init; } = -1;
 		public double EffectiveSliderBPM { get; protected init; } = -1;
 		public double MsPerBeat { get; protected init; } = -1;
 
 		public override void PrintDebug(string prepend = "", string append = "") {
 			Console.Write(prepend);
-			Console.Write("{0}   msPerBeat:{1:0.00}   bpm:{2:0.0}   effectiveSliderBPM:{3:0.0}",
-					TimingParser.GetTimeStamp(Offset), MsPerBeat, Bpm, EffectiveSliderBPM);
+			Console.Write($"{TimingParser.GetTimeStamp(Offset)}   msPerBeat:{MsPerBeat:0.00}   bpm:{Bpm:0.0}   effectiveSliderBPM:{EffectiveSliderBPM:0.0}");
 			Console.WriteLine(append);
+		}
+
+		public int CompareTo(TimingPoint other) {
+			if (other is null) return 2;
+			return Offset.CompareTo(other.Offset);
 		}
 	}
 }
