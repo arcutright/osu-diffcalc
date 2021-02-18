@@ -82,6 +82,7 @@
 			foreach (var obj in beatmap.BeatmapObjects) {
 				shapeAdded = false;
 				// TODO: fast spinners can act like jumps
+				// TODO: calculate spinner properties (min speed for 300, 100, etc -- include some 'get to spinner' margin)
 				if (obj is Slider or Hitcircle) {
 					var hitObj = obj as HitObject;
 					// shape analysis for triplet, streams, etc

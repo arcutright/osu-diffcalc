@@ -286,29 +286,33 @@
 				Thread.CurrentThread.Name = "ManualBeatmapAnalyzerWorkerThread";
 			try {
 				Mapset set = MapsetManager.BuildSet(UX.GetFilenamesFromDialog(this));
+				SetTime1($"0 ms");
 				Console.WriteLine("set built");
 				MapsetManager.Clear();
 				if (set.Beatmaps.Count == 0) {
-					Invoke((MethodInvoker)delegate {
-						ClearBeatmapDisplay();
-					});
+					Invoke((MethodInvoker)ClearBeatmapDisplay);
 					return;
 				}
 
+				var sw = Stopwatch.StartNew();
 				foreach (var beatmap in set.Beatmaps) {
 					MapsetManager.AnalyzeMap(beatmap);
 					MapsetManager.SaveMap(beatmap);
 				}
+				sw.Stop();
+				SetTime2($"{sw.ElapsedMilliseconds} ms");
 
-				var selectedMap = set.Beatmaps.First();
 				Invoke((MethodInvoker)delegate {
 					ClearBeatmapDisplay();
-					//display text results
-					AddBeatmapToDisplay(selectedMap);
-					//display graph results
-					_chartedBeatmap = selectedMap;
+					// add to text results
+					_displayedMapset = set;
+					foreach (var beatmap in set.Beatmaps) {
+						AddBeatmapToDisplay(beatmap);
+					}
+					// display graph results
+					_chartedBeatmap = set.Beatmaps.First();
 					SeriesSelect_SelectedIndexChanged(null, null);
-					UpdateChartOptions(false);
+					UpdateChartOptions(true);
 				});
 			}
 			catch { }

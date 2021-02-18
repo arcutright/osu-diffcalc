@@ -84,12 +84,12 @@
 
 		public string GetFamiliarizedDisplayString() {
 			var diff = DifficultyRating.FamiliarizeRating(DiffRating.TotalDifficulty);
-			return $"[{Version}]  {diff:0.###}";
+			return $"[{Version}]  {diff:0.##}";
 		}
 
 		public string GetDiffDisplayString(double scalingFactor = 1) {
 			var diff = DiffRating.TotalDifficulty / scalingFactor;
-			return $"[{Version}]  {diff:0.###}";
+			return $"[{Version}]  {diff:0.##}";
 		}
 
 		public string GetFamiliarizedDetailString() {
@@ -98,7 +98,7 @@
 		}
 
 		public string GetDiffDetailString(double scalingFactor = 1) {
-			return string.Format("jump:{0:0.####}  stream:{3:0.####}  \ncouplet:{1:0.####}  burst:{2:0.####}  slider:{4:0.####}",
+			return string.Format("jump:{0:0.###}  stream:{3:0.###}  \ncouplet:{1:0.###}  burst:{2:0.###}  slider:{4:0.###}",
 					DiffRating.JumpDifficulty / scalingFactor, 
 					DiffRating.CoupletDifficulty / scalingFactor,
 					DiffRating.BurstDifficulty / scalingFactor, 
@@ -107,7 +107,7 @@
 		}
 
 		public string GetDiffDetailString(Func<double, double> diffFunction) {
-			return string.Format("jump:{0:0.####}  stream:{3:0.####}  \ncouplet:{1:0.####}  burst:{2:0.####}  slider:{4:0.####}",
+			return string.Format("jump:{0:0.###}  stream:{3:0.###}  \ncouplet:{1:0.###}  burst:{2:0.###}  slider:{4:0.###}",
 					diffFunction(DiffRating.JumpDifficulty), 
 					diffFunction(DiffRating.CoupletDifficulty),
 					diffFunction(DiffRating.BurstDifficulty), 

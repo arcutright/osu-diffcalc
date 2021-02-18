@@ -81,10 +81,10 @@
 				}
 			}
 			catch (Exception e) {
+				sw.Stop();
 				Console.WriteLine("!!-- Error: could not analyze set");
 				Console.WriteLine(e.GetBaseException());
 			}
-			sw.Stop();
 			return null;
 		}
 
