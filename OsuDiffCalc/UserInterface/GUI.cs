@@ -18,6 +18,7 @@
 
 		private bool _isVisible = true;
 		private bool _isOsuPresent = false;
+		private int? _osuPid = null;
 		private bool _isInGame = false;
 		private string _inGameWindowTitle = null;
 		private string _prevMapsetDirectory = null, _currentMapsetDirectory = null;
@@ -45,6 +46,7 @@
 			2000;
 #endif
 
+		public int MinUpdateDelayMs { get; set; } = 600;
 		public int AutoBeatmapAnalyzerTimeoutMs { get; set; } = INITIAL_TIMEOUT_MS;
 		public int AutoWindowUpdaterTimeoutMs { get; set; } = INITIAL_TIMEOUT_MS;
 
@@ -315,6 +317,7 @@
 					UpdateChartOptions(true);
 				});
 			}
+			catch (OperationCanceledException) { throw; }
 			catch { }
 		}
 #endregion
@@ -331,9 +334,9 @@
 
 		private void StopAutoWindowUpdater() {
 			if (_autoWindowUpdater is not null) {
-				_autoWindowCancellation.Cancel();
-				_autoWindowUpdater.GetAwaiter().GetResult();
-				_autoWindowUpdater.Dispose();
+				try { _autoWindowCancellation.Cancel(); } catch { }
+				try { _autoWindowUpdater.GetAwaiter().GetResult(); } catch { }
+				try { _autoWindowUpdater.Dispose(); } catch { }
 			}
 			_autoWindowUpdater = null;
 		}
@@ -347,13 +350,13 @@
 					sw.Restart();
 					if (!_pauseGUI)
 						AutoWindowUpdaterThreadTick(cancelToken, timeoutMs);
-					cancelToken.ThrowIfCancellationRequested();
 					sw.Stop();
-					int wait = timeoutMs - (int)sw.ElapsedMilliseconds;
-					Thread.Sleep(wait > 0 ? wait : 0);
+					cancelToken.ThrowIfCancellationRequested();
+					Thread.Sleep(Math.Max(MinUpdateDelayMs, timeoutMs - (int)sw.ElapsedMilliseconds));
 				}
 				cancelToken.ThrowIfCancellationRequested();
 			}
+			catch (OperationCanceledException) { throw; }
 			catch { }
 		}
 
@@ -372,42 +375,42 @@
 					t.Abort();
 				}
 			}
+			catch (OperationCanceledException) { throw; }
 			catch { }
 
 			void ts() {
-				//the try-catch is needed for cancellation/disposal
-				try {
-					if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
-						Thread.CurrentThread.Name = "AutoWindowTickThread";
-#region Tick
-					string windowTitle = Finder.GetWindowTitle("osu!");
-					//update visibility
-					if (windowTitle.Contains("[")) {
-						Invoke((MethodInvoker)delegate {
-							Visible = false;
-							_isVisible = false;
-							_isOsuPresent = true;
-							_isInGame = true;
-							_inGameWindowTitle = windowTitle;
-						});
-					}
-					else if (windowTitle.Length > 0) {
-						Invoke((MethodInvoker)delegate {
-							Visible = true;
-							TopMost = true;
-							_isVisible = true;
-							_isOsuPresent = true;
-							_isInGame = false;
-						});
-					}
-					else
-						Invoke((MethodInvoker)delegate {
-							_isOsuPresent = false;
-							_isInGame = false;
-						});
-#endregion
+				if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
+					Thread.CurrentThread.Name = "AutoWindowTickThread";
+
+				var osuProcess = Finder.GetOsuProcess(_osuPid);
+				string windowTitle =  osuProcess?.MainWindowTitle;
+				_osuPid = osuProcess?.Id;
+
+				//update visibility
+				if (string.IsNullOrEmpty(windowTitle)) {
+					Invoke((MethodInvoker)delegate {
+						_isOsuPresent = false;
+						_isInGame = false;
+					});
 				}
-				catch { }
+				else if (windowTitle.Contains("[")) {
+					Invoke((MethodInvoker)delegate {
+						Visible = false;
+						_isVisible = false;
+						_isOsuPresent = true;
+						_isInGame = true;
+						_inGameWindowTitle = windowTitle;
+					});
+				}
+				else {
+					Invoke((MethodInvoker)delegate {
+						Visible = true;
+						TopMost = true;
+						_isVisible = true;
+						_isOsuPresent = true;
+						_isInGame = false;
+					});
+				}
 			}
 		}
 
@@ -425,9 +428,9 @@
 
 		private void StopAutoBeatmapAnalyzer() {
 			if (_autoBeatmapAnalyzer is not null) {
-				_autoBeatmapCancellation.Cancel();
-				_autoBeatmapAnalyzer.GetAwaiter().GetResult();
-				_autoBeatmapAnalyzer.Dispose();
+				try { _autoBeatmapCancellation.Cancel(); } catch { }
+				try { _autoBeatmapAnalyzer.GetAwaiter().GetResult(); } catch { }
+				try { _autoBeatmapAnalyzer.Dispose(); } catch { }
 			}
 			_autoBeatmapAnalyzer = null;
 		}
@@ -441,18 +444,20 @@
 					sw.Restart();
 					if (!_pauseGUI)
 						AutoBeatmapAnalyzerThreadTick(cancelToken, timeoutMs);
-					cancelToken.ThrowIfCancellationRequested();
 					sw.Stop();
-					int wait = timeoutMs - (int)sw.ElapsedMilliseconds;
-					Thread.Sleep(wait > 0 ? wait : 0);
+					cancelToken.ThrowIfCancellationRequested();
+					Thread.Sleep(Math.Max(MinUpdateDelayMs, timeoutMs - (int)sw.ElapsedMilliseconds));
 				}
 				cancelToken.ThrowIfCancellationRequested();
 			}
+			catch (OperationCanceledException) { throw; }
 			catch { }
 		}
 
 		private void AutoBeatmapAnalyzerThreadTick(CancellationToken cancelToken, int timeoutMs) {
 			bool useWindowTitleForDirectory = false;
+			if (!_isOsuPresent || _isInGame || !_isVisible)
+				return;
 			try {
 				var t = new Thread(ts) {
 					IsBackground = true,
@@ -466,51 +471,43 @@
 					t.Abort();
 				}
 			}
+			catch (OperationCanceledException) { throw; }
 			catch { }
 
 			void ts() {
-				try {
-					if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
-						Thread.CurrentThread.Name = "AutoBeatmapTickThread";
+				if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
+					Thread.CurrentThread.Name = "AutoBeatmapTickThread";
 					
-					//timing
-					var sw = Stopwatch.StartNew();
-					//the try-catch is needed for cancellation/disposal
-					try {
-						if (_isOsuPresent && _isVisible) {
-							sw.Restart();
-							if (useWindowTitleForDirectory) {
-								_currentMapsetDirectory = MapsetManager.GetCurrentMapsetDirectory(_inGameWindowTitle, _prevMapsetDirectory);
-								useWindowTitleForDirectory = false;
-							}
-							else
-								_currentMapsetDirectory = MapsetManager.GetCurrentMapsetDirectory();   //native calls lie ahead
-							sw.Stop();
-							SetTime1($"{sw.ElapsedMilliseconds} ms");
-
-							if (_currentMapsetDirectory != _prevMapsetDirectory && Directory.Exists(_currentMapsetDirectory)) {
-								//analyze the mapset
-								Mapset set = MapsetManager.AnalyzeMapset(_currentMapsetDirectory, this);
-								if (set is not null) {
-									//show info on GUI
-									Invoke((MethodInvoker)delegate {
-										//display text results
-										ClearBeatmapDisplay();
-										DisplayMapset(set);
-										//display graph results
-										SeriesSelect_SelectedIndexChanged(null, null);
-										_prevMapsetDirectory = _currentMapsetDirectory;
-									});
-								}
-							}
-						}
-						else if (_isInGame) {
-							useWindowTitleForDirectory = true;
-						}
-					}
-					catch { }
+				//timing
+				var sw = Stopwatch.StartNew();
+				if (useWindowTitleForDirectory) {
+					// TODO: this branch is unused since the program is always minimized when in-game
+					_currentMapsetDirectory = MapsetManager.GetCurrentMapsetDirectory(_inGameWindowTitle, _prevMapsetDirectory);
+					useWindowTitleForDirectory = false;
 				}
-				catch { }
+				else {
+					var osuProcess = Finder.GetOsuProcess(_osuPid);
+					_osuPid = osuProcess?.Id;
+					_currentMapsetDirectory = _osuPid.HasValue ? Finder.GetOsuBeatmapDirectory(_osuPid) : null;
+				}
+				sw.Stop();
+				SetTime1($"{sw.ElapsedMilliseconds} ms");
+
+				if (_currentMapsetDirectory != _prevMapsetDirectory && Directory.Exists(_currentMapsetDirectory)) {
+					//analyze the mapset
+					Mapset set = MapsetManager.AnalyzeMapset(_currentMapsetDirectory, this);
+					if (set is not null) {
+						//show info on GUI
+						Invoke((MethodInvoker)delegate {
+							//display text results
+							ClearBeatmapDisplay();
+							DisplayMapset(set);
+							//display graph results
+							SeriesSelect_SelectedIndexChanged(null, null);
+							_prevMapsetDirectory = _currentMapsetDirectory;
+						});
+					}
+				}
 			}
 		}
 

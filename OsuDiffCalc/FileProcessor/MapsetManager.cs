@@ -16,28 +16,16 @@
 			_allMapsets.Clear();
 		}
 
-		//gets mapset directory based on osu's hooks to audio files
-		public static string GetCurrentMapsetDirectory() {
-			try {
-				//get current mapset from process hooks
-				string[] audioFormats = {".mp3", ".ogg", ".wav"};
-				return Finder.GetOsuBeatmapDirectoriesFromProcessHooks("osu!").FirstOrDefault();
-			}
-			catch {
-				return null;
-			}
-		}
-
 		//get mapset directory based on osu's window title (only works while user is playing a map)
-		public static string GetCurrentMapsetDirectory(string ingameWindowTitle, string prevMapsetDirectory) {
+		public static string GetCurrentMapsetDirectory(string inGameWindowTitle, string prevMapsetDirectory) {
 			try {
 				//title info is organized: artist - song title [difficulty]
-				string titleInfo = ingameWindowTitle[(ingameWindowTitle.IndexOf('-')+1)..].Trim();
+				string titleInfo = inGameWindowTitle[(inGameWindowTitle.IndexOf('-')+1)..].Trim();
 				string mapsetDirectoryTitle = titleInfo[..titleInfo.LastIndexOf('[')].Trim();
 				string diffName = titleInfo.Substring(titleInfo.LastIndexOf('[')+1, titleInfo.LastIndexOf(']'));
 				string songsDirectoryX = Path.GetDirectoryName(prevMapsetDirectory);
 				string songsDirectory = prevMapsetDirectory[..prevMapsetDirectory.LastIndexOf('\\')];
-				IEnumerable<string> possibleMapsetDirectories = Directory.EnumerateDirectories(songsDirectory, $"*{mapsetDirectoryTitle}*", SearchOption.TopDirectoryOnly);
+				var possibleMapsetDirectories = Directory.EnumerateDirectories(songsDirectory, $"*{mapsetDirectoryTitle}*", SearchOption.TopDirectoryOnly);
 				foreach (string directory in possibleMapsetDirectories) {
 					if (Directory.EnumerateFiles(directory, $"*{diffName}*.osu", SearchOption.TopDirectoryOnly).Any()) {
 						return directory;

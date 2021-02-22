@@ -68,7 +68,7 @@
 			Shell32.FolderItem folderItem = shell.NameSpace(dir).ParseName(filename);
 			if (folderItem is not null) {
 				var link = (Shell32.ShellLinkObject)folderItem.GetLink;
-				return link.Path;
+				return link?.Path ?? string.Empty;
 			}
 			return string.Empty;
 		}
