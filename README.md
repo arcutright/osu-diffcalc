@@ -10,11 +10,12 @@ This is an alternate difficulty calculator for [osu!](https://osu.ppy.sh/) maps.
 
 ### Features ###
 
-+ Calculates difficulty of an osu! mapset based on what map is selected in-game, in the background
-+ Difficulty graphs (as well as a familiarly-scaled rating system)
-    + currently, these graphs are difficulty (y) vs time (x)
-+ Automatically hides itself when in-game (stops analyzing when hidden or minimized)
-+ Logs all difficulty results to an easy-to-parse XML that may come in handy (and saves on calculations)
+- Calculates difficulty of an osu! mapset based on what map is selected in-game, in the background
+- Difficulty graphs (as well as a familiarly-scaled rating system)
+    - currently, these graphs are difficulty (y) vs time (x)
+- Automatically hides itself when in-game (stops analyzing when hidden or minimized)
+- Logs all difficulty results to an easy-to-parse XML that may come in handy (and saves on calculations)
+
 ```xml
 <root>
   <mapset title="Bios Epic Edition" artist="Hiroyuki Sawano feat. Mika Kobayashi" creator="xChippy">
@@ -36,26 +37,26 @@ Planned considerations: patterns, couplets, weird timing, top ranked plays (ie a
 
 ### Where can I get a copy? ###
 
-Grab the latest binary distribution from [Downloads](https://bitbucket.org/countcutright/osu-diffcalc/downloads) or compile from source
+Grab the latest binary distribution from Downloads/Releases or compile from source
 
 ### Reporting issues ###
 
-+ Create new issue in `Issues` section
-+ Provide a copy of any output logs (right now it's shown in the console) 
-+ Provide a link to any maps that may cause issues
-+ Describe what the issue is, what problems it may be causing, etc
+- Create new issue in `Issues` section
+- Provide a copy of any output logs (right now it's shown in the console) 
+- Provide a link to any maps that may cause issues
+- Describe what the issue is, what problems it may be causing, etc
 
 ### Development ###
 
-+ Clone latest commit, develop, test, submit pull request
+- Clone latest commit, develop, test, submit pull request
 
 ### How can I get my pull request accepted? ###
 
-+ Provide reasoning
-+ Demonstrate an improvement
-    + for performance tweaks, show timing improvements (or provide reasoning)
-    + for difficulty algorithm tweaks, give a few map examples of repo version rating versus your rating and some justification as to why this new rating is more appropriate
+- Provide reasoning
+- Demonstrate an improvement
+    - for performance tweaks, show timing improvements (or provide reasoning)
+    - for difficulty algorithm tweaks, give a few map examples of repo version rating versus your rating and some justification as to why this new rating is more appropriate
 
 ### Who do I talk to? ###
 
-+ Repo owner (through github or [message me on osu!](https://osu.ppy.sh/u/mastaa_p), although I'm rarely online)
+- Repo owner (through github or [message me on osu!](https://osu.ppy.sh/u/mastaa_p), although I'm rarely online)
