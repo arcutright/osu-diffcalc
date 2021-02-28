@@ -328,7 +328,7 @@
 			if (_autoWindowUpdater is null) {
 				if (_autoWindowCancellation.IsCancellationRequested)
 					_autoWindowCancellation = new CancellationTokenSource();
-				_autoWindowUpdater = Task.Run(() => AutoWindowUpdaterBegin(_autoWindowCancellation.Token, AutoWindowUpdaterTimeoutMs));
+				_autoWindowUpdater = Task.Run(() => AutoWindowUpdaterBegin(_autoWindowCancellation.Token, AutoWindowUpdaterTimeoutMs), _autoWindowCancellation.Token);
 			}
 		}
 
@@ -422,7 +422,7 @@
 			if (_autoBeatmapAnalyzer is null) {
 				if (_autoBeatmapCancellation.IsCancellationRequested)
 					_autoBeatmapCancellation = new CancellationTokenSource();
-				_autoBeatmapAnalyzer = Task.Run(() => AutoBeatmapAnalyzerBegin(_autoBeatmapCancellation.Token, AutoBeatmapAnalyzerTimeoutMs));
+				_autoBeatmapAnalyzer = Task.Run(() => AutoBeatmapAnalyzerBegin(_autoBeatmapCancellation.Token, AutoBeatmapAnalyzerTimeoutMs), _autoBeatmapCancellation.Token);
 			}
 		}
 
