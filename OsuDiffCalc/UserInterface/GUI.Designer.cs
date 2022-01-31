@@ -187,7 +187,7 @@
 			this.tabPage2.Padding = new System.Windows.Forms.Padding(3, 2, 3, 2);
 			this.tabPage2.Size = new System.Drawing.Size(503, 235);
 			this.tabPage2.TabIndex = 1;
-			this.tabPage2.Text = "Graoh";
+			this.tabPage2.Text = "Graph";
 			this.tabPage2.UseVisualStyleBackColor = true;
 			// 
 			// chartedMapChoice
@@ -275,7 +275,7 @@
 			this.Margin = new System.Windows.Forms.Padding(4);
 			this.Name = "GUI";
 			this.Text = "Diff Analyzer";
-			this.TopMost = true;
+			this.TopMost = false;
 			this.TransparencyKey = System.Drawing.Color.Fuchsia;
 			this.Load += new System.EventHandler(this.GUI_Load);
 			this.tabs.ResumeLayout(false);

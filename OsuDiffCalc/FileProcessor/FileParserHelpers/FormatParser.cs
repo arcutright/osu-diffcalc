@@ -15,7 +15,7 @@
 		/// and populate <see cref="Beatmap.Format"/>
 		/// </summary>
 		/// <returns> <see langword="true"/> if the format was parsed and is supported, otherwise <see langword="false"/> </returns>
-		public static bool TryParse(Beatmap beatmap, ref StreamReader reader, out string failureMessage) {
+		public static bool TryParse(Beatmap beatmap, StreamReader reader, out string failureMessage) {
 			//beatmap.isOfficiallySupported = false;
 			if (reader.BaseStream.CanSeek)
 				reader.BaseStream.Seek(0, SeekOrigin.Begin);

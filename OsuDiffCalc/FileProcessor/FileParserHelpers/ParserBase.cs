@@ -45,46 +45,38 @@
 		}
 
 		protected static double? GetDoubleFromLine(string line, string startsWith, char delimiter = ':') {
-			try {
-				if (!line.StartsWith(startsWith, StringComparison.OrdinalIgnoreCase))
-					return null;
-				int index = line.IndexOf(delimiter);
-				if (index != -1)
-					return double.Parse(line[(index + 1)..], CultureInfo.InvariantCulture);
-			}
-			catch (Exception e) {
-				Console.WriteLine("!! -- Error pulling float from line");
-				Console.WriteLine(e.GetBaseException());
-			}
-			return null;
+			if (!line.StartsWith(startsWith, StringComparison.OrdinalIgnoreCase))
+				return null;
+			int index = line.IndexOf(delimiter);
+			if (index != -1 && double.TryParse(line[(index + 1)..], out double value))
+				return value;
+			else
+				return null;
 		}
 
 		protected static double? GetDoubleFromNextLine(ref StreamReader reader, string startsWith, char delimiter = ':') {
 			try {
 				string line = reader.ReadLine()?.Trim();
-				if (!string.IsNullOrEmpty(line)) 
+				if (!string.IsNullOrEmpty(line))
 					return GetDoubleFromLine(line, startsWith, delimiter);
+				else
+					return null;
 			}
 			catch (Exception e) {
 				Console.WriteLine("!! -- Error using reader to get float from next line");
 				Console.WriteLine(e.GetBaseException());
+				return null;
 			}
-			return null;
 		}
 
 		protected static string GetStringFromLine(string line, string startsWith, char delimiter = ':') {
-			try {
-				if (!line.StartsWith(startsWith, StringComparison.OrdinalIgnoreCase))
-					return null;
-				int index = line.IndexOf(delimiter);
-				if (index != -1)  
-					return line[(index + 1)..].Trim();
-			}
-			catch (Exception e) {
-				Console.WriteLine("!! -- Error pulling string from line");
-				Console.WriteLine(e.GetBaseException());
-			}
-			return null;
+			if (!line.StartsWith(startsWith, StringComparison.OrdinalIgnoreCase))
+				return null;
+			int index = line.IndexOf(delimiter);
+			if (index != -1)  
+				return line[(index + 1)..].Trim();
+			else
+				return null;
 		}
 
 		protected static string GetStringFromNextLine(ref StreamReader reader, string startsWith, char delimiter = ':') {
@@ -92,12 +84,14 @@
 				string line = reader.ReadLine()?.Trim();
 				if (!string.IsNullOrEmpty(line))
 					return GetStringFromLine(line, startsWith, delimiter);
+				else
+					return null;
 			}
 			catch (Exception e) {
 				Console.WriteLine("!! -- Error using reader to get string from next line");
 				Console.WriteLine(e.GetBaseException());
+				return null;
 			}
-			return null;
 		}
 
 		protected static bool TryAssignStringFromLine(string line, string startsWith, out string result, char delimeter = ':') {

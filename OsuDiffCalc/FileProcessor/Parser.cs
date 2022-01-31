@@ -46,6 +46,8 @@
 					{ "[General]", GeneralParser.TryProcessLine },
 					{ "[Metadata]", MetadataParser.TryProcessLine },
 				};
+				if (!FormatParser.TryParse(beatmap, reader, out failureMessage))
+					return null;
 				if (!TryParseSections(reader, sectionParsers, ref beatmap, out failureMessage))
 					return null;
 				// in ye olde times, ar = od. Not sure if ar can still be omitted
@@ -78,7 +80,7 @@
 				Thread.CurrentThread.Name = $"parse[{beatmap.Version}]";
 
 			try {
-				if (!FormatParser.TryParse(beatmap, ref reader, out failureMessage))
+				if (!beatmap.IsMetadataParsed && !FormatParser.TryParse(beatmap, reader, out failureMessage))
 					return false;
 				var sectionParsers = new Dictionary<string, TryProcessLineCallback> {
 					{ "[Events]", EventsParser.TryProcessLine },
@@ -140,7 +142,7 @@
 					// skip indented storyboard lines or variables (scripting)
 					// https://osu.ppy.sh/wiki/en/Storyboard_Scripting
 					// https://osu.ppy.sh/community/forums/topics/1869
-					if (sectionHeader is "[Events]" && line.Length != 0 && line[0] is ' ' or '_' or '$')
+					if (sectionHeader == "[Events]" && line.Length != 0 && line[0] is ' ' or '_' or '$')
 						continue;
 					line = line.Trim();
 					// continue past empty lines
@@ -158,7 +160,7 @@
 						if (!tryProcessLine(lineNumber, line, beatmap, out failureMessage)) {
 							if (string.IsNullOrEmpty(failureMessage))
 								failureMessage = $"Failed to process line {lineNumber}: '{line}' in section '{sectionHeader}'";
-							if (exitOnSectionParseErrors)
+							if (exitOnSectionParseErrors || !beatmap.IsOsuStandard)
 								return false;
 							else
 								System.Console.WriteLine(failureMessage);

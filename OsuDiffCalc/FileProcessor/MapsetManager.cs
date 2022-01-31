@@ -49,7 +49,8 @@
 
 					//parse the mapset by iterating on the directory's .osu files
 					var mapPaths = Directory.EnumerateFiles(directory, "*", SearchOption.TopDirectoryOnly)
-						.Where(path => path.EndsWith(".osu", StringComparison.OrdinalIgnoreCase));
+						.Where(path => path.EndsWith(".osu", StringComparison.OrdinalIgnoreCase))
+						.ToArray();
 					Console.WriteLine("got osu files");
 
 					Mapset set = BuildSet(mapPaths);
@@ -131,7 +132,7 @@
 
 		#region Private helpers
 
-		public static Mapset BuildSet(IEnumerable<string> mapPaths) {
+		public static Mapset BuildSet(IList<string> mapPaths) {
 			var allMaps = new List<Beatmap>();
 			foreach (string mapPath in mapPaths) {
 				if (string.IsNullOrEmpty(mapPath)) continue;

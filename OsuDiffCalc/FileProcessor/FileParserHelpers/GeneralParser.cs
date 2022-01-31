@@ -13,10 +13,11 @@
 					beatmap.Mp3FileName = fn;
 			}
 			else if (beatmap.Format > 5 && TryAssignIntFromLine(line, "Mode", out int mode)) {
-				if (mode == 0)
+				beatmap.Mode = mode;
+				if (mode == 0) // osu!standard
 					return true;
 				else {
-					failureMessage = $"Mode not supported, not an osu!standard map. Mode = {mode}";
+					failureMessage = $"Mode '{mode}', not an osu!standard map: '{Path.GetFileName(beatmap?.Filepath)}'";
 					return false;
 				}
 			}

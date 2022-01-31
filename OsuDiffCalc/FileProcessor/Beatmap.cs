@@ -17,10 +17,12 @@
 		public double MarginOfErrorMs50; // time window for a 50
 		public double CircleSizePx; // actual circle size
 		public int Format = -1; // osu file format version
+		public int Mode = -1; // osu!standard == 0, taiko == ?, ctb == ?, mania == ? etc.
 		public bool IsAnalyzed;
 		public bool IsParsed;
 		public bool IsMetadataParsed;
 		public bool IsOfficiallySupported;
+		public bool IsOsuStandard => Mode == 0;
 
 		public DifficultyRating DiffRating = new();
 
