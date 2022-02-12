@@ -37,9 +37,9 @@
 			}
 
 			// analysis variables
-			double minStreamAvgMs = -1, minCoupletAvgMs = -1, minTripletAvgMs = -1, minBurstAvgMs = -1;
+			double minStreamAvgMs = -1, minDoubleAvgMs = -1, minTripletAvgMs = -1, minBurstAvgMs = -1;
 			var streams = new List<Shape>();
-			var couplets = new List<Shape>();
+			var doubles = new List<Shape>();
 			var triplets = new List<Shape>();
 			var bursts = new List<Shape>();
 
@@ -56,9 +56,9 @@
 				shape.Analyze();
 				shape.PrevShape = lastShape;
 				if (shape.NumObjects == 2) {
-					shape.Type = Shape.ShapeType.Couplet;
-					couplets.Add(shape);
-					UpdateMin(ref minCoupletAvgMs, shape.AvgTimeGapMs);
+					shape.Type = Shape.ShapeType.Double;
+					doubles.Add(shape);
+					UpdateMin(ref minDoubleAvgMs, shape.AvgTimeGapMs);
 				}
 				else if (shape.NumObjects < MinBurstLength) {
 					shape.Type = Shape.ShapeType.Triplet;
@@ -122,29 +122,29 @@
 				addShapeToAppropriateList();
 
 			double streamsDifficulty = GetStreamsDifficulty(streams, minStreamAvgMs, beatmap);
-			double coupletsDifficulty = GetCoupletsDifficulty(couplets, minCoupletAvgMs, beatmap);
+			double doublesDifficulty = GetDoublesDifficulty(doubles, minDoubleAvgMs, beatmap);
 			double burstsDifficulty = GetStreamsDifficulty(bursts, minBurstAvgMs, beatmap);
 			//Console.Write("jump ");
 			double jumpsDifficulty = GetWeightedSumOfList(jumpDifficultyList, 1.5);
 			//Console.Write("slider ");
 			double slidersDifficulty = GetWeightedSumOfList(sliderDifficultyList, 1.5);
-			double totalDifficulty = streamsDifficulty + burstsDifficulty + coupletsDifficulty + jumpsDifficulty + slidersDifficulty;
+			double totalDifficulty = streamsDifficulty + burstsDifficulty + doublesDifficulty + jumpsDifficulty + slidersDifficulty;
 
-			beatmap.DiffRating.JumpDifficulty = jumpsDifficulty;
-			beatmap.DiffRating.StreamDifficulty = streamsDifficulty;
-			beatmap.DiffRating.BurstDifficulty = burstsDifficulty;
-			beatmap.DiffRating.CoupletDifficulty = coupletsDifficulty;
-			beatmap.DiffRating.SliderDifficulty = slidersDifficulty;
+			beatmap.DiffRating.JumpsDifficulty = jumpsDifficulty;
+			beatmap.DiffRating.StreamsDifficulty = streamsDifficulty;
+			beatmap.DiffRating.BurstsDifficulty = burstsDifficulty;
+			beatmap.DiffRating.DoublesDifficulty = doublesDifficulty;
+			beatmap.DiffRating.SlidersDifficulty = slidersDifficulty;
 			beatmap.DiffRating.TotalDifficulty = totalDifficulty;
 			beatmap.IsAnalyzed = true;
 			/*
 			Console.WriteLine("\n{1:000} jumps diff    = {0:0.0}", jumpsDifficulty, jumpDifficultyList.Count);
 			Console.WriteLine("{1:000} streams diff  = {0:0.0}", streamsDifficulty, streams.Count);
 			Console.WriteLine("{1:000} bursts diff   = {0:0.0}", burstsDifficulty, bursts.Count);
-			Console.WriteLine("{1:000} couplets diff = {0:0.0}", coupletsDifficulty, couplets.Count);
+			Console.WriteLine("{1:000} doubles diff = {0:0.0}", doublesDifficulty, doubles.Count);
 			Console.WriteLine("{1:000} sliders diff  = {0:0.0}", slidersDifficulty, sliderDifficultyList.Count);
 			Console.WriteLine("* total diff  = {0:0.0}", beatmap.diffRating.totalDifficulty);
-			//printDebug(couplets, "couplets");
+			//printDebug(doubles, "doubles");
 			//printDebug(triplets, "triplets");
 			//printDebug(streams, "streams");
 			*/
@@ -202,35 +202,35 @@
 				return 0;
 		}
 
-		static double GetCoupletsDifficulty(List<Shape> couplets, double minCoupletsMs, Beatmap map) {
-			if (couplets.Count == 0)
+		static double GetDoublesDifficulty(List<Shape> doubles, double minDoubleMs, Beatmap map) {
+			if (doubles.Count == 0)
 				return 0;
 
-			// TODO: actually include the couplets difficulty (their difficulty is still poorly-defined)
+			// TODO: actually include the doubles difficulty (their difficulty is still poorly-defined)
 
-			// difficulty is also dependent on the spacing between couplets... ie, closely timed objects are harder to hit than far-timed ones
+			// difficulty is also dependent on the spacing between doubles... ie, closely timed objects are harder to hit than far-timed ones
 			// TODO: introduce extra scaling for tongue-twisters
 			double difficulty = 0;
-			double coupletBPM;
-			for (int i = 0; i < couplets.Count; ++i) {
-				var couplet = couplets[i];
-				double coupletDiff = 0;
-				double timeGapMs = couplet.StartTime - couplet.PrevShape.EndTime;
+			double doubleBPM;
+			for (int i = 0; i < doubles.Count; ++i) {
+				var theDouble = doubles[i];
+				double doubleDiff = 0;
+				double timeGapMs = theDouble.StartTime - theDouble.PrevShape.EndTime;
 
 				// measure how abrubt changing between shapes is
-				double timeDifferenceForTransition = Math.Abs(couplet.AvgTimeGapMs * 2 - timeGapMs);
+				double timeDifferenceForTransition = Math.Abs(theDouble.AvgTimeGapMs * 2 - timeGapMs);
 
 				// similar to difference in BPM between streams, but in ms/tick
-				double timeDifferenceForSpeeds = Math.Abs(couplet.AvgTimeGapMs - couplet.PrevShape.AvgTimeGapMs);
+				double timeDifferenceForSpeeds = Math.Abs(theDouble.AvgTimeGapMs - theDouble.PrevShape.AvgTimeGapMs);
 
-				// let's define these parameters to make a couplet difiicult
+				// let's define these parameters to make a double difiicult
 				if (timeGapMs > 0) {
-					if (timeDifferenceForTransition <= 20 && timeDifferenceForSpeeds <= 1.5 * couplet.AvgTimeGapMs + 20) {
-						coupletBPM = 15000 / couplet.AvgTimeGapMs;
-						coupletDiff = Math.Pow(coupletBPM, 3.2) / 1e9 * Math.Pow(couplet.AvgDistancePx + 1, 1.6);
+					if (timeDifferenceForTransition <= 20 && timeDifferenceForSpeeds <= 1.5 * theDouble.AvgTimeGapMs + 20) {
+						doubleBPM = 15000 / theDouble.AvgTimeGapMs;
+						doubleDiff = Math.Pow(doubleBPM, 3.2) / 1e9 * Math.Pow(theDouble.AvgDistancePx + 1, 1.6);
 					}
-					// difficulty += coupletDiff; // once balancing with other map features is determined
-					map.DiffRating.AddCouplet(couplet.StartTime, coupletDiff);
+					// difficulty += doubleDiff; // once balancing with other map features is determined
+					map.DiffRating.AddDouble(theDouble.StartTime, doubleDiff);
 				}
 			}
 			return difficulty;

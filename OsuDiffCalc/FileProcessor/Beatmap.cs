@@ -86,12 +86,12 @@
 
 		public string GetFamiliarizedDisplayString() {
 			var diff = DifficultyRating.FamiliarizeRating(DiffRating.TotalDifficulty);
-			return $"[{Version}]  {diff:0.##}";
+			return $"{diff,5:f2} [{Version}]";
 		}
 
 		public string GetDiffDisplayString(double scalingFactor = 1) {
 			var diff = DiffRating.TotalDifficulty / scalingFactor;
-			return $"[{Version}]  {diff:0.##}";
+			return $"{diff,5:f2} [{Version}]";
 		}
 
 		public string GetFamiliarizedDetailString() {
@@ -100,21 +100,21 @@
 		}
 
 		public string GetDiffDetailString(double scalingFactor = 1) {
-			return string.Format("jump:{0:0.###}  stream:{3:0.###}  \ncouplet:{1:0.###}  burst:{2:0.###}  slider:{4:0.###}",
-					DiffRating.JumpDifficulty / scalingFactor, 
-					DiffRating.CoupletDifficulty / scalingFactor,
-					DiffRating.BurstDifficulty / scalingFactor, 
-					DiffRating.StreamDifficulty / scalingFactor,
-					DiffRating.SliderDifficulty / scalingFactor);
+			return string.Format("jumps:{0:0.###}  streams:{3:0.###}  \ndoubles:{1:0.###}  bursts:{2:0.###}  sliders:{4:0.###}",
+					DiffRating.JumpsDifficulty / scalingFactor, 
+					DiffRating.DoublesDifficulty / scalingFactor,
+					DiffRating.BurstsDifficulty / scalingFactor, 
+					DiffRating.StreamsDifficulty / scalingFactor,
+					DiffRating.SlidersDifficulty / scalingFactor);
 		}
 
 		public string GetDiffDetailString(Func<double, double> diffFunction) {
-			return string.Format("jump:{0:0.###}  stream:{3:0.###}  \ncouplet:{1:0.###}  burst:{2:0.###}  slider:{4:0.###}",
-					diffFunction(DiffRating.JumpDifficulty), 
-					diffFunction(DiffRating.CoupletDifficulty),
-					diffFunction(DiffRating.BurstDifficulty), 
-					diffFunction(DiffRating.StreamDifficulty),
-					diffFunction(DiffRating.SliderDifficulty));
+			return string.Format("jumps:{0:0.###}  streams:{3:0.###}  \ndoubles:{1:0.###}  bursts:{2:0.###}  sliders:{4:0.###}",
+					diffFunction(DiffRating.JumpsDifficulty), 
+					diffFunction(DiffRating.DoublesDifficulty),
+					diffFunction(DiffRating.BurstsDifficulty), 
+					diffFunction(DiffRating.StreamsDifficulty),
+					diffFunction(DiffRating.SlidersDifficulty));
 		}
 
 		public void PrintDebug() {

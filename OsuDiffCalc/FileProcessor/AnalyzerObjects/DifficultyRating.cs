@@ -5,13 +5,13 @@
 	class DifficultyRating {
 		public const SeriesChartType DEFAULT_CHART_TYPE = SeriesChartType.Column;
 
-		public double JumpDifficulty, StreamDifficulty, BurstDifficulty, CoupletDifficulty, SliderDifficulty;
+		public double JumpsDifficulty, StreamsDifficulty, BurstsDifficulty, DoublesDifficulty, SlidersDifficulty;
 		public double TotalDifficulty;
 
 		public Series Jumps { get; } = BuildSeries("Jumps");
 		public Series Streams { get; } = BuildSeries("Streams");
 		public Series Bursts { get; } = BuildSeries("Bursts");
-		public Series Couplets { get; } = BuildSeries("Couplets");
+		public Series Doubles { get; } = BuildSeries("Doubles");
 		public Series Sliders { get; } = BuildSeries("Sliders");
 
 		public static double FamiliarizeRating(double rating) {
@@ -22,7 +22,7 @@
 		public void AddJump(double time, double difficulty) => Add(time, difficulty, Jumps);
 		public void AddStream(double time, double difficulty) => Add(time, difficulty, Streams);
 		public void AddBurst(double time, double difficulty) => Add(time, difficulty, Bursts);
-		public void AddCouplet(double time, double difficulty) => Add(time, difficulty, Couplets);
+		public void AddDouble(double time, double difficulty) => Add(time, difficulty, Doubles);
 		public void AddSlider(double time, double difficulty) => Add(time, difficulty, Sliders);
 
 		private void Add(double ms, double diff, Series dest) {

@@ -1,6 +1,5 @@
 ﻿
 STYLE:
-	- couplet -> double (?)
 	- if osu is fullscreen and user has multi-monitors, open on secondary monitor
 	-- or find a way to stay on top despite fullscreen
 	- comments should be '// text here' not '//text here'

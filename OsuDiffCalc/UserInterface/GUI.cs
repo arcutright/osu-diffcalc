@@ -135,8 +135,8 @@
 						AddChartSeries(_chartedBeatmap.DiffRating.Streams);
 					else if (text == "Bursts")
 						AddChartSeries(_chartedBeatmap.DiffRating.Bursts);
-					else if (text == "Couplets")
-						AddChartSeries(_chartedBeatmap.DiffRating.Couplets);
+					else if (text == "Doubles")
+						AddChartSeries(_chartedBeatmap.DiffRating.Doubles);
 					else if (text == "Sliders")
 						AddChartSeries(_chartedBeatmap.DiffRating.Sliders);
 					else if (text == "Jumps")

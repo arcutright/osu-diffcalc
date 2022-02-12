@@ -103,7 +103,7 @@
 
 		public enum ShapeType {
 			Unknown = 0,
-			Couplet,
+			Double,
 			Triplet,
 			Burst,
 			Stream,

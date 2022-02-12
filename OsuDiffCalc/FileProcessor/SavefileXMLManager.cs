@@ -32,24 +32,27 @@
 				foreach (var mapset in mapsets) {
 					var set = new Mapset(mapset.title, mapset.artist, mapset.creator);
 					foreach (var map in mapset.maps) {
-						var beatmap = new Beatmap(set, map.Attribute("version").Value.Trim());
-						string diffstring = map.Attribute("totalDiff").Value.Trim();
+						string version = map.Attribute("version")?.Value.Trim() ?? "";
+						if (string.IsNullOrEmpty(version)) continue;
+
+						var beatmap = new Beatmap(set, version);
+						string diffstring = map.Attribute("totalDiff")?.Value.Trim() ?? "0";
 						beatmap.DiffRating.TotalDifficulty = double.Parse(diffstring, CultureInfo.InvariantCulture);
 
-						diffstring = map.Attribute("jumpDiff").Value.Trim();
-						beatmap.DiffRating.JumpDifficulty = double.Parse(diffstring, CultureInfo.InvariantCulture);
+						diffstring = map.Attribute("jumpDiff")?.Value.Trim() ?? "0";
+						beatmap.DiffRating.JumpsDifficulty = double.Parse(diffstring, CultureInfo.InvariantCulture);
 
-						diffstring = map.Attribute("streamDiff").Value.Trim();
-						beatmap.DiffRating.StreamDifficulty = double.Parse(diffstring, CultureInfo.InvariantCulture);
+						diffstring = map.Attribute("streamDiff")?.Value.Trim() ?? "0";
+						beatmap.DiffRating.StreamsDifficulty = double.Parse(diffstring, CultureInfo.InvariantCulture);
 
-						diffstring = map.Attribute("burstDiff").Value.Trim();
-						beatmap.DiffRating.BurstDifficulty = double.Parse(diffstring, CultureInfo.InvariantCulture);
+						diffstring = map.Attribute("burstDiff")?.Value.Trim() ?? "0";
+						beatmap.DiffRating.BurstsDifficulty = double.Parse(diffstring, CultureInfo.InvariantCulture);
 
-						diffstring = map.Attribute("coupletDiff").Value.Trim();
-						beatmap.DiffRating.CoupletDifficulty = double.Parse(diffstring, CultureInfo.InvariantCulture);
+						diffstring = map.Attribute("doubleDiff")?.Value.Trim() ?? map.Attribute("coupletDiff")?.Value.Trim() ?? "0";
+						beatmap.DiffRating.DoublesDifficulty = double.Parse(diffstring, CultureInfo.InvariantCulture);
 
-						diffstring = map.Attribute("sliderDiff").Value.Trim();
-						beatmap.DiffRating.SliderDifficulty = double.Parse(diffstring, CultureInfo.InvariantCulture);
+						diffstring = map.Attribute("sliderDiff")?.Value.Trim() ?? "0";
+						beatmap.DiffRating.SlidersDifficulty = double.Parse(diffstring, CultureInfo.InvariantCulture);
 
 						set.Add(beatmap);
 					}
@@ -89,11 +92,11 @@
 								validDiffs[^1].AddAfterSelf(new XElement("map",
 										new XAttribute("version", map.Version),
 										new XAttribute("totalDiff", dstr(map.DiffRating.TotalDifficulty)),
-										new XAttribute("jumpDiff", dstr(map.DiffRating.JumpDifficulty)),
-										new XAttribute("streamDiff", dstr(map.DiffRating.StreamDifficulty)),
-										new XAttribute("burstDiff", dstr(map.DiffRating.BurstDifficulty)),
-										new XAttribute("coupletDiff", dstr(map.DiffRating.CoupletDifficulty)),
-										new XAttribute("sliderDiff", dstr(map.DiffRating.SliderDifficulty))));
+										new XAttribute("jumpDiff", dstr(map.DiffRating.JumpsDifficulty)),
+										new XAttribute("streamDiff", dstr(map.DiffRating.StreamsDifficulty)),
+										new XAttribute("burstDiff", dstr(map.DiffRating.BurstsDifficulty)),
+										new XAttribute("doubleDiff", dstr(map.DiffRating.DoublesDifficulty)),
+										new XAttribute("sliderDiff", dstr(map.DiffRating.SlidersDifficulty))));
 							}
 						}
 					}
@@ -113,11 +116,11 @@
 						mapsetNode.Add(new XElement("map",
 							new XAttribute("version", map.Version),
 							new XAttribute("totalDiff", dstr(map.DiffRating.TotalDifficulty)),
-							new XAttribute("jumpDiff", dstr(map.DiffRating.JumpDifficulty)),
-							new XAttribute("streamDiff", dstr(map.DiffRating.StreamDifficulty)),
-							new XAttribute("burstDiff", dstr(map.DiffRating.BurstDifficulty)),
-							new XAttribute("coupletDiff", dstr(map.DiffRating.CoupletDifficulty)),
-							new XAttribute("sliderDiff", dstr(map.DiffRating.SliderDifficulty))));
+							new XAttribute("jumpDiff", dstr(map.DiffRating.JumpsDifficulty)),
+							new XAttribute("streamDiff", dstr(map.DiffRating.StreamsDifficulty)),
+							new XAttribute("burstDiff", dstr(map.DiffRating.BurstsDifficulty)),
+							new XAttribute("doubleDiff", dstr(map.DiffRating.DoublesDifficulty)),
+							new XAttribute("sliderDiff", dstr(map.DiffRating.SlidersDifficulty))));
 					}
 					if (_document.Root.Elements().Count() > 0)
 						_document.Root.LastNode.AddAfterSelf(mapsetNode);
@@ -152,11 +155,11 @@
 						//populate beatmap specific data
 						writer.WriteAttributeString("version", map.Version);
 						writer.WriteAttributeString("totalDiff", dstr(map.DiffRating.TotalDifficulty));
-						writer.WriteAttributeString("jumpDiff", dstr(map.DiffRating.JumpDifficulty));
-						writer.WriteAttributeString("streamDiff", dstr(map.DiffRating.StreamDifficulty));
-						writer.WriteAttributeString("burstDiff", dstr(map.DiffRating.BurstDifficulty));
-						writer.WriteAttributeString("coupletDiff", dstr(map.DiffRating.CoupletDifficulty));
-						writer.WriteAttributeString("sliderDiff", dstr(map.DiffRating.SliderDifficulty));
+						writer.WriteAttributeString("jumpDiff", dstr(map.DiffRating.JumpsDifficulty));
+						writer.WriteAttributeString("streamDiff", dstr(map.DiffRating.StreamsDifficulty));
+						writer.WriteAttributeString("burstDiff", dstr(map.DiffRating.BurstsDifficulty));
+						writer.WriteAttributeString("doubleDiff", dstr(map.DiffRating.DoublesDifficulty));
+						writer.WriteAttributeString("sliderDiff", dstr(map.DiffRating.SlidersDifficulty));
 						writer.WriteWhitespace("\n\t\t");
 						writer.WriteEndElement();
 					}
