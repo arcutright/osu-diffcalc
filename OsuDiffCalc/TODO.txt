@@ -9,14 +9,15 @@ BUGS:
 	- does not show graphs if it has cached difficulty data
 		- need to re-analyze to generate graph
 	- sometimes fails to find song if osu already open and playing song
-	- UI has weird scaling, text looks cut off in several places
 	- after a while failed to analyze maps, UI was responsive but it stopped updating mapset
 
 FEATURES:
 	- understand sliders
 	- add 'open folder in explorer'
+	- add difficulty rating from osu / osu API
 
 OVERHAULS:
+  - "friendly scale" feels compressed on the top end (many 2.0* are similar to 3.0, but 8.0 is much harder than 7.0 and many things fall into 4.5-5.5)
 	- xml -> actual database schema
 	- winforms hacks -> WPF + MVVM
 

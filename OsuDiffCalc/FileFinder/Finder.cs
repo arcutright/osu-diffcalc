@@ -55,7 +55,9 @@
 		public static Process GetOsuProcess(int? lastPid = null) {
 			if (lastPid.HasValue) {
 				try {
-					return Process.GetProcessById(lastPid.Value);
+					var process = Process.GetProcessById(lastPid.Value);
+					if (process is not null)
+						return process;
 				}
 				catch (Exception ex) when (ex is ArgumentException or InvalidOperationException) {
 					int yy = 1;

@@ -14,24 +14,36 @@
 	using FileProcessor;
 
 	public partial class GUI : Form {
-		const int LABEL_FONT_SIZE = 12;
+		private const int LABEL_FONT_SIZE = 12;
 
+		private bool _isLoaded = false;
 		private bool _isVisible = true;
 		private bool _isOsuPresent = false;
 		private int? _osuPid = null;
 		private bool _isInGame = false;
 		private string _inGameWindowTitle = null;
 		private string _prevMapsetDirectory = null, _currentMapsetDirectory = null;
+
 		//background event timers
 		private Task _autoBeatmapAnalyzer;
-		private CancellationTokenSource _autoBeatmapCancellation = new CancellationTokenSource();
+		private CancellationTokenSource _autoBeatmapCancellation = new();
+		/// <summary>
+		/// Task to minimize this program when osu is in-game, move to other monitors if osu is full screen, etc.
+		/// </summary>
 		private Task _autoWindowUpdater;
-		private CancellationTokenSource _autoWindowCancellation = new CancellationTokenSource();
+		private CancellationTokenSource _autoWindowCancellation = new();
 
 		//display variables
 		private Beatmap _chartedBeatmap;
 		private Mapset _displayedMapset;
 		private bool _pauseGUI = false;
+
+		private const int INITIAL_TIMEOUT_MS =
+#if DEBUG
+			-1;
+#else
+			3000;
+#endif
 
 		public GUI() {
 			if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
@@ -39,42 +51,164 @@
 			InitializeComponent();
 		}
 
-		private const int INITIAL_TIMEOUT_MS =
-#if DEBUG
-			-1;
-#else
-			2000;
-#endif
-
-		public int MinUpdateDelayMs { get; set; } = 600;
-		public int AutoBeatmapAnalyzerTimeoutMs { get; set; } = INITIAL_TIMEOUT_MS;
-		public int AutoWindowUpdaterTimeoutMs { get; set; } = INITIAL_TIMEOUT_MS;
-
-#region Public methods
-
-		public void GUI_Load(object sender, EventArgs eArgs) {
-			if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
-				Thread.CurrentThread.Name = "GUIThread";
+		private void GUI_Load(object sender, EventArgs eArgs) {
 			double xPadding = 0;
 			int x = Screen.PrimaryScreen.Bounds.Right - Width - (int)(Screen.PrimaryScreen.Bounds.Width * xPadding + 0.5);
 			int y = Screen.PrimaryScreen.Bounds.Y + (Screen.PrimaryScreen.Bounds.Height - Height) / 2;
 			Location = new Point(x, y);
+			TopMost = IsAlwaysOnTop;
+			// initialize text box text
+			SetText(Settings_StarTargetMinTextbox, $"{Settings.FamiliarStarTargetMinimum:f2}");
+			SetText(Settings_StarTargetMaxTextbox, $"{Settings.FamiliarStarTargetMaximum:f2}");
+			SetText(Settings_UpdateIntervalNormalTextbox, $"{Settings.AutoUpdateIntervalNormalMs}");
+			SetText(Settings_UpdateIntervalMinimizedTextbox, $"{Settings.AutoUpdateIntervalMinimizedMs}");
+
+			_isLoaded = true;
+
+			if (_isVisible) {
+				StartAutoWindowUpdater();
+				if (EnableAutoBeatmapAnalyzer)
+					StartAutoBeatmapAnalyzer();
+			}
 		}
 
-		public void SetTime1(string timeString) {
-			SetLabel(timeDisplay1, timeString);
+		public Properties.Settings Settings { get; } = Properties.Settings.Default;
+
+		public int AutoBeatmapAnalyzerTimeoutMs { get; set; } = INITIAL_TIMEOUT_MS;
+		public int AutoWindowUpdaterTimeoutMs { get; set; } = INITIAL_TIMEOUT_MS;
+
+		#region Results page checkbox backing properties
+
+		public bool ShowFamiliarRating {
+			get => Settings.ShowFamiliarStarRating;
+			set {
+				if (ShowFamiliarRating == value) return;
+				Settings.ShowFamiliarStarRating = value;
+				scaleRatings.Checked = value;
+				Settings.Save();
+				RefreshMapset();
+			}
 		}
 
-		public void SetTime2(string timeString) {
-			SetLabel(timeDisplay2, timeString);
+		public bool EnableXmlCache {
+			get => Settings.EnableXmlCache;
+			set {
+				if (EnableXmlCache == value) return;
+				Settings.EnableXmlCache = value;
+				EnableXmlCheckbox.Checked = value;
+				Settings.Save();
+			}
+		}
+
+		public bool IsAlwaysOnTop {
+			get => Settings.AlwaysOnTop;
+			set {
+				if (IsAlwaysOnTop == value) return;
+				Settings.AlwaysOnTop = value;
+				AlwaysOnTopCheckbox.Checked = value;
+				Settings.Save();
+			}
+		}
+
+		public bool EnableAutoBeatmapAnalyzer {
+			get => Settings.EnableAutoBeatmapAnalyzer;
+			set {
+				if (EnableAutoBeatmapAnalyzer == value) return;
+				Settings.EnableAutoBeatmapAnalyzer = value;
+				AutoBeatmapCheckbox.Checked = value;
+				Settings.Save();
+				if (value && _isVisible)
+					StartAutoBeatmapAnalyzer();
+				else
+					_ = StopAutoBeatmapAnalyzer();
+			}
+		}
+
+		#endregion
+
+		#region Settings page input box and checkbox backing properties
+
+		public int UpdateIntervalNormalMs {
+			get => Settings.AutoUpdateIntervalNormalMs;
+			set {
+				if (UpdateIntervalNormalMs == value) return;
+				Settings.AutoUpdateIntervalNormalMs = value;
+				SetText(Settings_UpdateIntervalNormalTextbox, $"{value}");
+				Settings.Save();
+			}
+		}
+
+		public int UpdateIntervalMinimizedMs {
+			get => Settings.AutoUpdateIntervalMinimizedMs;
+			set {
+				if (UpdateIntervalMinimizedMs == value) return;
+				Settings.AutoUpdateIntervalMinimizedMs = value;
+				SetText(Settings_UpdateIntervalMinimizedTextbox, $"{value}");
+				Settings.Save();
+			}
+		}
+
+		public double FamiliarStarTargetMininum {
+			get => Settings.FamiliarStarTargetMinimum;
+			set {
+				if (FamiliarStarTargetMininum == value) return;
+				Settings.FamiliarStarTargetMinimum = value;
+				SetText(Settings_StarTargetMinTextbox, $"{value:f2}");
+				Settings.Save();
+			}
+		}
+
+		public double FamiliarStarTargetMaximum {
+			get => Settings.FamiliarStarTargetMaximum;
+			set {
+				if (FamiliarStarTargetMaximum == value) return;
+				Settings.FamiliarStarTargetMaximum = value;
+				SetText(Settings_StarTargetMaxTextbox, $"{value:f2}");
+				Settings.Save();
+			}
+		}
+
+		#endregion
+
+		#region Public methods
+
+		/// <summary>
+		/// Update the "parse + analyze" time text in the UI
+		/// </summary>
+		public void SetAnalyzeTime(string timeString) {
+			SetText(timeDisplay2, timeString);
 		}
 
 #endregion
 
-#region Controls
-
-		private void ScaleRatings_CheckedChanged(object sender, EventArgs e) {
+		//starts and stops all background threads
+		protected override async void OnResize(EventArgs e) {
+			if (WindowState == FormWindowState.Minimized) {
+				_isVisible = false;
+				_pauseGUI = true;
+				await StopAutoWindowUpdater();
+				await StopAutoBeatmapAnalyzer();
+			}
+			else {
+				_isVisible = true;
+				_pauseGUI = false;
+				if (_isLoaded) {
+					StartAutoWindowUpdater();
+					if (EnableAutoBeatmapAnalyzer)
+						StartAutoBeatmapAnalyzer();
+				}
+			}
 		}
+
+		protected override async void OnFormClosing(FormClosingEventArgs e) {
+			if (e.CloseReason == CloseReason.UserClosing) {
+				await StopAutoBeatmapAnalyzer();
+				await StopAutoWindowUpdater();
+			}
+			base.OnFormClosing(e);
+		}
+
+#region Controls
 
 		private void OpenFromFile_Click(object sender, EventArgs e) {
 			Task.Run(ManualBeatmapAnalyzer);
@@ -85,40 +219,25 @@
 			SavefileXMLManager.ClearXML();
 		}
 
-		//starts and stops all background threads
-		protected override void OnResize(EventArgs e) {
-			if (WindowState == FormWindowState.Minimized) {
-				StopAutoWindowUpdater();
-				StopAutoBeatmapAnalyzer();
-				_isVisible = false;
-				_pauseGUI = true;
-			}
-			else {
-				StartAutoWindowUpdater();
-				StartAutoBeatmapAnalyzer();
-				_isVisible = true;
-				_pauseGUI = false;
-			}
-		}
-
-		protected override void OnFormClosing(FormClosingEventArgs e) {
-			if (e.CloseReason == CloseReason.UserClosing) {
-				StopAutoBeatmapAnalyzer();
-				StopAutoWindowUpdater();
-			}
-			base.OnFormClosing(e);
+		private void ScaleRatings_CheckedChanged(object sender, EventArgs e) {
+			ShowFamiliarRating = scaleRatings.Checked;
 		}
 
 		private void AutoBeatmapCheckbox_CheckedChanged(object sender, EventArgs e) {
-			if (autoBeatmapCheckbox.Checked)
-				StartAutoBeatmapAnalyzer();
-			else
-				StopAutoBeatmapAnalyzer();
+			EnableAutoBeatmapAnalyzer = AutoBeatmapCheckbox.Checked;
+		}
+
+		private void AlwaysOnTop_CheckedChanged(object sender, EventArgs e) {
+			IsAlwaysOnTop = AlwaysOnTopCheckbox.Checked;
+		}
+
+		private void EnableXmlCheckbox_CheckedChanged(object sender, EventArgs e) {
+			EnableXmlCache = EnableXmlCheckbox.Checked;
 		}
 
 		private void SeriesSelect_SelectedIndexChanged(object sender, EventArgs e) {
 			if (_chartedBeatmap is not null) {
-				Invoke((MethodInvoker)delegate { _pauseGUI = true; });
+				_pauseGUI = true;
 				var selectedItemsText = new List<string>();
 				foreach (ListViewItem sel in seriesSelect.SelectedItems) {
 					sel.Checked = true;
@@ -143,12 +262,12 @@
 						AddChartSeries(_chartedBeatmap.DiffRating.Jumps);
 				}
 			}
-			Invoke((MethodInvoker)delegate { _pauseGUI = false; });
+			_pauseGUI = false;
 		}
 
 		private void ChartedMapChoice_SelectedIndexChanged(object sender, EventArgs e) {
 			if (_displayedMapset is not null) {
-				Invoke((MethodInvoker)delegate { _pauseGUI = false; });
+				_pauseGUI = false;
 				string choice = chartedMapChoice.SelectedItem.ToString();
 				Beatmap displayedMap = _displayedMapset.Beatmaps.FirstOrDefault(map => map.Version == choice);
 				if (displayedMap is not null)
@@ -158,12 +277,37 @@
 		}
 
 		private void ChartedMapChoice_DropDown(object sender, EventArgs e) {
-			Invoke((MethodInvoker)delegate { _pauseGUI = true; });
+			_pauseGUI = true;
 		}
 
-#endregion
+		private bool _isTextChanging = false;
+		private void SettingsTextbox_TextChanged(object sender, System.EventArgs e) {
+			if (!_isLoaded || _isTextChanging || sender is not TextBox box) return;
+			if (!box.IsHandleCreated || box.Focused) return;
+			try {
+				_isTextChanging = true;
 
-#region Private Helpers
+				if (box == Settings_StarTargetMinTextbox)
+					FamiliarStarTargetMininum = Settings_StarTargetMinTextbox.Value;
+				else if (box == Settings_StarTargetMaxTextbox)
+					FamiliarStarTargetMaximum = Settings_StarTargetMaxTextbox.Value;
+				else if (box == Settings_UpdateIntervalNormalTextbox)
+					UpdateIntervalNormalMs = Settings_UpdateIntervalNormalTextbox.Value;
+				else if (box == Settings_UpdateIntervalMinimizedTextbox)
+					UpdateIntervalMinimizedMs = Settings_UpdateIntervalMinimizedTextbox.Value;
+#if DEBUG
+				else
+					throw new NotImplementedException($"No logic defined for sender '{sender}'");
+#endif
+			}
+			finally {
+				_isTextChanging = false;
+			}
+		}
+
+		#endregion
+
+		#region Private Helpers
 
 		private void ClearBeatmapDisplay() {
 			difficultyDisplayPanel.Controls.Clear();
@@ -171,7 +315,7 @@
 
 		private void AddBeatmapToDisplay(Beatmap beatmap) {
 			Label diff;
-			if (scaleRatings.Checked)
+			if (ShowFamiliarRating)
 				diff = MakeLabel(beatmap.GetFamiliarizedDisplayString(), LABEL_FONT_SIZE, beatmap.GetFamiliarizedDetailString());
 			else
 				diff = MakeLabel(beatmap.GetDiffDisplayString(), LABEL_FONT_SIZE, beatmap.GetDiffDetailString());
@@ -179,24 +323,31 @@
 			difficultyDisplayPanel.SetFlowBreak(diff, true);
 		}
 
+		private void RefreshMapset() {
+			DisplayMapset(_displayedMapset);
+		}
+
 		private void DisplayMapset(Mapset set) {
-			if (set.Beatmaps.Count != 0) {
-				// sort by difficulty
-				set.Sort(false);
+			// sort by difficulty
+			set.Sort(false);
+
+			Invoke((MethodInvoker)delegate {
 				// display all maps
+				ClearBeatmapDisplay();
 				foreach (Beatmap map in set.Beatmaps) {
 					AddBeatmapToDisplay(map);
 				}
 				_displayedMapset = set;
-				_chartedBeatmap = set.Beatmaps[0];
+				_chartedBeatmap = set.Beatmaps.FirstOrDefault();
 				UpdateChartOptions(true);
-			}
+				SeriesSelect_SelectedIndexChanged(null, null);
+			});
 		}
 
 		private Label MakeLabel(string text, int fontSize, string toolTipStr = "") {
 			var label = new Label {
 				Text = text,
-				AutoSize = true
+				AutoSize = true,
 			};
 			label.Font = new Font(label.Font.FontFamily, fontSize);
 			if (!string.IsNullOrEmpty(toolTipStr)) {
@@ -208,53 +359,60 @@
 			return label;
 		}
 
-		private void SetLabel(Label label, string labelString) {
+		private void SetText(Control control, string text) {
+			bool prevIsTextChanging = _isTextChanging;
 			try {
+				_isTextChanging = true;
 				Invoke((MethodInvoker)delegate {
-					label.Text = labelString;
-					label.AutoSize = true;
-					label.Font = new Font(label.Font.FontFamily, 9);
+					control.Text = text;
+					//if (control is Label) {
+					//	control.AutoSize = true;
+					//	control.Font = new Font(control.Font.FontFamily, 9);
+					//}
 				});
 			}
 			catch { }
+			finally {
+				_isTextChanging = prevIsTextChanging;
+			}
 		}
 
 		public void AddChartPoint(double x, double y) {
 			Invoke((MethodInvoker)delegate {
-				Series last = chart.Series.Last();
+				Series last = Chart.Series.Last();
 				if (last is null) {
 					last = new Series();
-					chart.Series.Add(last);
-					last = chart.Series.Last();
+					Chart.Series.Add(last);
+					last = Chart.Series.Last();
 				}
-				chart.Series.Last().Points.AddXY(x, y);
+				Chart.Series.Last().Points.AddXY(x, y);
 				//chart.ChartAreas[0].RecalculateAxesScale();
-				chart.Visible = true;
-				chart.Update();
+				Chart.Visible = true;
+				Chart.Update();
 			});
 		}
 
 		private void ClearChart() {
 			Invoke((MethodInvoker)delegate {
-				chart.Series.Clear();
-				if (chart.ChartAreas.Count != 0) {
-					chart.ChartAreas[0].AxisX.MajorGrid.Enabled = false;
-					chart.ChartAreas[0].AxisX.MinorGrid.Enabled = false;
-					chart.ChartAreas[0].AxisX.LabelStyle.Format = "#";
-					chart.ChartAreas[0].AxisY.MajorGrid.Enabled = false;
-					chart.ChartAreas[0].AxisY.MinorGrid.Enabled = false;
-					chart.ChartAreas[0].AxisY.LabelStyle.Format = "#";
+				Chart.Series.Clear();
+				if (Chart.ChartAreas.Count != 0) {
+					Chart.ChartAreas[0].AxisX.MajorGrid.Enabled = false;
+					Chart.ChartAreas[0].AxisX.MinorGrid.Enabled = false;
+					Chart.ChartAreas[0].AxisX.LabelStyle.Format = "#";
+					Chart.ChartAreas[0].AxisY.MajorGrid.Enabled = false;
+					Chart.ChartAreas[0].AxisY.MinorGrid.Enabled = false;
+					Chart.ChartAreas[0].AxisY.LabelStyle.Format = "#";
 				}
-				chart.Update();
+				Chart.Update();
 			});
 		}
 
 		private void AddChartSeries(Series series) {
 			Invoke((MethodInvoker)delegate {
-				if (chart.Series.IsUniqueName(series.Name)) {
-					chart.Series.Add(series);
-					chart.Visible = true;
-					chart.Update();
+				if (Chart.Series.IsUniqueName(series.Name)) {
+					Chart.Series.Add(series);
+					Chart.Visible = true;
+					Chart.Update();
 				}
 			});
 		}
@@ -264,10 +422,50 @@
 			if (fullSet) {
 				Invoke((MethodInvoker)delegate {
 					chartedMapChoice.Items.Clear();
+					bool showFamiliarRating = ShowFamiliarRating;
 					foreach (Beatmap map in _displayedMapset.Beatmaps) {
-						chartedMapChoice.Items.Add(map.Version);
+						string displayString = showFamiliarRating ? map.GetFamiliarizedDisplayString() : map.GetDiffDisplayString();
+						chartedMapChoice.Items.Add(displayString);
 					}
-					chartedMapChoice.SelectedIndex = 0;
+
+					// pick the most appropriate initial map according to the settings
+					int selectedIndex = -1;
+					int numMaps = _displayedMapset.Beatmaps.Count;
+					if (numMaps > 1) {
+						var diffs = new double[numMaps];
+						for (int i = 0; i < numMaps; ++i) {
+							diffs[i] = FileProcessor.AnalyzerObjects.DifficultyRating.FamiliarizeRating(_displayedMapset.Beatmaps[i].DiffRating.TotalDifficulty);
+						}
+
+						var (minStars, maxStars) = (FamiliarStarTargetMininum, FamiliarStarTargetMaximum);
+						double minDiffSeen = double.MinValue;
+						double maxDiffSeen = double.MaxValue;
+						int minDiffSeenIndex = 0;
+						int maxDiffSeenIndex = 0;
+						for (int i = 0; i < numMaps; ++i) {
+							double diff = diffs[i];
+							minDiffSeen = Math.Min(minDiffSeen, diff);
+							maxDiffSeen = Math.Max(maxDiffSeen, diff);
+							if (diff == minDiffSeen)
+								minDiffSeenIndex = i;
+							if (diff == maxDiffSeen)
+								maxDiffSeenIndex = i;
+							if (diff >= minStars && diff <= maxStars) {
+								selectedIndex = i;
+								break;
+							}
+						}
+						if (selectedIndex == -1) {
+							if (minDiffSeen > maxStars)
+								selectedIndex = minDiffSeenIndex;
+							else
+								selectedIndex = maxDiffSeenIndex;
+						}
+					}
+					else {
+						selectedIndex = 0;
+					}
+					chartedMapChoice.SelectedIndex = selectedIndex;
 				});
 			}
 			else {
@@ -288,7 +486,7 @@
 				Thread.CurrentThread.Name = "ManualBeatmapAnalyzerWorkerThread";
 			try {
 				Mapset set = MapsetManager.BuildSet(UX.GetFilenamesFromDialog(this));
-				SetTime1($"0 ms");
+				SetText(timeDisplay1, $"0 ms");
 				Console.WriteLine("set built");
 				MapsetManager.Clear();
 				if (set.Beatmaps.Count == 0) {
@@ -299,10 +497,10 @@
 				var sw = Stopwatch.StartNew();
 				foreach (var beatmap in set.Beatmaps) {
 					MapsetManager.AnalyzeMap(beatmap);
-					MapsetManager.SaveMap(beatmap);
+					MapsetManager.SaveMap(beatmap, EnableXmlCache);
 				}
 				sw.Stop();
-				SetTime2($"{sw.ElapsedMilliseconds} ms");
+				SetAnalyzeTime($"{sw.ElapsedMilliseconds} ms");
 
 				Invoke((MethodInvoker)delegate {
 					ClearBeatmapDisplay();
@@ -328,20 +526,20 @@
 			if (_autoWindowUpdater is null) {
 				if (_autoWindowCancellation.IsCancellationRequested)
 					_autoWindowCancellation = new CancellationTokenSource();
-				_autoWindowUpdater = Task.Run(() => AutoWindowUpdaterBegin(_autoWindowCancellation.Token, AutoWindowUpdaterTimeoutMs), _autoWindowCancellation.Token);
+				_autoWindowUpdater = AutoWindowUpdaterBegin(_autoWindowCancellation.Token, AutoWindowUpdaterTimeoutMs);
 			}
 		}
 
-		private void StopAutoWindowUpdater() {
+		private async Task StopAutoWindowUpdater() {
 			if (_autoWindowUpdater is not null) {
-				try { _autoWindowCancellation.Cancel(); } catch { }
-				try { _autoWindowUpdater.GetAwaiter().GetResult(); } catch { }
+				try { _autoWindowCancellation.Cancel(true); } catch { }
+				try { await _autoWindowUpdater; } catch { }
 				try { _autoWindowUpdater.Dispose(); } catch { }
 			}
 			_autoWindowUpdater = null;
 		}
 
-		private void AutoWindowUpdaterBegin(CancellationToken cancelToken, int timeoutMs) {
+		private async Task AutoWindowUpdaterBegin(CancellationToken cancelToken, int timeoutMs) {
 			try {
 				if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 					Thread.CurrentThread.Name = "AutoWindowUpdaterThread";
@@ -349,10 +547,11 @@
 				while (!cancelToken.IsCancellationRequested) {
 					sw.Restart();
 					if (!_pauseGUI)
-						AutoWindowUpdaterThreadTick(cancelToken, timeoutMs);
+						await AutoWindowUpdaterThreadTick(cancelToken, timeoutMs);
 					sw.Stop();
 					cancelToken.ThrowIfCancellationRequested();
-					Thread.Sleep(Math.Max(MinUpdateDelayMs, timeoutMs - (int)sw.ElapsedMilliseconds));
+					int updateInterval = _isVisible ? UpdateIntervalNormalMs : UpdateIntervalMinimizedMs;
+					await Task.Delay(Math.Max(updateInterval, timeoutMs - (int)sw.ElapsedMilliseconds));
 				}
 				cancelToken.ThrowIfCancellationRequested();
 			}
@@ -360,7 +559,7 @@
 			catch { }
 		}
 
-		private void AutoWindowUpdaterThreadTick(CancellationToken cancelToken, int timeoutMs) {
+		private async Task AutoWindowUpdaterThreadTick(CancellationToken cancelToken, int timeoutMs) {
 			//Console.Write("auto window  ");
 			try {
 				var t = new Thread(ts) {
@@ -369,7 +568,7 @@
 				};
 				t.Start();
 				var joinTask = Task.Run(t.Join, cancelToken);
-				Task.WaitAny(joinTask, Task.Delay(timeoutMs, cancelToken));
+				await Task.WhenAny(joinTask, Task.Delay(timeoutMs, cancelToken));
 				if (t.IsAlive) {
 					t.Interrupt();
 					t.Abort();
@@ -389,13 +588,15 @@
 				//update visibility
 				if (string.IsNullOrEmpty(windowTitle)) {
 					Invoke((MethodInvoker)delegate {
+						if (TopMost) TopMost = false;
 						_isOsuPresent = false;
 						_isInGame = false;
 					});
 				}
 				else if (windowTitle.Contains("[")) {
 					Invoke((MethodInvoker)delegate {
-						Visible = false;
+						if (Visible) Visible = false;
+						if (TopMost) TopMost = false;
 						_isVisible = false;
 						_isOsuPresent = true;
 						_isInGame = true;
@@ -404,8 +605,8 @@
 				}
 				else {
 					Invoke((MethodInvoker)delegate {
-						Visible = true;
-						TopMost = true;
+						if (!TopMost) TopMost = IsAlwaysOnTop;
+						if (!Visible) Visible = true;
 						_isVisible = true;
 						_isOsuPresent = true;
 						_isInGame = false;
@@ -422,20 +623,20 @@
 			if (_autoBeatmapAnalyzer is null) {
 				if (_autoBeatmapCancellation.IsCancellationRequested)
 					_autoBeatmapCancellation = new CancellationTokenSource();
-				_autoBeatmapAnalyzer = Task.Run(() => AutoBeatmapAnalyzerBegin(_autoBeatmapCancellation.Token, AutoBeatmapAnalyzerTimeoutMs), _autoBeatmapCancellation.Token);
+				_autoBeatmapAnalyzer = AutoBeatmapAnalyzerBegin(_autoBeatmapCancellation.Token, AutoBeatmapAnalyzerTimeoutMs);
 			}
 		}
 
-		private void StopAutoBeatmapAnalyzer() {
+		private async Task StopAutoBeatmapAnalyzer() {
 			if (_autoBeatmapAnalyzer is not null) {
-				try { _autoBeatmapCancellation.Cancel(); } catch { }
-				try { _autoBeatmapAnalyzer.GetAwaiter().GetResult(); } catch { }
+				try { _autoBeatmapCancellation.Cancel(true); } catch { }
+				try { await _autoBeatmapAnalyzer; } catch { }
 				try { _autoBeatmapAnalyzer.Dispose(); } catch { }
 			}
 			_autoBeatmapAnalyzer = null;
 		}
 
-		private void AutoBeatmapAnalyzerBegin(CancellationToken cancelToken, int timeoutMs) {
+		private async Task AutoBeatmapAnalyzerBegin(CancellationToken cancelToken, int timeoutMs) {
 			try {
 				if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 					Thread.CurrentThread.Name = "AutoBeatmapAnalyzerThread";
@@ -443,10 +644,11 @@
 				while (!cancelToken.IsCancellationRequested) {
 					sw.Restart();
 					if (!_pauseGUI)
-						AutoBeatmapAnalyzerThreadTick(cancelToken, timeoutMs);
+						await AutoBeatmapAnalyzerThreadTick(cancelToken, timeoutMs);
 					sw.Stop();
 					cancelToken.ThrowIfCancellationRequested();
-					Thread.Sleep(Math.Max(MinUpdateDelayMs, timeoutMs - (int)sw.ElapsedMilliseconds));
+					int updateInterval = _isVisible ? UpdateIntervalNormalMs : UpdateIntervalMinimizedMs;
+					await Task.Delay(Math.Max(updateInterval, timeoutMs - (int)sw.ElapsedMilliseconds));
 				}
 				cancelToken.ThrowIfCancellationRequested();
 			}
@@ -454,7 +656,7 @@
 			catch { }
 		}
 
-		private void AutoBeatmapAnalyzerThreadTick(CancellationToken cancelToken, int timeoutMs) {
+		private async Task AutoBeatmapAnalyzerThreadTick(CancellationToken cancelToken, int timeoutMs) {
 			bool useWindowTitleForDirectory = false;
 			if (!_isOsuPresent || _isInGame || !_isVisible)
 				return;
@@ -465,7 +667,7 @@
 				};
 				t.Start();
 				var joinTask = Task.Run(t.Join, cancelToken);
-				Task.WaitAny(joinTask, Task.Delay(timeoutMs, cancelToken));
+				await Task.WhenAny(joinTask, Task.Delay(timeoutMs, cancelToken));
 				if (t.IsAlive) {
 					t.Interrupt();
 					t.Abort();
@@ -488,22 +690,18 @@
 				else {
 					var osuProcess = Finder.GetOsuProcess(_osuPid);
 					_osuPid = osuProcess?.Id;
-					_currentMapsetDirectory = _osuPid.HasValue ? Finder.GetOsuBeatmapDirectory(_osuPid) : null;
+					_currentMapsetDirectory = Finder.GetOsuBeatmapDirectory(_osuPid);
 				}
 				sw.Stop();
-				SetTime1($"{sw.ElapsedMilliseconds} ms");
+				SetText(timeDisplay1, $"{sw.ElapsedMilliseconds} ms");
 
 				if (_currentMapsetDirectory != _prevMapsetDirectory && Directory.Exists(_currentMapsetDirectory)) {
 					//analyze the mapset
-					Mapset set = MapsetManager.AnalyzeMapset(_currentMapsetDirectory, this);
+					Mapset set = MapsetManager.AnalyzeMapset(_currentMapsetDirectory, this, true, EnableXmlCache);
 					if (set is not null) {
 						//show info on GUI
 						Invoke((MethodInvoker)delegate {
-							//display text results
-							ClearBeatmapDisplay();
 							DisplayMapset(set);
-							//display graph results
-							SeriesSelect_SelectedIndexChanged(null, null);
 							_prevMapsetDirectory = _currentMapsetDirectory;
 						});
 					}

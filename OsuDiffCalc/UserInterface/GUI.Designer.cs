@@ -38,29 +38,41 @@
 			this.clearButton = new System.Windows.Forms.Button();
 			this.timeDisplay1 = new System.Windows.Forms.Label();
 			this.label2 = new System.Windows.Forms.Label();
-			this.autoBeatmapCheckbox = new System.Windows.Forms.CheckBox();
+			this.AutoBeatmapCheckbox = new System.Windows.Forms.CheckBox();
 			this.tabs = new System.Windows.Forms.TabControl();
-			this.tabPage1 = new System.Windows.Forms.TabPage();
-			this.tabPage2 = new System.Windows.Forms.TabPage();
+			this.resultsTab = new System.Windows.Forms.TabPage();
+			this.EnableXmlCheckbox = new System.Windows.Forms.CheckBox();
+			this.AlwaysOnTopCheckbox = new System.Windows.Forms.CheckBox();
+			this.chartsTab = new System.Windows.Forms.TabPage();
+			this.label1 = new System.Windows.Forms.Label();
 			this.chartedMapChoice = new System.Windows.Forms.ComboBox();
 			this.seriesSelect = new System.Windows.Forms.ListView();
 			this.column = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-			this.chart = new System.Windows.Forms.DataVisualization.Charting.Chart();
+			this.Chart = new System.Windows.Forms.DataVisualization.Charting.Chart();
+			this.settingsTab = new System.Windows.Forms.TabPage();
+			this.label3 = new System.Windows.Forms.Label();
+			this.label4 = new System.Windows.Forms.Label();
+			this.label5 = new System.Windows.Forms.Label();
+			this.Settings_StarTargetMinTextbox = new OsuDiffCalc.UserInterface.DoubleTextBox();
+			this.Settings_StarTargetMaxTextbox = new OsuDiffCalc.UserInterface.DoubleTextBox();
+			this.Settings_UpdateIntervalNormalTextbox = new OsuDiffCalc.UserInterface.IntTextBox();
+			this.Settings_UpdateIntervalMinimizedTextbox = new OsuDiffCalc.UserInterface.IntTextBox();
 			this.tabs.SuspendLayout();
-			this.tabPage1.SuspendLayout();
-			this.tabPage2.SuspendLayout();
-			((System.ComponentModel.ISupportInitialize)(this.chart)).BeginInit();
+			this.resultsTab.SuspendLayout();
+			this.chartsTab.SuspendLayout();
+			((System.ComponentModel.ISupportInitialize)(this.Chart)).BeginInit();
+			this.settingsTab.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// openFromFile
 			// 
-			this.openFromFile.Location = new System.Drawing.Point(7, 194);
-			this.openFromFile.Margin = new System.Windows.Forms.Padding(4);
+			this.openFromFile.BackColor = System.Drawing.SystemColors.Control;
+			this.openFromFile.Location = new System.Drawing.Point(0, 187);
 			this.openFromFile.Name = "openFromFile";
-			this.openFromFile.Size = new System.Drawing.Size(125, 28);
+			this.openFromFile.Size = new System.Drawing.Size(94, 23);
 			this.openFromFile.TabIndex = 3;
 			this.openFromFile.Text = "Open From File";
-			this.openFromFile.UseVisualStyleBackColor = true;
+			this.openFromFile.UseVisualStyleBackColor = false;
 			this.openFromFile.Click += new System.EventHandler(this.OpenFromFile_Click);
 			// 
 			// scaleRatings
@@ -68,10 +80,9 @@
 			this.scaleRatings.AutoSize = true;
 			this.scaleRatings.Checked = true;
 			this.scaleRatings.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.scaleRatings.Location = new System.Drawing.Point(156, 199);
-			this.scaleRatings.Margin = new System.Windows.Forms.Padding(4);
+			this.scaleRatings.Location = new System.Drawing.Point(100, 191);
 			this.scaleRatings.Name = "scaleRatings";
-			this.scaleRatings.Size = new System.Drawing.Size(163, 21);
+			this.scaleRatings.Size = new System.Drawing.Size(125, 17);
 			this.scaleRatings.TabIndex = 4;
 			this.scaleRatings.Text = "Familiar Rating Scale";
 			this.scaleRatings.UseVisualStyleBackColor = true;
@@ -80,35 +91,39 @@
 			// difficultyDisplayPanel
 			// 
 			this.difficultyDisplayPanel.AutoScroll = true;
-			this.difficultyDisplayPanel.Location = new System.Drawing.Point(4, 4);
-			this.difficultyDisplayPanel.Margin = new System.Windows.Forms.Padding(4);
+			this.difficultyDisplayPanel.BackColor = System.Drawing.Color.Gainsboro;
+			this.difficultyDisplayPanel.Location = new System.Drawing.Point(-4, 3);
 			this.difficultyDisplayPanel.Name = "difficultyDisplayPanel";
-			this.difficultyDisplayPanel.Size = new System.Drawing.Size(355, 188);
+			this.difficultyDisplayPanel.Size = new System.Drawing.Size(305, 180);
 			this.difficultyDisplayPanel.TabIndex = 7;
 			// 
 			// timeDisplay2
 			// 
 			this.timeDisplay2.BackColor = System.Drawing.SystemColors.Control;
-			this.timeDisplay2.Location = new System.Drawing.Point(368, 169);
+			this.timeDisplay2.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.timeDisplay2.Location = new System.Drawing.Point(343, 164);
+			this.timeDisplay2.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
 			this.timeDisplay2.Name = "timeDisplay2";
-			this.timeDisplay2.Size = new System.Drawing.Size(48, 23);
+			this.timeDisplay2.Size = new System.Drawing.Size(51, 19);
 			this.timeDisplay2.TabIndex = 11;
+			this.timeDisplay2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
 			// 
 			// timeDescriptionLabel
 			// 
 			this.timeDescriptionLabel.AutoSize = true;
-			this.timeDescriptionLabel.Location = new System.Drawing.Point(368, 143);
+			this.timeDescriptionLabel.Location = new System.Drawing.Point(315, 150);
+			this.timeDescriptionLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
 			this.timeDescriptionLabel.Name = "timeDescriptionLabel";
-			this.timeDescriptionLabel.Size = new System.Drawing.Size(107, 17);
+			this.timeDescriptionLabel.Size = new System.Drawing.Size(80, 13);
 			this.timeDescriptionLabel.TabIndex = 10;
 			this.timeDescriptionLabel.Text = "Parse+Analyze:";
 			// 
 			// clearButton
 			// 
-			this.clearButton.Location = new System.Drawing.Point(371, 199);
-			this.clearButton.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+			this.clearButton.Location = new System.Drawing.Point(349, 188);
+			this.clearButton.Margin = new System.Windows.Forms.Padding(2);
 			this.clearButton.Name = "clearButton";
-			this.clearButton.Size = new System.Drawing.Size(53, 23);
+			this.clearButton.Size = new System.Drawing.Size(45, 20);
 			this.clearButton.TabIndex = 0;
 			this.clearButton.Text = "Clear";
 			this.clearButton.UseVisualStyleBackColor = true;
@@ -117,102 +132,148 @@
 			// timeDisplay1
 			// 
 			this.timeDisplay1.BackColor = System.Drawing.SystemColors.Control;
-			this.timeDisplay1.Location = new System.Drawing.Point(368, 121);
+			this.timeDisplay1.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.timeDisplay1.Location = new System.Drawing.Point(340, 127);
+			this.timeDisplay1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
 			this.timeDisplay1.Name = "timeDisplay1";
-			this.timeDisplay1.Size = new System.Drawing.Size(48, 23);
+			this.timeDisplay1.Size = new System.Drawing.Size(54, 19);
 			this.timeDisplay1.TabIndex = 12;
+			this.timeDisplay1.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
 			// 
 			// label2
 			// 
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(365, 94);
+			this.label2.Location = new System.Drawing.Point(313, 112);
+			this.label2.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
 			this.label2.Name = "label2";
-			this.label2.Size = new System.Drawing.Size(110, 17);
+			this.label2.Size = new System.Drawing.Size(83, 13);
 			this.label2.TabIndex = 13;
 			this.label2.Text = "getSetDirectory:";
 			// 
-			// autoBeatmapCheckbox
+			// AutoBeatmapCheckbox
 			// 
-			this.autoBeatmapCheckbox.AutoSize = true;
-			this.autoBeatmapCheckbox.Checked = true;
-			this.autoBeatmapCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.autoBeatmapCheckbox.Location = new System.Drawing.Point(368, 6);
-			this.autoBeatmapCheckbox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-			this.autoBeatmapCheckbox.Name = "autoBeatmapCheckbox";
-			this.autoBeatmapCheckbox.Size = new System.Drawing.Size(119, 21);
-			this.autoBeatmapCheckbox.TabIndex = 14;
-			this.autoBeatmapCheckbox.Text = "Auto Beatmap";
-			this.autoBeatmapCheckbox.UseVisualStyleBackColor = true;
-			this.autoBeatmapCheckbox.CheckedChanged += new System.EventHandler(this.AutoBeatmapCheckbox_CheckedChanged);
+			this.AutoBeatmapCheckbox.AutoSize = true;
+			this.AutoBeatmapCheckbox.Checked = true;
+			this.AutoBeatmapCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.AutoBeatmapCheckbox.Location = new System.Drawing.Point(306, 4);
+			this.AutoBeatmapCheckbox.Margin = new System.Windows.Forms.Padding(2);
+			this.AutoBeatmapCheckbox.Name = "AutoBeatmapCheckbox";
+			this.AutoBeatmapCheckbox.Size = new System.Drawing.Size(92, 17);
+			this.AutoBeatmapCheckbox.TabIndex = 14;
+			this.AutoBeatmapCheckbox.Text = "Auto beatmap";
+			this.AutoBeatmapCheckbox.UseVisualStyleBackColor = true;
+			this.AutoBeatmapCheckbox.CheckedChanged += new System.EventHandler(this.AutoBeatmapCheckbox_CheckedChanged);
 			// 
 			// tabs
 			// 
-			this.tabs.Controls.Add(this.tabPage1);
-			this.tabs.Controls.Add(this.tabPage2);
-			this.tabs.Location = new System.Drawing.Point(3, 2);
-			this.tabs.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+			this.tabs.Controls.Add(this.resultsTab);
+			this.tabs.Controls.Add(this.chartsTab);
+			this.tabs.Controls.Add(this.settingsTab);
+			this.tabs.Location = new System.Drawing.Point(-1, 2);
+			this.tabs.Margin = new System.Windows.Forms.Padding(2);
 			this.tabs.Name = "tabs";
 			this.tabs.SelectedIndex = 0;
-			this.tabs.Size = new System.Drawing.Size(511, 264);
+			this.tabs.Size = new System.Drawing.Size(403, 237);
 			this.tabs.TabIndex = 15;
 			// 
-			// tabPage1
+			// resultsTab
 			// 
-			this.tabPage1.Controls.Add(this.difficultyDisplayPanel);
-			this.tabPage1.Controls.Add(this.autoBeatmapCheckbox);
-			this.tabPage1.Controls.Add(this.openFromFile);
-			this.tabPage1.Controls.Add(this.label2);
-			this.tabPage1.Controls.Add(this.scaleRatings);
-			this.tabPage1.Controls.Add(this.timeDisplay1);
-			this.tabPage1.Controls.Add(this.clearButton);
-			this.tabPage1.Controls.Add(this.timeDisplay2);
-			this.tabPage1.Controls.Add(this.timeDescriptionLabel);
-			this.tabPage1.Location = new System.Drawing.Point(4, 25);
-			this.tabPage1.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-			this.tabPage1.Name = "tabPage1";
-			this.tabPage1.Padding = new System.Windows.Forms.Padding(3, 2, 3, 2);
-			this.tabPage1.Size = new System.Drawing.Size(503, 235);
-			this.tabPage1.TabIndex = 0;
-			this.tabPage1.Text = "Results";
-			this.tabPage1.UseVisualStyleBackColor = true;
+			this.resultsTab.BackColor = System.Drawing.Color.Silver;
+			this.resultsTab.Controls.Add(this.EnableXmlCheckbox);
+			this.resultsTab.Controls.Add(this.AlwaysOnTopCheckbox);
+			this.resultsTab.Controls.Add(this.difficultyDisplayPanel);
+			this.resultsTab.Controls.Add(this.AutoBeatmapCheckbox);
+			this.resultsTab.Controls.Add(this.openFromFile);
+			this.resultsTab.Controls.Add(this.label2);
+			this.resultsTab.Controls.Add(this.scaleRatings);
+			this.resultsTab.Controls.Add(this.timeDisplay1);
+			this.resultsTab.Controls.Add(this.clearButton);
+			this.resultsTab.Controls.Add(this.timeDisplay2);
+			this.resultsTab.Controls.Add(this.timeDescriptionLabel);
+			this.resultsTab.Location = new System.Drawing.Point(4, 22);
+			this.resultsTab.Margin = new System.Windows.Forms.Padding(2);
+			this.resultsTab.Name = "resultsTab";
+			this.resultsTab.Padding = new System.Windows.Forms.Padding(2);
+			this.resultsTab.Size = new System.Drawing.Size(395, 211);
+			this.resultsTab.TabIndex = 0;
+			this.resultsTab.Text = "Results";
 			// 
-			// tabPage2
+			// EnableXmlCheckbox
 			// 
-			this.tabPage2.Controls.Add(this.chartedMapChoice);
-			this.tabPage2.Controls.Add(this.seriesSelect);
-			this.tabPage2.Controls.Add(this.chart);
-			this.tabPage2.Location = new System.Drawing.Point(4, 25);
-			this.tabPage2.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-			this.tabPage2.Name = "tabPage2";
-			this.tabPage2.Padding = new System.Windows.Forms.Padding(3, 2, 3, 2);
-			this.tabPage2.Size = new System.Drawing.Size(503, 235);
-			this.tabPage2.TabIndex = 1;
-			this.tabPage2.Text = "Graph";
-			this.tabPage2.UseVisualStyleBackColor = true;
+			this.EnableXmlCheckbox.AutoSize = true;
+			this.EnableXmlCheckbox.Location = new System.Drawing.Point(306, 46);
+			this.EnableXmlCheckbox.Margin = new System.Windows.Forms.Padding(2);
+			this.EnableXmlCheckbox.Name = "EnableXmlCheckbox";
+			this.EnableXmlCheckbox.Size = new System.Drawing.Size(84, 17);
+			this.EnableXmlCheckbox.TabIndex = 16;
+			this.EnableXmlCheckbox.Text = "Enable XML";
+			this.EnableXmlCheckbox.UseVisualStyleBackColor = true;
+			this.EnableXmlCheckbox.CheckedChanged += new System.EventHandler(this.EnableXmlCheckbox_CheckedChanged);
+			// 
+			// AlwaysOnTopCheckbox
+			// 
+			this.AlwaysOnTopCheckbox.AutoSize = true;
+			this.AlwaysOnTopCheckbox.Checked = true;
+			this.AlwaysOnTopCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.AlwaysOnTopCheckbox.Location = new System.Drawing.Point(306, 25);
+			this.AlwaysOnTopCheckbox.Margin = new System.Windows.Forms.Padding(2);
+			this.AlwaysOnTopCheckbox.Name = "AlwaysOnTopCheckbox";
+			this.AlwaysOnTopCheckbox.Size = new System.Drawing.Size(92, 17);
+			this.AlwaysOnTopCheckbox.TabIndex = 15;
+			this.AlwaysOnTopCheckbox.Text = "Always on top";
+			this.AlwaysOnTopCheckbox.UseVisualStyleBackColor = true;
+			this.AlwaysOnTopCheckbox.CheckedChanged += new System.EventHandler(this.AlwaysOnTop_CheckedChanged);
+			// 
+			// chartsTab
+			// 
+			this.chartsTab.BackColor = System.Drawing.Color.Silver;
+			this.chartsTab.Controls.Add(this.label1);
+			this.chartsTab.Controls.Add(this.chartedMapChoice);
+			this.chartsTab.Controls.Add(this.seriesSelect);
+			this.chartsTab.Controls.Add(this.Chart);
+			this.chartsTab.Location = new System.Drawing.Point(4, 22);
+			this.chartsTab.Margin = new System.Windows.Forms.Padding(2);
+			this.chartsTab.Name = "chartsTab";
+			this.chartsTab.Padding = new System.Windows.Forms.Padding(2);
+			this.chartsTab.Size = new System.Drawing.Size(395, 211);
+			this.chartsTab.TabIndex = 1;
+			this.chartsTab.Text = "Charts";
+			// 
+			// label1
+			// 
+			this.label1.AutoSize = true;
+			this.label1.Location = new System.Drawing.Point(154, 194);
+			this.label1.Name = "label1";
+			this.label1.Size = new System.Drawing.Size(45, 13);
+			this.label1.TabIndex = 3;
+			this.label1.Text = "Version:";
 			// 
 			// chartedMapChoice
 			// 
+			this.chartedMapChoice.BackColor = System.Drawing.SystemColors.Window;
 			this.chartedMapChoice.CausesValidation = false;
 			this.chartedMapChoice.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
 			this.chartedMapChoice.FormattingEnabled = true;
 			this.chartedMapChoice.Items.AddRange(new object[] {
-			"test",
-			"test2",
-			"test3"});
-			this.chartedMapChoice.Location = new System.Drawing.Point(381, 110);
-			this.chartedMapChoice.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            "test",
+            "test2",
+            "test3"});
+			this.chartedMapChoice.Location = new System.Drawing.Point(199, 190);
+			this.chartedMapChoice.Margin = new System.Windows.Forms.Padding(2);
 			this.chartedMapChoice.Name = "chartedMapChoice";
-			this.chartedMapChoice.Size = new System.Drawing.Size(121, 24);
+			this.chartedMapChoice.Size = new System.Drawing.Size(196, 21);
 			this.chartedMapChoice.TabIndex = 2;
 			this.chartedMapChoice.DropDown += new System.EventHandler(this.ChartedMapChoice_DropDown);
 			this.chartedMapChoice.SelectedIndexChanged += new System.EventHandler(this.ChartedMapChoice_SelectedIndexChanged);
 			// 
 			// seriesSelect
 			// 
+			this.seriesSelect.BackColor = System.Drawing.Color.Silver;
 			this.seriesSelect.BorderStyle = System.Windows.Forms.BorderStyle.None;
 			this.seriesSelect.CheckBoxes = true;
 			this.seriesSelect.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-			this.column});
+            this.column});
+			this.seriesSelect.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
 			listViewItem1.Checked = true;
 			listViewItem1.StateImageIndex = 1;
 			listViewItem2.Checked = true;
@@ -223,16 +284,17 @@
 			listViewItem5.Checked = true;
 			listViewItem5.StateImageIndex = 1;
 			this.seriesSelect.Items.AddRange(new System.Windows.Forms.ListViewItem[] {
-			listViewItem1,
-			listViewItem2,
-			listViewItem3,
-			listViewItem4,
-			listViewItem5});
-			this.seriesSelect.Location = new System.Drawing.Point(405, 136);
-			this.seriesSelect.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            listViewItem1,
+            listViewItem2,
+            listViewItem3,
+            listViewItem4,
+            listViewItem5});
+			this.seriesSelect.Location = new System.Drawing.Point(327, 113);
+			this.seriesSelect.Margin = new System.Windows.Forms.Padding(2);
+			this.seriesSelect.MultiSelect = false;
 			this.seriesSelect.Name = "seriesSelect";
 			this.seriesSelect.Scrollable = false;
-			this.seriesSelect.Size = new System.Drawing.Size(97, 119);
+			this.seriesSelect.Size = new System.Drawing.Size(64, 73);
 			this.seriesSelect.TabIndex = 1;
 			this.seriesSelect.UseCompatibleStateImageBehavior = false;
 			this.seriesSelect.View = System.Windows.Forms.View.List;
@@ -244,45 +306,129 @@
 			this.column.Text = "Column";
 			this.column.Width = 120;
 			// 
-			// chart
+			// Chart
 			// 
+			this.Chart.BackColor = System.Drawing.Color.Transparent;
+			this.Chart.BorderlineColor = System.Drawing.Color.LightGray;
+			chartArea1.AxisX.Title = "X=Time, Y=Diff";
+			chartArea1.AxisX.TitleAlignment = System.Drawing.StringAlignment.Near;
+			chartArea1.BackColor = System.Drawing.Color.Gainsboro;
 			chartArea1.Name = "ChartArea";
-			this.chart.ChartAreas.Add(chartArea1);
+			this.Chart.ChartAreas.Add(chartArea1);
+			legend1.BackColor = System.Drawing.Color.Gainsboro;
 			legend1.Name = "Legend1";
-			this.chart.Legends.Add(legend1);
-			this.chart.Location = new System.Drawing.Point(-13, -9);
-			this.chart.Margin = new System.Windows.Forms.Padding(0);
-			this.chart.Name = "chart";
+			this.Chart.Legends.Add(legend1);
+			this.Chart.Location = new System.Drawing.Point(-16, -4);
+			this.Chart.Margin = new System.Windows.Forms.Padding(0);
+			this.Chart.Name = "Chart";
+			this.Chart.Palette = System.Windows.Forms.DataVisualization.Charting.ChartColorPalette.Pastel;
 			series1.ChartArea = "ChartArea";
 			series1.Legend = "Legend1";
 			series1.Name = "Series1";
 			series1.YValuesPerPoint = 6;
-			this.chart.Series.Add(series1);
-			this.chart.Size = new System.Drawing.Size(534, 250);
-			this.chart.TabIndex = 0;
-			this.chart.Text = "Graph";
+			this.Chart.Series.Add(series1);
+			this.Chart.Size = new System.Drawing.Size(427, 219);
+			this.Chart.TabIndex = 0;
+			this.Chart.Text = "Chart";
+			// 
+			// settingsTab
+			// 
+			this.settingsTab.BackColor = System.Drawing.Color.Silver;
+			this.settingsTab.Controls.Add(this.label3);
+			this.settingsTab.Controls.Add(this.label4);
+			this.settingsTab.Controls.Add(this.label5);
+			this.settingsTab.Controls.Add(this.Settings_StarTargetMinTextbox);
+			this.settingsTab.Controls.Add(this.Settings_StarTargetMaxTextbox);
+			this.settingsTab.Controls.Add(this.Settings_UpdateIntervalNormalTextbox);
+			this.settingsTab.Controls.Add(this.Settings_UpdateIntervalMinimizedTextbox);
+			this.settingsTab.Location = new System.Drawing.Point(4, 22);
+			this.settingsTab.Name = "settingsTab";
+			this.settingsTab.Padding = new System.Windows.Forms.Padding(3);
+			this.settingsTab.Size = new System.Drawing.Size(395, 211);
+			this.settingsTab.TabIndex = 2;
+			this.settingsTab.Text = "Settings";
+			// 
+			// label3
+			// 
+			this.label3.AutoSize = true;
+			this.label3.Location = new System.Drawing.Point(9, 14);
+			this.label3.Name = "label3";
+			this.label3.Size = new System.Drawing.Size(153, 13);
+			this.label3.TabIndex = 1;
+			this.label3.Text = "Chart default friendly star range";
+			// 
+			// label4
+			// 
+			this.label4.AutoSize = true;
+			this.label4.Location = new System.Drawing.Point(9, 40);
+			this.label4.Name = "label4";
+			this.label4.Size = new System.Drawing.Size(138, 13);
+			this.label4.TabIndex = 3;
+			this.label4.Text = "Update interval, normal (ms)";
+			// 
+			// label5
+			// 
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(9, 64);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(152, 13);
+			this.label5.TabIndex = 5;
+			this.label5.Text = "Update interval, minimized (ms)";
+			// 
+			// Settings_StarTargetMinTextbox
+			// 
+			this.Settings_StarTargetMinTextbox.AllowNegative = true;
+			this.Settings_StarTargetMinTextbox.Location = new System.Drawing.Point(167, 11);
+			this.Settings_StarTargetMinTextbox.Name = "Settings_StarTargetMinTextbox";
+			this.Settings_StarTargetMinTextbox.Size = new System.Drawing.Size(44, 20);
+			this.Settings_StarTargetMinTextbox.TabIndex = 0;
+			// 
+			// Settings_StarTargetMaxTextbox
+			// 
+			this.Settings_StarTargetMaxTextbox.AllowNegative = true;
+			this.Settings_StarTargetMaxTextbox.Location = new System.Drawing.Point(217, 11);
+			this.Settings_StarTargetMaxTextbox.Name = "Settings_StarTargetMaxTextbox";
+			this.Settings_StarTargetMaxTextbox.Size = new System.Drawing.Size(44, 20);
+			this.Settings_StarTargetMaxTextbox.TabIndex = 1;
+			// 
+			// Settings_UpdateIntervalNormalTextbox
+			// 
+			this.Settings_UpdateIntervalNormalTextbox.AllowNegative = true;
+			this.Settings_UpdateIntervalNormalTextbox.Location = new System.Drawing.Point(167, 37);
+			this.Settings_UpdateIntervalNormalTextbox.Name = "Settings_UpdateIntervalNormalTextbox";
+			this.Settings_UpdateIntervalNormalTextbox.Size = new System.Drawing.Size(44, 20);
+			this.Settings_UpdateIntervalNormalTextbox.TabIndex = 2;
+			// 
+			// Settings_UpdateIntervalMinimizedTextbox
+			// 
+			this.Settings_UpdateIntervalMinimizedTextbox.AllowNegative = true;
+			this.Settings_UpdateIntervalMinimizedTextbox.Location = new System.Drawing.Point(167, 61);
+			this.Settings_UpdateIntervalMinimizedTextbox.Name = "Settings_UpdateIntervalMinimizedTextbox";
+			this.Settings_UpdateIntervalMinimizedTextbox.Size = new System.Drawing.Size(44, 20);
+			this.Settings_UpdateIntervalMinimizedTextbox.TabIndex = 3;
 			// 
 			// GUI
 			// 
-			this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.AutoSize = true;
-			this.BackColor = System.Drawing.SystemColors.Control;
-			this.ClientSize = new System.Drawing.Size(515, 266);
+			this.BackColor = System.Drawing.Color.Silver;
+			this.ClientSize = new System.Drawing.Size(398, 235);
 			this.Controls.Add(this.tabs);
 			this.ForeColor = System.Drawing.SystemColors.ControlText;
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
-			this.Margin = new System.Windows.Forms.Padding(4);
 			this.Name = "GUI";
 			this.Text = "Diff Analyzer";
-			this.TopMost = false;
 			this.TransparencyKey = System.Drawing.Color.Fuchsia;
 			this.Load += new System.EventHandler(this.GUI_Load);
 			this.tabs.ResumeLayout(false);
-			this.tabPage1.ResumeLayout(false);
-			this.tabPage1.PerformLayout();
-			this.tabPage2.ResumeLayout(false);
-			((System.ComponentModel.ISupportInitialize)(this.chart)).EndInit();
+			this.resultsTab.ResumeLayout(false);
+			this.resultsTab.PerformLayout();
+			this.chartsTab.ResumeLayout(false);
+			this.chartsTab.PerformLayout();
+			((System.ComponentModel.ISupportInitialize)(this.Chart)).EndInit();
+			this.settingsTab.ResumeLayout(false);
+			this.settingsTab.PerformLayout();
 			this.ResumeLayout(false);
 
 		}
@@ -296,13 +442,24 @@
 		private System.Windows.Forms.Button clearButton;
 		private System.Windows.Forms.Label timeDisplay1;
 		private System.Windows.Forms.Label label2;
-		private System.Windows.Forms.CheckBox autoBeatmapCheckbox;
+		private System.Windows.Forms.CheckBox AutoBeatmapCheckbox;
 		private System.Windows.Forms.TabControl tabs;
-		private System.Windows.Forms.TabPage tabPage1;
-		private System.Windows.Forms.TabPage tabPage2;
-		private System.Windows.Forms.DataVisualization.Charting.Chart chart;
+		private System.Windows.Forms.TabPage resultsTab;
+		private System.Windows.Forms.TabPage chartsTab;
+		private System.Windows.Forms.DataVisualization.Charting.Chart Chart;
 		private System.Windows.Forms.ListView seriesSelect;
 		private System.Windows.Forms.ColumnHeader column;
 		private System.Windows.Forms.ComboBox chartedMapChoice;
+		private System.Windows.Forms.TabPage settingsTab;
+		private System.Windows.Forms.CheckBox AlwaysOnTopCheckbox;
+		private System.Windows.Forms.Label label1;
+		private System.Windows.Forms.CheckBox EnableXmlCheckbox;
+		private System.Windows.Forms.Label label3;
+		private DoubleTextBox Settings_StarTargetMinTextbox;
+		private System.Windows.Forms.Label label5;
+		private IntTextBox Settings_UpdateIntervalMinimizedTextbox;
+		private System.Windows.Forms.Label label4;
+		private IntTextBox Settings_UpdateIntervalNormalTextbox;
+		private DoubleTextBox Settings_StarTargetMaxTextbox;
 	}
 }

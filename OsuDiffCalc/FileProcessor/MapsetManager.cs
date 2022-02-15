@@ -37,15 +37,16 @@
 		}
 
 		//entry point from GUI.cs
-		public static Mapset AnalyzeMapset(string directory, UserInterface.GUI gui, bool clearLists = true) {
+		public static Mapset AnalyzeMapset(string directory, UserInterface.GUI gui, bool clearLists, bool enableXml) {
 			//timing
 			var sw = Stopwatch.StartNew();
 			try {
 				if (Directory.Exists(directory)) {
 					//initalize allMapsets array from xml if needed
-					if (!SavefileXMLManager.IsInitialized)
+					if (!SavefileXMLManager.IsInitialized && enableXml)
 						SavefileXMLManager.Parse(ref _allMapsets);
-					Console.WriteLine("xml analyzed");
+					if (enableXml)
+						Console.WriteLine("xml analyzed");
 
 					//parse the mapset by iterating on the directory's .osu files
 					var mapPaths = Directory.EnumerateFiles(directory, "*", SearchOption.TopDirectoryOnly)
@@ -57,14 +58,14 @@
 					Console.WriteLine("set built");
 
 					if (set.Beatmaps.Count > 0) {
-						set = AnalyzeMapset(set, clearLists);
+						set = AnalyzeMapset(set, clearLists, enableXml);
 						Console.WriteLine("mapset analyzed");
 					}
 
 					//timing
 					sw.Stop();
 					if (gui is not null)
-						gui.SetTime2($"{sw.ElapsedMilliseconds} ms");
+						gui.SetAnalyzeTime($"{sw.ElapsedMilliseconds} ms");
 
 					return set;
 				}
@@ -101,7 +102,7 @@
 		}
 
 		//this is meant to save maps that are manually chosen
-		public static void SaveMap(Beatmap map) {
+		public static void SaveMap(Beatmap map, bool saveToXml) {
 			if (string.IsNullOrEmpty(map?.Title)) return;
 				var set = new Mapset(map);
 			if (map.IsAnalyzed)
@@ -121,12 +122,12 @@
 				//save map 
 				if (!found) {
 					storedSet.Add(map);
-					storedSet.SaveToXML();
+					if (saveToXml) storedSet.SaveToXML();
 				}
 			}
 			else {
 				_allMapsets.Add(set);
-				set.SaveToXML();
+				if (saveToXml) set.SaveToXML();
 			}
 		}
 
@@ -143,8 +144,7 @@
 			return new Mapset(allMaps);
 		}
 
-		private static Mapset AnalyzeMapset(Mapset set, bool clearLists = true) {
-			bool save = true;
+		private static Mapset AnalyzeMapset(Mapset set, bool clearLists, bool saveToXml) {
 			int index = CheckForMapset(set);
 			//Console.Write("analyzing set...");
 			//check if the mapset has been analyzed
@@ -164,7 +164,7 @@
 				}
 				else {
 					//Console.WriteLine("no maps are missing");
-					save = false;
+					saveToXml = false;
 				}
 				set = _allMapsets[index];
 			}
@@ -177,7 +177,7 @@
 				//Console.WriteLine("analyzed");
 			}
 			set.IsAnalyzed = true;
-			if (save) {
+			if (saveToXml) {
 				//Console.Write("saving set...");
 				if (set.SaveToXML()) { /*Console.WriteLine("set saved");*/ }
 				else { /*Console.WriteLine("!! could not save");*/ }
