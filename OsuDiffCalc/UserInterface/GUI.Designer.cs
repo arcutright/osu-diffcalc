@@ -25,8 +25,8 @@
 			System.Windows.Forms.ListViewItem listViewItem1 = new System.Windows.Forms.ListViewItem("Jumps");
 			System.Windows.Forms.ListViewItem listViewItem2 = new System.Windows.Forms.ListViewItem("Streams");
 			System.Windows.Forms.ListViewItem listViewItem3 = new System.Windows.Forms.ListViewItem("Bursts");
-			System.Windows.Forms.ListViewItem listViewItem4 = new System.Windows.Forms.ListViewItem("Doubles");
-			System.Windows.Forms.ListViewItem listViewItem5 = new System.Windows.Forms.ListViewItem("Sliders");
+			System.Windows.Forms.ListViewItem listViewItem4 = new System.Windows.Forms.ListViewItem("Sliders");
+			System.Windows.Forms.ListViewItem listViewItem5 = new System.Windows.Forms.ListViewItem("Doubles");
 			System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
 			System.Windows.Forms.DataVisualization.Charting.Legend legend1 = new System.Windows.Forms.DataVisualization.Charting.Legend();
 			System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
@@ -274,27 +274,29 @@
 			this.seriesSelect.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.column});
 			this.seriesSelect.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
+			this.seriesSelect.HideSelection = false;
 			listViewItem1.Checked = true;
 			listViewItem1.StateImageIndex = 1;
 			listViewItem2.Checked = true;
 			listViewItem2.StateImageIndex = 1;
 			listViewItem3.Checked = true;
 			listViewItem3.StateImageIndex = 1;
-			listViewItem4.StateImageIndex = 0;
-			listViewItem5.Checked = true;
-			listViewItem5.StateImageIndex = 1;
+			listViewItem4.Checked = true;
+			listViewItem4.StateImageIndex = 1;
+			listViewItem5.StateImageIndex = 0;
 			this.seriesSelect.Items.AddRange(new System.Windows.Forms.ListViewItem[] {
             listViewItem1,
             listViewItem2,
             listViewItem3,
             listViewItem4,
             listViewItem5});
-			this.seriesSelect.Location = new System.Drawing.Point(327, 113);
+			this.seriesSelect.LabelWrap = false;
+			this.seriesSelect.Location = new System.Drawing.Point(326, 116);
 			this.seriesSelect.Margin = new System.Windows.Forms.Padding(2);
 			this.seriesSelect.MultiSelect = false;
 			this.seriesSelect.Name = "seriesSelect";
 			this.seriesSelect.Scrollable = false;
-			this.seriesSelect.Size = new System.Drawing.Size(64, 73);
+			this.seriesSelect.Size = new System.Drawing.Size(65, 142);
 			this.seriesSelect.TabIndex = 1;
 			this.seriesSelect.UseCompatibleStateImageBehavior = false;
 			this.seriesSelect.View = System.Windows.Forms.View.List;
@@ -418,7 +420,7 @@
 			this.ForeColor = System.Drawing.SystemColors.ControlText;
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
 			this.Name = "GUI";
-			this.Text = "Diff Analyzer";
+			this.Text = "osu! Difficulty Calculator";
 			this.TransparencyKey = System.Drawing.Color.Fuchsia;
 			this.Load += new System.EventHandler(this.GUI_Load);
 			this.tabs.ResumeLayout(false);

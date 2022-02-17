@@ -28,13 +28,14 @@
 		/// <summary>
 		/// Gets current/active beatmap directory based on osu!'s open file hooks
 		/// </summary>
-		public static string GetOsuBeatmapDirectory(int? pid) {
-			if (!pid.HasValue)
+		public static string GetOsuBeatmapDirectory(int? osuPid) {
+			if (!osuPid.HasValue)
 				return null;
 			try {
+				// TODO: rewrite without linq (consider using win32 api funcs?) to reduce cpu/memory usage
 				var beatmapDirs =
 					// filter to processes with open audio files
-					from file in Win32Processes.DetectOpenFiles.GetOpenFilesEnumerator(pid.Value)
+					from file in Win32Processes.DetectOpenFiles.GetOpenFilesEnumerator(osuPid.Value)
 					where _osuOpenFileTypes.Contains(Path.GetExtension(file).ToLower())
 					// filter to processes whose directory contains .osu files
 					let dirPath = Path.GetDirectoryName(file)
@@ -51,11 +52,11 @@
 		/// <summary>
 		/// Get a reference to the osu! process. Returns <see langword="null"/> if it cannot be found.
 		/// </summary>
-		/// <param name="lastPid"> last pid of osu!, if available </param>
-		public static Process GetOsuProcess(int? lastPid = null) {
-			if (lastPid.HasValue) {
+		/// <param name="lastOsuPid"> last pid of osu!, if available </param>
+		public static Process GetOsuProcess(int guiPid, int? lastOsuPid = null) {
+			if (lastOsuPid.HasValue) {
 				try {
-					var process = Process.GetProcessById(lastPid.Value);
+					var process = Process.GetProcessById(lastOsuPid.Value);
 					if (process is not null)
 						return process;
 				}
@@ -64,9 +65,11 @@
 				} 
 			}
 			try {
+				// TODO: rewrite without linq (consider using win32 api funcs?) to reduce cpu/memory usage
+				var consolePid = Program.ConsolePid;
 				var processes =
 					(from p in Process.GetProcessesByName("osu!")
-					 where Path.GetFileName(p.MainModule.FileName).ToLower() == "osu!.exe"
+					 where p.Id != consolePid && p.Id != guiPid && Path.GetFileName(p.MainModule.FileName).ToLower() == "osu!.exe"
 					 select p).ToList();
 				if (processes.Count <= 1)
 					return processes.FirstOrDefault();

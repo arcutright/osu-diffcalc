@@ -15,6 +15,12 @@
 
 	public partial class GUI : Form {
 		private const int LABEL_FONT_SIZE = 12;
+		/// <summary> Process for the ui thread </summary>
+		private readonly Process _guiProcess;
+		/// <summary> Process for the console thread </summary>
+		private readonly Process _consoleProcess;
+		/// <summary> System-wide pid for the ui thread </summary>
+		private readonly int _guiPid;
 
 		private bool _isLoaded = false;
 		private bool _isVisible = true;
@@ -46,6 +52,9 @@
 #endif
 
 		public GUI() {
+			_guiProcess = Process.GetCurrentProcess();
+			_guiPid = _guiProcess?.Id ?? (int)NativeMethods.GetCurrentThreadId();
+
 			if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 				Thread.CurrentThread.Name = "GUIThread";
 			InitializeComponent();
@@ -581,7 +590,7 @@
 				if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 					Thread.CurrentThread.Name = "AutoWindowTickThread";
 
-				var osuProcess = Finder.GetOsuProcess(_osuPid);
+				var osuProcess = Finder.GetOsuProcess(_guiPid, _osuPid);
 				string windowTitle =  osuProcess?.MainWindowTitle;
 				_osuPid = osuProcess?.Id;
 
@@ -593,7 +602,7 @@
 						_isInGame = false;
 					});
 				}
-				else if (windowTitle.Contains("[")) {
+				else if (windowTitle.IndexOf('[') != -1) {
 					Invoke((MethodInvoker)delegate {
 						if (Visible) Visible = false;
 						if (TopMost) TopMost = false;
@@ -610,6 +619,34 @@
 						_isVisible = true;
 						_isOsuPresent = true;
 						_isInGame = false;
+
+						var osuScreenBounds = Screen.FromHandle(osuProcess.MainWindowHandle)?.Bounds;
+						var thisScreenBounds = Screen.FromHandle(_guiProcess.MainWindowHandle)?.Bounds;
+						if (thisScreenBounds == osuScreenBounds) {
+							int numScreens = Screen.AllScreens.Length;
+							bool isOsuFullScreen = NativeMethods.IsFullScreen(osuProcess);
+							if (numScreens > 1 && isOsuFullScreen) {
+								var otherScreen = Screen.AllScreens.First(s => s.Bounds != osuScreenBounds);
+								NativeMethods.TryMoveToScreen(Program.ConsoleWindowHandle, otherScreen);
+								NativeMethods.TryMoveToScreen(_guiProcess, otherScreen);
+								//TopMost = false;
+							}
+							else if (!isOsuFullScreen) {
+								//TopMost = IsAlwaysOnTop;
+							}
+							else {
+								// TODO: find way to forward mouse/kb inputs to osu process when using this technique
+								NativeMethods.ForceForegroundWindow(_guiProcess, osuProcess);
+
+								// seizure warning
+								//NativeMethods.MakeForegroundWindow(_guiProcess);
+								//NativeMethods.MakeForegroundWindow2(_guiProcess);
+								//NativeMethods.MakeForegroundWindow3(_guiProcess);
+							}
+						}
+						else {
+							//TopMost = false;
+						}
 					});
 				}
 			}
@@ -688,7 +725,7 @@
 					useWindowTitleForDirectory = false;
 				}
 				else {
-					var osuProcess = Finder.GetOsuProcess(_osuPid);
+					var osuProcess = Finder.GetOsuProcess(_guiPid, _osuPid);
 					_osuPid = osuProcess?.Id;
 					_currentMapsetDirectory = Finder.GetOsuBeatmapDirectory(_osuPid);
 				}
