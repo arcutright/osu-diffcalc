@@ -23,38 +23,30 @@
 				//find and load xml
 				LoadXML();
 				//parse xml
-				var mapsets = _document.Descendants("mapset").Select(set => new {
-					title = set.Attribute("title").Value.Trim(),
-					artist = set.Attribute("artist").Value.Trim(),
-					creator = set.Attribute("creator").Value.Trim(),
-					maps = set.Descendants("map"),
-				});
-				foreach (var mapset in mapsets) {
-					var set = new Mapset(mapset.title, mapset.artist, mapset.creator);
-					foreach (var map in mapset.maps) {
-						string version = map.Attribute("version")?.Value.Trim() ?? "";
+				var mapsets = _document.Descendants("mapset").Select(set => (
+					title: set.Attribute("title").Value?.Trim() ?? string.Empty,
+					artist: set.Attribute("artist").Value?.Trim() ?? string.Empty,
+					creator: set.Attribute("creator").Value?.Trim() ?? string.Empty,
+					maps: set.Descendants("map")
+				));
+				foreach (var (title, artist, creator, maps) in mapsets) {
+					var set = new Mapset(title, artist, creator);
+					foreach (var map in maps) {
+						string version = map.Attribute("version")?.Value.Trim() ?? string.Empty;
 						if (string.IsNullOrEmpty(version)) continue;
 
-						var beatmap = new Beatmap(set, version);
-						string diffstring = map.Attribute("totalDiff")?.Value.Trim() ?? "0";
-						beatmap.DiffRating.TotalDifficulty = double.Parse(diffstring, CultureInfo.InvariantCulture);
-
-						diffstring = map.Attribute("jumpDiff")?.Value.Trim() ?? "0";
-						beatmap.DiffRating.JumpsDifficulty = double.Parse(diffstring, CultureInfo.InvariantCulture);
-
-						diffstring = map.Attribute("streamDiff")?.Value.Trim() ?? "0";
-						beatmap.DiffRating.StreamsDifficulty = double.Parse(diffstring, CultureInfo.InvariantCulture);
-
-						diffstring = map.Attribute("burstDiff")?.Value.Trim() ?? "0";
-						beatmap.DiffRating.BurstsDifficulty = double.Parse(diffstring, CultureInfo.InvariantCulture);
-
-						diffstring = map.Attribute("doubleDiff")?.Value.Trim() ?? map.Attribute("coupletDiff")?.Value.Trim() ?? "0";
-						beatmap.DiffRating.DoublesDifficulty = double.Parse(diffstring, CultureInfo.InvariantCulture);
-
-						diffstring = map.Attribute("sliderDiff")?.Value.Trim() ?? "0";
-						beatmap.DiffRating.SlidersDifficulty = double.Parse(diffstring, CultureInfo.InvariantCulture);
-
+						var beatmap = new Beatmap(set, version) {
+							DiffRating = new(
+								jumpsDifficulty: TryParseDouble(map.Attribute("jumpDiff")?.Value),
+								streamsDifficulty: TryParseDouble(map.Attribute("streamDiff")?.Value),
+								burstsDifficulty: TryParseDouble(map.Attribute("burstDiff")?.Value),
+								doublesDifficulty: TryParseDouble(map.Attribute("doubleDiff")?.Value ?? map.Attribute("coupletDiff")?.Value),
+								slidersDifficulty: TryParseDouble(map.Attribute("sliderDiff")?.Value),
+								totalDifficulty: TryParseDouble(map.Attribute("totalDiff")?.Value)
+							)
+						};
 						set.Add(beatmap);
+
 					}
 					allMapsets.Add(set);
 				}
@@ -64,6 +56,13 @@
 			catch {
 				return false;
 			}
+		}
+
+		private static double TryParseDouble(string valueString) {
+			if (!string.IsNullOrEmpty(valueString) && double.TryParse(valueString, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedValue))
+				return parsedValue;
+			else
+				return default;
 		}
 
 		public static bool SaveMapset(Mapset set) {
@@ -111,7 +110,8 @@
 					var mapsetNode = new XElement("mapset",
 						new XAttribute("title", set.Title),
 						new XAttribute("artist", set.Artist),
-						new XAttribute("creator", set.Creator) );
+						new XAttribute("creator", set.Creator)
+					);
 					foreach (Beatmap map in set.Beatmaps) {
 						mapsetNode.Add(new XElement("map",
 							new XAttribute("version", map.Version),
@@ -120,7 +120,8 @@
 							new XAttribute("streamDiff", dstr(map.DiffRating.StreamsDifficulty)),
 							new XAttribute("burstDiff", dstr(map.DiffRating.BurstsDifficulty)),
 							new XAttribute("doubleDiff", dstr(map.DiffRating.DoublesDifficulty)),
-							new XAttribute("sliderDiff", dstr(map.DiffRating.SlidersDifficulty))));
+							new XAttribute("sliderDiff", dstr(map.DiffRating.SlidersDifficulty))
+						));
 					}
 					if (_document.Root.Elements().Count() > 0)
 						_document.Root.LastNode.AddAfterSelf(mapsetNode);

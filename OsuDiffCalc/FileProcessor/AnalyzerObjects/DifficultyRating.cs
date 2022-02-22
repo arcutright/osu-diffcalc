@@ -14,6 +14,16 @@
 		public Series Doubles { get; } = BuildSeries("Doubles");
 		public Series Sliders { get; } = BuildSeries("Sliders");
 
+		public DifficultyRating() { }
+		public DifficultyRating(double jumpsDifficulty, double streamsDifficulty, double burstsDifficulty, double doublesDifficulty, double slidersDifficulty, double totalDifficulty) {
+			JumpsDifficulty = jumpsDifficulty;
+			StreamsDifficulty = streamsDifficulty;
+			BurstsDifficulty = burstsDifficulty;
+			DoublesDifficulty = doublesDifficulty;
+			SlidersDifficulty = slidersDifficulty;
+			TotalDifficulty = totalDifficulty;
+		}
+
 		public static double FamiliarizeRating(double rating) {
 			//return 1.1 * Math.Pow(rating, 0.25);
 			return 0.5 * Math.Pow(rating, 0.4);

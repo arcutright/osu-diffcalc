@@ -8,6 +8,7 @@
 	using System.Windows.Forms;
 
 #pragma warning disable IDE1006 // Naming Styles
+	[DesignerCategory("")]
 	public class ValidatingTextBox : TextBox {
 		private string _validText;
 		private int _selectionStart;
@@ -16,7 +17,9 @@
 
 		public event EventHandler<TextValidatingEventArgs> TextValidating;
 
-		protected virtual void OnTextValidating(object sender, TextValidatingEventArgs e) => TextValidating?.Invoke(sender, e);
+		protected virtual void OnTextValidating(TextValidatingEventArgs e) {
+			TextValidating?.Invoke(this, e);
+		}
 
 		protected override void WndProc(ref Message m) {
 			base.WndProc(ref m);
@@ -29,8 +32,7 @@
 
 			bool delete = m.Msg == WM_KEYDOWN && (int)m.WParam == VK_DELETE;
 			if ((m.Msg == WM_KEYDOWN && !delete) || m.Msg == WM_ENTERIDLE) {
-				DontProcessMessage(() =>
-				{
+				DontProcessMessage(() => {
 					_validText = Text;
 					_selectionStart = SelectionStart;
 					_selectionEnd = SelectionLength;
@@ -41,16 +43,12 @@
 			const int WM_PASTE = 0x302;
 			if (m.Msg == WM_CHAR || m.Msg == WM_PASTE || delete) {
 				string newText = null;
-				DontProcessMessage(() =>
-				{
-					newText = Text;
-				});
+				DontProcessMessage(() => newText = Text);
 
 				var e = new TextValidatingEventArgs(newText);
-				OnTextValidating(this, e);
+				OnTextValidating(e);
 				if (!e.IsValid) {
-					DontProcessMessage(() =>
-					{
+					DontProcessMessage(() => {
 						Text = _validText;
 						SelectionStart = _selectionStart;
 						SelectionLength = _selectionEnd;
@@ -61,7 +59,7 @@
 
 		protected override void OnLostFocus(EventArgs e) {
 			var e2 = new TextValidatingEventArgs(Text);
-			OnTextValidating(this, e2);
+			OnTextValidating(e2);
 			base.OnLostFocus(e);
 		}
 
@@ -82,8 +80,8 @@
 		}
 
 		private void DontProcessMessage(Action action) {
-			_dontProcessMessages = true;
 			try {
+				_dontProcessMessages = true;
 				action();
 			}
 			finally {

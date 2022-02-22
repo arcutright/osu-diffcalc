@@ -6,6 +6,7 @@
 	using System.Drawing;
 	using System.IO;
 	using System.Linq;
+	using System.Text;
 	using System.Threading;
 	using System.Threading.Tasks;
 	using System.Windows.Forms;
@@ -17,13 +18,11 @@
 		private const int LABEL_FONT_SIZE = 12;
 		/// <summary> Process for the ui thread </summary>
 		private readonly Process _guiProcess;
-		/// <summary> Process for the console thread </summary>
-		private readonly Process _consoleProcess;
 		/// <summary> System-wide pid for the ui thread </summary>
 		private readonly int _guiPid;
 
 		private bool _isLoaded = false;
-		private bool _isVisible = true;
+		private bool _isMinimized = false;
 		private bool _isOsuPresent = false;
 		private int? _osuPid = null;
 		private bool _isInGame = false;
@@ -72,16 +71,12 @@
 			SetText(Settings_UpdateIntervalNormalTextbox, $"{Settings.AutoUpdateIntervalNormalMs}");
 			SetText(Settings_UpdateIntervalMinimizedTextbox, $"{Settings.AutoUpdateIntervalMinimizedMs}");
 
-			_isLoaded = true;
 
-			if (_isVisible) {
-				StartAutoWindowUpdater();
-				if (EnableAutoBeatmapAnalyzer)
-					StartAutoBeatmapAnalyzer();
-			}
+			_isLoaded = true;
+			StartTasksIfNeeded();
 		}
 
-		public Properties.Settings Settings { get; } = Properties.Settings.Default;
+		public Properties.Settings Settings => Properties.Settings.Default;
 
 		public int AutoBeatmapAnalyzerTimeoutMs { get; set; } = INITIAL_TIMEOUT_MS;
 		public int AutoWindowUpdaterTimeoutMs { get; set; } = INITIAL_TIMEOUT_MS;
@@ -126,10 +121,10 @@
 				Settings.EnableAutoBeatmapAnalyzer = value;
 				AutoBeatmapCheckbox.Checked = value;
 				Settings.Save();
-				if (value && _isVisible)
+				if (value && _isLoaded)
 					StartAutoBeatmapAnalyzer();
 				else
-					_ = StopAutoBeatmapAnalyzer();
+					Task.Run(StopAutoBeatmapAnalyzer);
 			}
 		}
 
@@ -188,36 +183,47 @@
 			SetText(timeDisplay2, timeString);
 		}
 
-#endregion
+		#endregion
 
 		//starts and stops all background threads
 		protected override async void OnResize(EventArgs e) {
-			if (WindowState == FormWindowState.Minimized) {
-				_isVisible = false;
-				_pauseGUI = true;
-				await StopAutoWindowUpdater();
-				await StopAutoBeatmapAnalyzer();
-			}
-			else {
-				_isVisible = true;
-				_pauseGUI = false;
-				if (_isLoaded) {
-					StartAutoWindowUpdater();
-					if (EnableAutoBeatmapAnalyzer)
-						StartAutoBeatmapAnalyzer();
+			try {
+				base.OnResize(e);
+				if (WindowState == FormWindowState.Minimized) {
+					_isMinimized = true;
+					_pauseAllTasks = true;
+					await Task.WhenAll(StopAutoWindowUpdater(), StopAutoBeatmapAnalyzer());
+				}
+				else {
+					_isMinimized = false;
+					_pauseAllTasks = false;
+					StartTasksIfNeeded();
 				}
 			}
+			catch { }
+		}
+
+		protected override void OnParentVisibleChanged(EventArgs e) {
+			base.OnParentVisibleChanged(e);
+			StartTasksIfNeeded();
+		}
+
+		protected override void OnVisibleChanged(EventArgs e) {
+			base.OnVisibleChanged(e);
+			StartTasksIfNeeded();
 		}
 
 		protected override async void OnFormClosing(FormClosingEventArgs e) {
-			if (e.CloseReason == CloseReason.UserClosing) {
-				await StopAutoBeatmapAnalyzer();
-				await StopAutoWindowUpdater();
+			try {
+				if (e.CloseReason == CloseReason.UserClosing) {
+					await Task.WhenAll(StopAutoWindowUpdater(), StopAutoBeatmapAnalyzer());
+				}
+				base.OnFormClosing(e);
 			}
-			base.OnFormClosing(e);
+			catch { }
 		}
 
-#region Controls
+		#region Controls
 
 		private void OpenFromFile_Click(object sender, EventArgs e) {
 			Task.Run(ManualBeatmapAnalyzer);
@@ -356,9 +362,10 @@
 		private Label MakeLabel(string text, int fontSize, string toolTipStr = "") {
 			var label = new Label {
 				Text = text,
+				Font = difficultyDisplayPanel.Font,
 				AutoSize = true,
 			};
-			label.Font = new Font(label.Font.FontFamily, fontSize);
+			//label.Font = new Font(label.Font.FontFamily, fontSize);
 			if (!string.IsNullOrEmpty(toolTipStr)) {
 				var tip = new ToolTip {
 					ShowAlways = true
@@ -404,14 +411,14 @@
 		private void ClearChart() {
 			Invoke((MethodInvoker)delegate {
 				Chart.Series.Clear();
-				if (Chart.ChartAreas.Count != 0) {
-					Chart.ChartAreas[0].AxisX.MajorGrid.Enabled = false;
-					Chart.ChartAreas[0].AxisX.MinorGrid.Enabled = false;
-					Chart.ChartAreas[0].AxisX.LabelStyle.Format = "#";
-					Chart.ChartAreas[0].AxisY.MajorGrid.Enabled = false;
-					Chart.ChartAreas[0].AxisY.MinorGrid.Enabled = false;
-					Chart.ChartAreas[0].AxisY.LabelStyle.Format = "#";
-				}
+				//if (Chart.ChartAreas.Count != 0) {
+				//	Chart.ChartAreas[0].AxisX.MajorGrid.Enabled = false;
+				//	Chart.ChartAreas[0].AxisX.MinorGrid.Enabled = false;
+				//	Chart.ChartAreas[0].AxisX.LabelStyle.Format = "#";
+				//	Chart.ChartAreas[0].AxisY.MajorGrid.Enabled = false;
+				//	Chart.ChartAreas[0].AxisY.MinorGrid.Enabled = false;
+				//	Chart.ChartAreas[0].AxisY.LabelStyle.Format = "#";
+				//}
 				Chart.Update();
 			});
 		}
@@ -486,9 +493,17 @@
 			}
 		}
 
-#endregion
+		#endregion
 
-#region Manual Beatmap Analyzer
+		private void StartTasksIfNeeded() {
+			if (_isLoaded && !_isMinimized && Visible) {
+				StartAutoWindowUpdater();
+				if (EnableAutoBeatmapAnalyzer)
+					StartAutoBeatmapAnalyzer();
+			}
+		}
+
+		#region Manual Beatmap Analyzer
 
 		private void ManualBeatmapAnalyzer() {
 			if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
@@ -527,15 +542,15 @@
 			catch (OperationCanceledException) { throw; }
 			catch { }
 		}
-#endregion
+		#endregion
 
-#region Automatic Window Updater - auto show/hide window
+		#region Automatic Window Updater - auto show/hide window
 
 		private void StartAutoWindowUpdater() {
 			if (_autoWindowUpdater is null) {
 				if (_autoWindowCancellation.IsCancellationRequested)
 					_autoWindowCancellation = new CancellationTokenSource();
-				_autoWindowUpdater = AutoWindowUpdaterBegin(_autoWindowCancellation.Token, AutoWindowUpdaterTimeoutMs);
+				_autoWindowUpdater = Task.Run(() => AutoWindowUpdaterBegin(_autoWindowCancellation.Token, AutoWindowUpdaterTimeoutMs));
 			}
 		}
 
@@ -559,7 +574,7 @@
 						await AutoWindowUpdaterThreadTick(cancelToken, timeoutMs);
 					sw.Stop();
 					cancelToken.ThrowIfCancellationRequested();
-					int updateInterval = _isVisible ? UpdateIntervalNormalMs : UpdateIntervalMinimizedMs;
+					int updateInterval = !_isMinimized && Visible ? UpdateIntervalNormalMs : UpdateIntervalMinimizedMs;
 					await Task.Delay(Math.Max(updateInterval, timeoutMs - (int)sw.ElapsedMilliseconds));
 				}
 				cancelToken.ThrowIfCancellationRequested();
@@ -606,7 +621,6 @@
 					Invoke((MethodInvoker)delegate {
 						if (Visible) Visible = false;
 						if (TopMost) TopMost = false;
-						_isVisible = false;
 						_isOsuPresent = true;
 						_isInGame = true;
 						_inGameWindowTitle = windowTitle;
@@ -616,7 +630,6 @@
 					Invoke((MethodInvoker)delegate {
 						if (!TopMost) TopMost = IsAlwaysOnTop;
 						if (!Visible) Visible = true;
-						_isVisible = true;
 						_isOsuPresent = true;
 						_isInGame = false;
 
@@ -652,15 +665,15 @@
 			}
 		}
 
-#endregion
+		#endregion
 
-#region Automatic Beatmap Analyzer - polls handles, gets beatmaps, analyzes, updates display
+		#region Automatic Beatmap Analyzer - polls handles, gets beatmaps, analyzes, updates display
 
 		private void StartAutoBeatmapAnalyzer() {
 			if (_autoBeatmapAnalyzer is null) {
 				if (_autoBeatmapCancellation.IsCancellationRequested)
 					_autoBeatmapCancellation = new CancellationTokenSource();
-				_autoBeatmapAnalyzer = AutoBeatmapAnalyzerBegin(_autoBeatmapCancellation.Token, AutoBeatmapAnalyzerTimeoutMs);
+				_autoBeatmapAnalyzer = Task.Run(() => AutoBeatmapAnalyzerBegin(_autoBeatmapCancellation.Token, AutoBeatmapAnalyzerTimeoutMs));
 			}
 		}
 
@@ -684,7 +697,7 @@
 						await AutoBeatmapAnalyzerThreadTick(cancelToken, timeoutMs);
 					sw.Stop();
 					cancelToken.ThrowIfCancellationRequested();
-					int updateInterval = _isVisible ? UpdateIntervalNormalMs : UpdateIntervalMinimizedMs;
+					int updateInterval = !_isMinimized && Visible ? UpdateIntervalNormalMs : UpdateIntervalMinimizedMs;
 					await Task.Delay(Math.Max(updateInterval, timeoutMs - (int)sw.ElapsedMilliseconds));
 				}
 				cancelToken.ThrowIfCancellationRequested();
@@ -695,7 +708,7 @@
 
 		private async Task AutoBeatmapAnalyzerThreadTick(CancellationToken cancelToken, int timeoutMs) {
 			bool useWindowTitleForDirectory = false;
-			if (!_isOsuPresent || _isInGame || !_isVisible)
+			if (!_isOsuPresent || _isInGame || _isMinimized || !Visible)
 				return;
 			try {
 				var t = new Thread(ts) {
@@ -716,7 +729,7 @@
 			void ts() {
 				if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 					Thread.CurrentThread.Name = "AutoBeatmapTickThread";
-					
+
 				//timing
 				var sw = Stopwatch.StartNew();
 				if (useWindowTitleForDirectory) {
@@ -746,7 +759,7 @@
 			}
 		}
 
-#endregion
+		#endregion
 
 	}
 }

@@ -6,11 +6,6 @@
 	using System.Diagnostics;
 
 	class Program {
-		/// <summary>
-		/// Program-wide settings
-		/// </summary>
-		internal static Properties.Settings Settings { get; private set; } = Properties.Settings.Default;
-
 		/// <summary> System-wide pid for the console window thread </summary>
 		internal static int ConsolePid { get; private set; }
 
@@ -28,11 +23,11 @@
 				NativeMethods.SetProcessDPIAware();
 
 			// configure settings
-			Settings = Properties.Settings.Default;
+			var settings = Properties.Settings.Default;
 #if DEBUG
-			Settings.Reset();
+			settings.Reset();
 #endif
-			Settings.Upgrade();
+			settings.Upgrade();
 
 			var hWndConsole = NativeMethods.GetConsoleWindow();
 			int consolePid = -1;
@@ -48,6 +43,7 @@
 
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
+			Application.ThreadException += Application_ThreadException;
 			Application.Run(new GUI());
 
 			//Finder.debugAllProcesses();
@@ -65,6 +61,12 @@
 			}
 			catch { }
 #endif
+		}
+
+		private static void Application_ThreadException(object sender, ThreadExceptionEventArgs e) {
+			Console.WriteLine($"Unhandled exception!");
+			Console.WriteLine($"  Sender [{sender?.GetType()}]: '{sender}', e: '{e}'");
+			Console.WriteLine($"  ex: '{e?.Exception}'");
 		}
 	}
 }

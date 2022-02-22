@@ -911,6 +911,8 @@
 		/// Application-defined struct to be used by the EnumWindows and EnumDesktopWindows functions
 		/// </summary>
 		struct EnumWindowsData {
+			public EnumWindowsData() { }
+
 			// Can put anything in this application-defined struct
 			/// <summary> Buffer length used for string matching </summary>
 			public int BufferLength = 1024;

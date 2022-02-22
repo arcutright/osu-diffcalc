@@ -5,10 +5,20 @@
 	/// Validating TextBox which only accepts valid <see cref="int"/> input
 	/// </summary>
 	public class IntTextBox : NumericTextBox<int> {
-		protected override void OnTextValidating(object sender, TextValidatingEventArgs e) {
-			e.IsValid = int.TryParse(e.NewText, _numberStyle, CultureInfo.CurrentUICulture, out var value);
-			if (e.IsValid)
-				Value = value;
+		private bool _textValidating = false;
+
+		protected override void OnTextValidating(TextValidatingEventArgs e) {
+			if (_textValidating) return;
+			base.OnTextValidating(e);
+			try {
+				_textValidating = true;
+				e.IsValid = int.TryParse(e.NewText, _numberStyle, CultureInfo.CurrentUICulture, out var value);
+				if (e.IsValid)
+					Value = value;
+			}
+			finally {
+				_textValidating = false;
+			}
 		}
 	}
 }

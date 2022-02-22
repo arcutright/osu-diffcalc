@@ -19,11 +19,11 @@
 			return Array.Empty<string>();
 		}
 
-		private static readonly HashSet<string> _osuOpenFileTypes = new(new []{ 
+		private static readonly HashSet<string> _osuOpenFileTypes = new(StringComparer.OrdinalIgnoreCase){ 
 			".mp3", ".ogg", ".oga", ".mogg", ".wma", ".wav", ".flac", ".aac", ".alac", ".wv", // audio
 			".avi", ".flv", ".mp4", ".mkv", ".mov", ".wmv", ".webm", ".gifv", ".vob", ".ogv",  // video
 			".mpg", ".mpeg", ".m4v", ".3gp", ".mov", ".qt", ".flv", // video
-		});
+		};
 
 		/// <summary>
 		/// Gets current/active beatmap directory based on osu!'s open file hooks
@@ -36,7 +36,7 @@
 				var beatmapDirs =
 					// filter to processes with open audio files
 					from file in Win32Processes.DetectOpenFiles.GetOpenFilesEnumerator(osuPid.Value)
-					where _osuOpenFileTypes.Contains(Path.GetExtension(file).ToLower())
+					where _osuOpenFileTypes.Contains(Path.GetExtension(file))
 					// filter to processes whose directory contains .osu files
 					let dirPath = Path.GetDirectoryName(file)
 					let beatmapFiles = Directory.EnumerateFiles(dirPath, "*.osu", SearchOption.TopDirectoryOnly)
@@ -78,7 +78,7 @@
 					from p in processes
 					// filter to processes with open audio files
 					from file in Win32Processes.DetectOpenFiles.GetOpenFilesEnumerator(p.Id)
-					where _osuOpenFileTypes.Contains(Path.GetExtension(file).ToLower())
+					where _osuOpenFileTypes.Contains(Path.GetExtension(file))
 					// filter to processes whose directory contains .osu files
 					let dirPath = Path.GetDirectoryName(file)
 					let beatmapFiles = Directory.EnumerateFiles(dirPath, "*.osu", SearchOption.TopDirectoryOnly)

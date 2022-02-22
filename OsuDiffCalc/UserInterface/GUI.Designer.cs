@@ -291,7 +291,7 @@
             listViewItem4,
             listViewItem5});
 			this.seriesSelect.LabelWrap = false;
-			this.seriesSelect.Location = new System.Drawing.Point(326, 116);
+			this.seriesSelect.Location = new System.Drawing.Point(326, 95);
 			this.seriesSelect.Margin = new System.Windows.Forms.Padding(2);
 			this.seriesSelect.MultiSelect = false;
 			this.seriesSelect.Name = "seriesSelect";
@@ -312,9 +312,12 @@
 			// 
 			this.Chart.BackColor = System.Drawing.Color.Transparent;
 			this.Chart.BorderlineColor = System.Drawing.Color.LightGray;
+			chartArea1.AxisX.LabelStyle.Format = "#";
+			chartArea1.AxisX.MajorGrid.LineColor = System.Drawing.Color.DimGray;
 			chartArea1.AxisX.Title = "X=Time, Y=Diff";
 			chartArea1.AxisX.TitleAlignment = System.Drawing.StringAlignment.Near;
-			chartArea1.BackColor = System.Drawing.Color.Gainsboro;
+			chartArea1.AxisY.MajorGrid.LineColor = System.Drawing.Color.DimGray;
+			chartArea1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(32)))), ((int)(((byte)(32)))), ((int)(((byte)(32)))));
 			chartArea1.Name = "ChartArea";
 			this.Chart.ChartAreas.Add(chartArea1);
 			legend1.BackColor = System.Drawing.Color.Gainsboro;
