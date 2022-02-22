@@ -44,8 +44,9 @@
 			this.EnableXmlCheckbox = new System.Windows.Forms.CheckBox();
 			this.AlwaysOnTopCheckbox = new System.Windows.Forms.CheckBox();
 			this.chartsTab = new System.Windows.Forms.TabPage();
+			this.ChartStyleDropdown = new System.Windows.Forms.ComboBox();
 			this.label1 = new System.Windows.Forms.Label();
-			this.chartedMapChoice = new System.Windows.Forms.ComboBox();
+			this.ChartedMapDropdown = new System.Windows.Forms.ComboBox();
 			this.seriesSelect = new System.Windows.Forms.ListView();
 			this.column = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.Chart = new System.Windows.Forms.DataVisualization.Charting.Chart();
@@ -92,6 +93,7 @@
 			// 
 			this.difficultyDisplayPanel.AutoScroll = true;
 			this.difficultyDisplayPanel.BackColor = System.Drawing.Color.Gainsboro;
+			this.difficultyDisplayPanel.Font = new System.Drawing.Font("Consolas", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.difficultyDisplayPanel.Location = new System.Drawing.Point(-4, 3);
 			this.difficultyDisplayPanel.Name = "difficultyDisplayPanel";
 			this.difficultyDisplayPanel.Size = new System.Drawing.Size(305, 180);
@@ -227,8 +229,9 @@
 			// chartsTab
 			// 
 			this.chartsTab.BackColor = System.Drawing.Color.Silver;
+			this.chartsTab.Controls.Add(this.ChartStyleDropdown);
 			this.chartsTab.Controls.Add(this.label1);
-			this.chartsTab.Controls.Add(this.chartedMapChoice);
+			this.chartsTab.Controls.Add(this.ChartedMapDropdown);
 			this.chartsTab.Controls.Add(this.seriesSelect);
 			this.chartsTab.Controls.Add(this.Chart);
 			this.chartsTab.Location = new System.Drawing.Point(4, 22);
@@ -239,6 +242,16 @@
 			this.chartsTab.TabIndex = 1;
 			this.chartsTab.Text = "Charts";
 			// 
+			// ChartStyleDropdown
+			// 
+			this.ChartStyleDropdown.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+			this.ChartStyleDropdown.FormattingEnabled = true;
+			this.ChartStyleDropdown.Location = new System.Drawing.Point(296, 168);
+			this.ChartStyleDropdown.Name = "ChartStyleDropdown";
+			this.ChartStyleDropdown.Size = new System.Drawing.Size(98, 21);
+			this.ChartStyleDropdown.TabIndex = 4;
+			this.ChartStyleDropdown.SelectedIndexChanged += new System.EventHandler(this.ChartStyleDropdown_SelectedIndexChanged);
+			// 
 			// label1
 			// 
 			this.label1.AutoSize = true;
@@ -248,23 +261,22 @@
 			this.label1.TabIndex = 3;
 			this.label1.Text = "Version:";
 			// 
-			// chartedMapChoice
+			// ChartedMapDropdown
 			// 
-			this.chartedMapChoice.BackColor = System.Drawing.SystemColors.Window;
-			this.chartedMapChoice.CausesValidation = false;
-			this.chartedMapChoice.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-			this.chartedMapChoice.FormattingEnabled = true;
-			this.chartedMapChoice.Items.AddRange(new object[] {
+			this.ChartedMapDropdown.BackColor = System.Drawing.SystemColors.Window;
+			this.ChartedMapDropdown.CausesValidation = false;
+			this.ChartedMapDropdown.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+			this.ChartedMapDropdown.FormattingEnabled = true;
+			this.ChartedMapDropdown.Items.AddRange(new object[] {
             "test",
             "test2",
             "test3"});
-			this.chartedMapChoice.Location = new System.Drawing.Point(199, 190);
-			this.chartedMapChoice.Margin = new System.Windows.Forms.Padding(2);
-			this.chartedMapChoice.Name = "chartedMapChoice";
-			this.chartedMapChoice.Size = new System.Drawing.Size(196, 21);
-			this.chartedMapChoice.TabIndex = 2;
-			this.chartedMapChoice.DropDown += new System.EventHandler(this.ChartedMapChoice_DropDown);
-			this.chartedMapChoice.SelectedIndexChanged += new System.EventHandler(this.ChartedMapChoice_SelectedIndexChanged);
+			this.ChartedMapDropdown.Location = new System.Drawing.Point(198, 189);
+			this.ChartedMapDropdown.Margin = new System.Windows.Forms.Padding(2);
+			this.ChartedMapDropdown.Name = "ChartedMapDropdown";
+			this.ChartedMapDropdown.Size = new System.Drawing.Size(196, 21);
+			this.ChartedMapDropdown.TabIndex = 2;
+			this.ChartedMapDropdown.SelectedIndexChanged += new System.EventHandler(this.ChartedMapDropdown_SelectedIndexChanged);
 			// 
 			// seriesSelect
 			// 
@@ -300,8 +312,8 @@
 			this.seriesSelect.TabIndex = 1;
 			this.seriesSelect.UseCompatibleStateImageBehavior = false;
 			this.seriesSelect.View = System.Windows.Forms.View.List;
-			this.seriesSelect.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.SeriesSelect_SelectedIndexChanged);
-			this.seriesSelect.SelectedIndexChanged += new System.EventHandler(this.SeriesSelect_SelectedIndexChanged);
+			this.seriesSelect.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.SeriesSelect_ColumnClick);
+			this.seriesSelect.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.SeriesSelect_ItemChecked);
 			// 
 			// column
 			// 
@@ -454,7 +466,7 @@
 		private System.Windows.Forms.DataVisualization.Charting.Chart Chart;
 		private System.Windows.Forms.ListView seriesSelect;
 		private System.Windows.Forms.ColumnHeader column;
-		private System.Windows.Forms.ComboBox chartedMapChoice;
+		private System.Windows.Forms.ComboBox ChartedMapDropdown;
 		private System.Windows.Forms.TabPage settingsTab;
 		private System.Windows.Forms.CheckBox AlwaysOnTopCheckbox;
 		private System.Windows.Forms.Label label1;
@@ -466,5 +478,6 @@
 		private System.Windows.Forms.Label label4;
 		private IntTextBox Settings_UpdateIntervalNormalTextbox;
 		private DoubleTextBox Settings_StarTargetMaxTextbox;
+		private System.Windows.Forms.ComboBox ChartStyleDropdown;
 	}
 }

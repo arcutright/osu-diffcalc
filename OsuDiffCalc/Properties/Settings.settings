@@ -26,5 +26,8 @@
     <Setting Name="EnableAutoBeatmapAnalyzer" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
+    <Setting Name="SeriesChartType" Type="System.Windows.Forms.DataVisualization.Charting.SeriesChartType" Scope="User">
+      <Value Profile="(Default)">StackedColumn</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

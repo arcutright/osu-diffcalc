@@ -39,6 +39,7 @@
 		private CancellationTokenSource _autoWindowCancellation = new();
 
 		//display variables
+		private SeriesChartType _seriesChartType = SeriesChartType.Column;
 		private Beatmap _chartedBeatmap;
 		private Mapset _displayedMapset;
 		private bool _pauseGUI = false;
@@ -71,6 +72,23 @@
 			SetText(Settings_UpdateIntervalNormalTextbox, $"{Settings.AutoUpdateIntervalNormalMs}");
 			SetText(Settings_UpdateIntervalMinimizedTextbox, $"{Settings.AutoUpdateIntervalMinimizedMs}");
 
+			// attach event handlers for text box updates
+			Settings_StarTargetMinTextbox.TextChanged += SettingsTextbox_TextChanged;
+			Settings_StarTargetMaxTextbox.TextChanged += SettingsTextbox_TextChanged;
+			Settings_UpdateIntervalNormalTextbox.TextChanged += SettingsTextbox_TextChanged;
+			Settings_UpdateIntervalMinimizedTextbox.TextChanged += SettingsTextbox_TextChanged;
+
+			ChartStyleDropdown.Items.Clear();
+			ChartStyleDropdown.Items.AddRange(new object[] {
+				SeriesChartType.Column,
+				SeriesChartType.RangeColumn,
+				SeriesChartType.StackedColumn,
+				SeriesChartType.StackedColumn100,
+				SeriesChartType.Point,
+			});
+			ChartStyleDropdown.SelectedItem = SeriesChartType;
+			ChartStyleDropdown.Update();
+			RefreshChart();
 
 			_isLoaded = true;
 			StartTasksIfNeeded();
@@ -125,6 +143,15 @@
 					StartAutoBeatmapAnalyzer();
 				else
 					Task.Run(StopAutoBeatmapAnalyzer);
+			}
+		}
+
+		public SeriesChartType SeriesChartType {
+			get => Settings.SeriesChartType;
+			set {
+				if (SeriesChartType == value) return;
+				Settings.SeriesChartType = value;
+				RefreshChart();
 			}
 		}
 
@@ -191,12 +218,12 @@
 				base.OnResize(e);
 				if (WindowState == FormWindowState.Minimized) {
 					_isMinimized = true;
-					_pauseAllTasks = true;
+					_pauseGUI = true;
 					await Task.WhenAll(StopAutoWindowUpdater(), StopAutoBeatmapAnalyzer());
 				}
 				else {
 					_isMinimized = false;
-					_pauseAllTasks = false;
+					_pauseGUI = false;
 					StartTasksIfNeeded();
 				}
 			}
@@ -250,52 +277,70 @@
 			EnableXmlCache = EnableXmlCheckbox.Checked;
 		}
 
-		private void SeriesSelect_SelectedIndexChanged(object sender, EventArgs e) {
-			if (_chartedBeatmap is not null) {
-				_pauseGUI = true;
-				var selectedItemsText = new List<string>();
-				foreach (ListViewItem sel in seriesSelect.SelectedItems) {
-					sel.Checked = true;
-					sel.Selected = false;
-				}
-				foreach (ListViewItem sel in seriesSelect.CheckedItems) {
-					if (!selectedItemsText.Contains(sel.Text))
-						selectedItemsText.Add(sel.Text);
-					sel.Selected = false;
-				}
+		private bool _checkedChanging = false;
+
+		private void SeriesSelect_ColumnClick(object sender, ColumnClickEventArgs e) {
+			if (_checkedChanging) return;
+			Invoke((MethodInvoker)delegate {
+				var item = seriesSelect.Items[e.Column];
+				item.Checked = !item.Checked;
+			});
+		}
+
+		/// <summary>
+		/// Clears the chart and adds the appropriate series to it based on the checked options
+		/// </summary>
+		private void SeriesSelect_ItemChecked(object sender, ItemCheckedEventArgs e) {
+			if (_checkedChanging)
+				return;
+			if (_chartedBeatmap is null) {
 				ClearChart();
-				foreach (string text in selectedItemsText) {
-					if (text == "Streams")
-						AddChartSeries(_chartedBeatmap.DiffRating.Streams);
-					else if (text == "Bursts")
-						AddChartSeries(_chartedBeatmap.DiffRating.Bursts);
-					else if (text == "Doubles")
-						AddChartSeries(_chartedBeatmap.DiffRating.Doubles);
-					else if (text == "Sliders")
-						AddChartSeries(_chartedBeatmap.DiffRating.Sliders);
-					else if (text == "Jumps")
-						AddChartSeries(_chartedBeatmap.DiffRating.Jumps);
-				}
+				return;
 			}
-			_pauseGUI = false;
-		}
+			//Console.WriteLine($"item checked! sender: '{sender}', e: '{e}'");
+			bool prevPauseGUI = _pauseGUI;
+			try {
+				_pauseGUI = true;
+				_checkedChanging = true;
 
-		private void ChartedMapChoice_SelectedIndexChanged(object sender, EventArgs e) {
-			if (_displayedMapset is not null) {
-				_pauseGUI = false;
-				string choice = chartedMapChoice.SelectedItem.ToString();
-				Beatmap displayedMap = _displayedMapset.Beatmaps.FirstOrDefault(map => map.Version == choice);
-				if (displayedMap is not null)
-					_chartedBeatmap = displayedMap;
-				SeriesSelect_SelectedIndexChanged(null, null);
+				Invoke((MethodInvoker)delegate {
+					//foreach (ListViewItem sel in seriesSelect.SelectedItems) {
+					//	sel.Checked = !sel.Checked;
+					//}
+					//var selectedItemsText = new List<string>();
+					//foreach (ListViewItem sel in seriesSelect.SelectedItems) {
+					//	sel.Checked = true;
+					//	sel.Selected = false;
+					//}
+					//foreach (ListViewItem sel in seriesSelect.CheckedItems) {
+					//	if (!selectedItemsText.Contains(sel.Text))
+					//		selectedItemsText.Add(sel.Text);
+					//	sel.Selected = false;
+					//}
+					Series series = _chartedBeatmap.DiffRating.GetSeriesByName(e.Item.Text);
+					if (series is null)
+						return;
+
+					series.Enabled = e.Item.Checked;
+					Chart.Visible = true;
+					Chart.Update();
+				});
+			}
+			finally {
+				_pauseGUI = prevPauseGUI;
+				_checkedChanging = false;
 			}
 		}
 
-		private void ChartedMapChoice_DropDown(object sender, EventArgs e) {
-			_pauseGUI = true;
+		private void ChartedMapDropdown_SelectedIndexChanged(object sender, EventArgs e) {
+			if (_displayedMapset is null) return;
+			int index = ChartedMapDropdown.SelectedIndex;
+			var displayedMap = index >= 0 && index < _displayedMapset.Beatmaps.Count ? _displayedMapset.Beatmaps[index] : null;
+			if (displayedMap is not null)
+				_chartedBeatmap = displayedMap;
+			RefreshChart();
 		}
 
-		private bool _isTextChanging = false;
 		private void SettingsTextbox_TextChanged(object sender, System.EventArgs e) {
 			if (!_isLoaded || _isTextChanging || sender is not TextBox box) return;
 			if (!box.IsHandleCreated || box.Focused) return;
@@ -320,6 +365,10 @@
 			}
 		}
 
+		private void ChartStyleDropdown_SelectedIndexChanged(object sender, EventArgs e) {
+			SeriesChartType = (SeriesChartType?)ChartStyleDropdown.SelectedItem ?? this.SeriesChartType;
+			RefreshChart();
+		}
 		#endregion
 
 		#region Private Helpers
@@ -343,6 +392,15 @@
 		}
 
 		private void DisplayMapset(Mapset set) {
+			if (set is null) {
+				Invoke((MethodInvoker)delegate {
+					ClearBeatmapDisplay();
+					ChartedMapDropdown.Items.Clear();
+					_displayedMapset = null;
+					_chartedBeatmap = null;
+				});
+				return;
+			}
 			// sort by difficulty
 			set.Sort(false);
 
@@ -354,8 +412,8 @@
 				}
 				_displayedMapset = set;
 				_chartedBeatmap = set.Beatmaps.FirstOrDefault();
-				UpdateChartOptions(true);
-				SeriesSelect_SelectedIndexChanged(null, null);
+				UpdateChartOptions();
+				RefreshChart();
 			});
 		}
 
@@ -423,25 +481,60 @@
 			});
 		}
 
-		private void AddChartSeries(Series series) {
-			Invoke((MethodInvoker)delegate {
-				if (Chart.Series.IsUniqueName(series.Name)) {
-					Chart.Series.Add(series);
+		private void RefreshChart() {
+			if (_checkedChanging)
+				return;
+			if (_chartedBeatmap is null) {
+				ClearChart();
+				return;
+			}
+			bool prevPauseGUI = _pauseGUI;
+			try {
+				_pauseGUI = true;
+				if (!_chartedBeatmap.DiffRating.IsNormalized)
+					_chartedBeatmap.DiffRating.NormalizeSeries();
+				Invoke((MethodInvoker)delegate {
+					// remove any unexpected series
+					Series[] allSeries = new[] {
+						_chartedBeatmap.DiffRating.JumpsSeries,
+						_chartedBeatmap.DiffRating.StreamsSeries,
+						_chartedBeatmap.DiffRating.BurstsSeries,
+						_chartedBeatmap.DiffRating.DoublesSeries,
+						_chartedBeatmap.DiffRating.SlidersSeries,
+					};
+					var toRemove = Chart.Series.Where(series => Array.IndexOf(allSeries, series) == -1).ToArray();
+					foreach (var series in toRemove) {
+						Chart.Series.Remove(series);
+					}
+					// add series if needed, update visibility + chart type of each series
+					foreach (ListViewItem sel in seriesSelect.Items) {
+						Series series = _chartedBeatmap.DiffRating.GetSeriesByName(sel?.Text);
+						if (series is null)
+							continue;
+						if (!Chart.Series.Contains(series))
+							Chart.Series.Add(series);
+						series.Enabled = sel.Checked;
+						series.ChartType = SeriesChartType;
+					}
+					// refresh the chart
 					Chart.Visible = true;
 					Chart.Update();
-				}
-			});
+				});
+			}
+			finally {
+				_pauseGUI = prevPauseGUI;
+				_checkedChanging = false;
+			}
 		}
 
 		private void UpdateChartOptions(bool fullSet = true) {
 			//if fullSet = false, the only option should be manually chosen map(s)
 			if (fullSet) {
 				Invoke((MethodInvoker)delegate {
-					chartedMapChoice.Items.Clear();
-					bool showFamiliarRating = ShowFamiliarRating;
+					ChartedMapDropdown.Items.Clear();
 					foreach (Beatmap map in _displayedMapset.Beatmaps) {
 						string displayString = showFamiliarRating ? map.GetFamiliarizedDisplayString() : map.GetDiffDisplayString();
-						chartedMapChoice.Items.Add(displayString);
+						ChartedMapDropdown.Items.Add(displayString);
 					}
 
 					// pick the most appropriate initial map according to the settings
@@ -481,14 +574,18 @@
 					else {
 						selectedIndex = 0;
 					}
-					chartedMapChoice.SelectedIndex = selectedIndex;
+					ChartedMapDropdown.SelectedIndex = selectedIndex;
 				});
 			}
 			else {
 				Invoke((MethodInvoker)delegate {
-					chartedMapChoice.Items.Clear();
-					chartedMapChoice.Items.Add(_chartedBeatmap.Version);
-					chartedMapChoice.SelectedIndex = 0;
+					ChartedMapDropdown.Items.Clear();
+					if (_chartedBeatmap is not null) {
+						var map = _chartedBeatmap;
+						string displayString = ShowFamiliarRating ? map.GetFamiliarizedDisplayString() : map.GetDiffDisplayString();
+						ChartedMapDropdown.Items.Add(displayString);
+					}
+					ChartedMapDropdown.SelectedIndex = 0;
 				});
 			}
 		}
@@ -508,7 +605,9 @@
 		private void ManualBeatmapAnalyzer() {
 			if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 				Thread.CurrentThread.Name = "ManualBeatmapAnalyzerWorkerThread";
+			bool prevPauseGUI = _pauseGUI;
 			try {
+				_pauseGUI = true;
 				Mapset set = MapsetManager.BuildSet(UX.GetFilenamesFromDialog(this));
 				SetText(timeDisplay1, $"0 ms");
 				Console.WriteLine("set built");
@@ -535,12 +634,15 @@
 					}
 					// display graph results
 					_chartedBeatmap = set.Beatmaps.First();
-					SeriesSelect_SelectedIndexChanged(null, null);
-					UpdateChartOptions(true);
+					UpdateChartOptions();
+					RefreshChart();
 				});
 			}
 			catch (OperationCanceledException) { throw; }
 			catch { }
+			finally {
+				_pauseGUI = prevPauseGUI;
+			}
 		}
 		#endregion
 
@@ -610,12 +712,12 @@
 				_osuPid = osuProcess?.Id;
 
 				//update visibility
-				if (string.IsNullOrEmpty(windowTitle)) {
 					Invoke((MethodInvoker)delegate {
 						if (TopMost) TopMost = false;
 						_isOsuPresent = false;
 						_isInGame = false;
 					});
+				if (!_osuPid.HasValue || string.IsNullOrEmpty(windowTitle)) {
 				}
 				else if (windowTitle.IndexOf('[') != -1) {
 					Invoke((MethodInvoker)delegate {
@@ -748,13 +850,9 @@
 				if (_currentMapsetDirectory != _prevMapsetDirectory && Directory.Exists(_currentMapsetDirectory)) {
 					//analyze the mapset
 					Mapset set = MapsetManager.AnalyzeMapset(_currentMapsetDirectory, this, true, EnableXmlCache);
-					if (set is not null) {
-						//show info on GUI
-						Invoke((MethodInvoker)delegate {
-							DisplayMapset(set);
-							_prevMapsetDirectory = _currentMapsetDirectory;
-						});
-					}
+					//show info on GUI
+					DisplayMapset(set);
+					_prevMapsetDirectory = _currentMapsetDirectory;
 				}
 			}
 		}

@@ -118,5 +118,17 @@ namespace OsuDiffCalc.Properties {
                 this["EnableAutoBeatmapAnalyzer"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("StackedColumn")]
+        public global::System.Windows.Forms.DataVisualization.Charting.SeriesChartType SeriesChartType {
+            get {
+                return ((global::System.Windows.Forms.DataVisualization.Charting.SeriesChartType)(this["SeriesChartType"]));
+            }
+            set {
+                this["SeriesChartType"] = value;
+            }
+        }
     }
 }
