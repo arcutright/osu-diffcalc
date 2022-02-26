@@ -24,9 +24,12 @@
 		private bool _isLoaded = false;
 		private bool _isMinimized = false;
 		private bool _isOsuPresent = false;
+		private bool _isOnSameScreen = true;
+		private bool _didMinimize = false;
 		private int? _osuPid = null;
 		private bool _isInGame = false;
 		private string _inGameWindowTitle = null;
+		private Beatmap _inGameBeatmap = null;
 		private string _prevMapsetDirectory = null, _currentMapsetDirectory = null;
 
 		//background event timers
@@ -39,10 +42,9 @@
 		private CancellationTokenSource _autoWindowCancellation = new();
 
 		//display variables
-		private SeriesChartType _seriesChartType = SeriesChartType.Column;
 		private Beatmap _chartedBeatmap;
 		private Mapset _displayedMapset;
-		private bool _pauseGUI = false;
+		private bool _pauseAllTasks = false;
 
 		private const int INITIAL_TIMEOUT_MS =
 #if DEBUG
@@ -218,12 +220,12 @@
 				base.OnResize(e);
 				if (WindowState == FormWindowState.Minimized) {
 					_isMinimized = true;
-					_pauseGUI = true;
+					_pauseAllTasks = true;
 					await Task.WhenAll(StopAutoWindowUpdater(), StopAutoBeatmapAnalyzer());
 				}
 				else {
 					_isMinimized = false;
-					_pauseGUI = false;
+					_pauseAllTasks = false;
 					StartTasksIfNeeded();
 				}
 			}
@@ -298,9 +300,9 @@
 				return;
 			}
 			//Console.WriteLine($"item checked! sender: '{sender}', e: '{e}'");
-			bool prevPauseGUI = _pauseGUI;
+			bool prevPauseAllTasks = _pauseAllTasks;
 			try {
-				_pauseGUI = true;
+				_pauseAllTasks = true;
 				_checkedChanging = true;
 
 				Invoke((MethodInvoker)delegate {
@@ -327,7 +329,7 @@
 				});
 			}
 			finally {
-				_pauseGUI = prevPauseGUI;
+				_pauseAllTasks = prevPauseAllTasks;
 				_checkedChanging = false;
 			}
 		}
@@ -411,7 +413,13 @@
 					AddBeatmapToDisplay(map);
 				}
 				_displayedMapset = set;
-				_chartedBeatmap = set.Beatmaps.FirstOrDefault();
+
+				var inGameBeatmap = !string.IsNullOrEmpty(_inGameWindowTitle) ? set?.Beatmaps.FirstOrDefault(map => _inGameWindowTitle.EndsWith(map.Version + "]", StringComparison.Ordinal)) : null;
+				if (inGameBeatmap != _inGameBeatmap)
+					Console.WriteLine($"in game beatmap: '{_inGameBeatmap?.Version}'");
+				_inGameBeatmap = inGameBeatmap;
+
+				_chartedBeatmap = _inGameBeatmap ?? set.Beatmaps.FirstOrDefault();
 				UpdateChartOptions();
 				RefreshChart();
 			});
@@ -433,22 +441,26 @@
 			return label;
 		}
 
+		private bool _isTextChanging = false;
 		private void SetText(Control control, string text) {
-			bool prevIsTextChanging = _isTextChanging;
-			try {
-				_isTextChanging = true;
-				Invoke((MethodInvoker)delegate {
+			string currentText = control?.Text;
+			if (currentText == text)
+				return;
+			Invoke((MethodInvoker)delegate {
+				bool prevIsTextChanging = _isTextChanging;
+				try {
+					_isTextChanging = true;
 					control.Text = text;
 					//if (control is Label) {
 					//	control.AutoSize = true;
 					//	control.Font = new Font(control.Font.FontFamily, 9);
 					//}
-				});
-			}
-			catch { }
-			finally {
-				_isTextChanging = prevIsTextChanging;
-			}
+				}
+				catch { }
+				finally {
+					_isTextChanging = prevIsTextChanging;
+				}
+			});
 		}
 
 		public void AddChartPoint(double x, double y) {
@@ -488,9 +500,9 @@
 				ClearChart();
 				return;
 			}
-			bool prevPauseGUI = _pauseGUI;
+			bool prevPauseAllTasks = _pauseAllTasks;
 			try {
-				_pauseGUI = true;
+				_pauseAllTasks = true;
 				if (!_chartedBeatmap.DiffRating.IsNormalized)
 					_chartedBeatmap.DiffRating.NormalizeSeries();
 				Invoke((MethodInvoker)delegate {
@@ -522,7 +534,7 @@
 				});
 			}
 			finally {
-				_pauseGUI = prevPauseGUI;
+				_pauseAllTasks = prevPauseAllTasks;
 				_checkedChanging = false;
 			}
 		}
@@ -530,6 +542,26 @@
 		private void UpdateChartOptions(bool fullSet = true) {
 			//if fullSet = false, the only option should be manually chosen map(s)
 			if (fullSet) {
+				bool showFamiliarRating = ShowFamiliarRating;
+				var newMapOptions = _displayedMapset.Beatmaps.Select(
+					map => showFamiliarRating ? map.GetFamiliarizedDisplayString() : map.GetDiffDisplayString()
+				).ToArray();
+				if (newMapOptions.Length == ChartedMapDropdown.Items.Count) {
+					if (newMapOptions.Length == 0)
+						return;
+					int i = 0;
+					bool equal = true;
+					foreach (var item in ChartedMapDropdown.Items) {
+						if (newMapOptions[i] != item?.ToString()) {
+							equal = false;
+							break;
+						}
+						++i;
+					}
+					if (equal)
+						return;
+				}
+
 				Invoke((MethodInvoker)delegate {
 					ChartedMapDropdown.Items.Clear();
 					foreach (Beatmap map in _displayedMapset.Beatmaps) {
@@ -605,9 +637,9 @@
 		private void ManualBeatmapAnalyzer() {
 			if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 				Thread.CurrentThread.Name = "ManualBeatmapAnalyzerWorkerThread";
-			bool prevPauseGUI = _pauseGUI;
+			bool prevPauseAllTasks = _pauseAllTasks;
 			try {
-				_pauseGUI = true;
+				_pauseAllTasks = true;
 				Mapset set = MapsetManager.BuildSet(UX.GetFilenamesFromDialog(this));
 				SetText(timeDisplay1, $"0 ms");
 				Console.WriteLine("set built");
@@ -628,12 +660,18 @@
 				Invoke((MethodInvoker)delegate {
 					ClearBeatmapDisplay();
 					// add to text results
-					_displayedMapset = set;
 					foreach (var beatmap in set.Beatmaps) {
 						AddBeatmapToDisplay(beatmap);
 					}
+					_displayedMapset = set;
+
+					var inGameBeatmap = !string.IsNullOrEmpty(_inGameWindowTitle) ? set?.Beatmaps.FirstOrDefault(map => _inGameWindowTitle.EndsWith(map.Version + "]", StringComparison.Ordinal)) : null;
+					if (inGameBeatmap != _inGameBeatmap)
+						Console.WriteLine($"in game beatmap: '{_inGameBeatmap?.Version}'");
+					_inGameBeatmap = inGameBeatmap;
+
 					// display graph results
-					_chartedBeatmap = set.Beatmaps.First();
+					_chartedBeatmap = _inGameBeatmap ?? set.Beatmaps.First();
 					UpdateChartOptions();
 					RefreshChart();
 				});
@@ -641,7 +679,7 @@
 			catch (OperationCanceledException) { throw; }
 			catch { }
 			finally {
-				_pauseGUI = prevPauseGUI;
+				_pauseAllTasks = prevPauseAllTasks;
 			}
 		}
 		#endregion
@@ -672,7 +710,7 @@
 				var sw = new Stopwatch();
 				while (!cancelToken.IsCancellationRequested) {
 					sw.Restart();
-					if (!_pauseGUI)
+					if (!_pauseAllTasks)
 						await AutoWindowUpdaterThreadTick(cancelToken, timeoutMs);
 					sw.Stop();
 					cancelToken.ThrowIfCancellationRequested();
@@ -712,56 +750,86 @@
 				_osuPid = osuProcess?.Id;
 
 				//update visibility
-					Invoke((MethodInvoker)delegate {
-						if (TopMost) TopMost = false;
-						_isOsuPresent = false;
-						_isInGame = false;
-					});
 				if (!_osuPid.HasValue || string.IsNullOrEmpty(windowTitle)) {
+					if (TopMost) {
+						Invoke((MethodInvoker)delegate {
+							TopMost = false;
+						});
+					}
+					_isOsuPresent = false;
+					_isInGame = false;
+					_didMinimize = false;
 				}
 				else if (windowTitle.IndexOf('[') != -1) {
-					Invoke((MethodInvoker)delegate {
-						if (Visible) Visible = false;
-						if (TopMost) TopMost = false;
-						_isOsuPresent = true;
-						_isInGame = true;
-						_inGameWindowTitle = windowTitle;
-					});
+					if (_isInGame && windowTitle == _inGameWindowTitle)
+						return;
+					try {
+						var osuScreenBounds = Screen.FromHandle(osuProcess.MainWindowHandle)?.Bounds;
+						var thisScreenBounds = Screen.FromHandle(_guiProcess.MainWindowHandle)?.Bounds;
+						_isOnSameScreen = thisScreenBounds == osuScreenBounds;
+					}
+					catch { }
+					if (!_isMinimized) _didMinimize = _isOnSameScreen;
+					if (_isOnSameScreen) {
+						Invoke((MethodInvoker)delegate {
+							if (Visible) Visible = false;
+							if (TopMost) TopMost = false;
+						});
+					}
+					_isOsuPresent = true;
+					_isInGame = true;
+					_inGameWindowTitle = windowTitle;
+					_inGameBeatmap = _displayedMapset?.Beatmaps.FirstOrDefault(map => windowTitle.EndsWith(map.Version + "]", StringComparison.Ordinal));
+
+					if (_chartedBeatmap != _inGameBeatmap) {
+						Invoke((MethodInvoker)delegate {
+							UpdateChartOptions();
+							ChartedMapDropdown.SelectedIndex = _displayedMapset.IndexOf(_inGameBeatmap);
+							RefreshChart();
+						});
+					}
+					Console.WriteLine($"In game, window title: '{windowTitle}'");
+					Console.WriteLine($"  => beatmap: '{_inGameBeatmap?.Version}'");
 				}
 				else {
 					Invoke((MethodInvoker)delegate {
 						if (!TopMost) TopMost = IsAlwaysOnTop;
-						if (!Visible) Visible = true;
+						if (_didMinimize && !Visible) Visible = true;
 						_isOsuPresent = true;
 						_isInGame = false;
+						_didMinimize = false;
 
-						var osuScreenBounds = Screen.FromHandle(osuProcess.MainWindowHandle)?.Bounds;
-						var thisScreenBounds = Screen.FromHandle(_guiProcess.MainWindowHandle)?.Bounds;
-						if (thisScreenBounds == osuScreenBounds) {
-							int numScreens = Screen.AllScreens.Length;
-							bool isOsuFullScreen = NativeMethods.IsFullScreen(osuProcess);
-							if (numScreens > 1 && isOsuFullScreen) {
-								var otherScreen = Screen.AllScreens.First(s => s.Bounds != osuScreenBounds);
-								NativeMethods.TryMoveToScreen(Program.ConsoleWindowHandle, otherScreen);
-								NativeMethods.TryMoveToScreen(_guiProcess, otherScreen);
-								//TopMost = false;
-							}
-							else if (!isOsuFullScreen) {
-								//TopMost = IsAlwaysOnTop;
+						try {
+							var osuScreenBounds = Screen.FromHandle(osuProcess.MainWindowHandle)?.Bounds;
+							var thisScreenBounds = Screen.FromHandle(_guiProcess.MainWindowHandle)?.Bounds;
+							_isOnSameScreen = thisScreenBounds == osuScreenBounds;
+							if (_isOnSameScreen) {
+								int numScreens = Screen.AllScreens.Length;
+								bool isOsuFullScreen = NativeMethods.IsFullScreen(osuProcess);
+								if (numScreens > 1 && isOsuFullScreen) {
+									var otherScreen = Screen.AllScreens.First(s => s.Bounds != osuScreenBounds);
+									NativeMethods.TryMoveToScreen(Program.ConsoleWindowHandle, otherScreen);
+									NativeMethods.TryMoveToScreen(_guiProcess, otherScreen);
+									//TopMost = false;
+								}
+								else if (!isOsuFullScreen) {
+									//TopMost = IsAlwaysOnTop;
+								}
+								else {
+									// TODO: find way to forward mouse/kb inputs to osu process when using this technique
+									NativeMethods.ForceForegroundWindow(_guiProcess, osuProcess);
+
+									// seizure warning
+									//NativeMethods.MakeForegroundWindow(_guiProcess);
+									//NativeMethods.MakeForegroundWindow2(_guiProcess);
+									//NativeMethods.MakeForegroundWindow3(_guiProcess);
+								}
 							}
 							else {
-								// TODO: find way to forward mouse/kb inputs to osu process when using this technique
-								NativeMethods.ForceForegroundWindow(_guiProcess, osuProcess);
-
-								// seizure warning
-								//NativeMethods.MakeForegroundWindow(_guiProcess);
-								//NativeMethods.MakeForegroundWindow2(_guiProcess);
-								//NativeMethods.MakeForegroundWindow3(_guiProcess);
+								//TopMost = false;
 							}
 						}
-						else {
-							//TopMost = false;
-						}
+						catch { }
 					});
 				}
 			}
@@ -795,7 +863,7 @@
 				var sw = new Stopwatch();
 				while (!cancelToken.IsCancellationRequested) {
 					sw.Restart();
-					if (!_pauseGUI)
+					if (!_pauseAllTasks)
 						await AutoBeatmapAnalyzerThreadTick(cancelToken, timeoutMs);
 					sw.Stop();
 					cancelToken.ThrowIfCancellationRequested();
