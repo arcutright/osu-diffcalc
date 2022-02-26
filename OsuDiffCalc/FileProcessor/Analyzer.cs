@@ -121,9 +121,11 @@
 			if (!shapeAdded)
 				addShapeToAppropriateList();
 
-			double streamsDifficulty = GetStreamsDifficulty(streams, minStreamAvgMs, beatmap);
-			double doublesDifficulty = GetDoublesDifficulty(doubles, minDoubleAvgMs, beatmap);
-			double burstsDifficulty = GetStreamsDifficulty(bursts, minBurstAvgMs, beatmap);
+			var streamsDiff = GetStreamsDifficulty(streams, minStreamAvgMs, beatmap);
+			var doublesDifficulty = GetDoublesDifficulty(doubles, minDoubleAvgMs, beatmap);
+			var burstsDiff = GetStreamsDifficulty(bursts, minBurstAvgMs, beatmap);
+			var (streamsDifficulty, streamsAvgBPM, streamsMaxBPM) = streamsDiff;
+			var (burstsDifficulty, burstsAvgBPM, burstsMaxBPM) = burstsDiff;
 			//Console.Write("jump ");
 			double jumpsDifficulty = GetWeightedSumOfList(jumpDifficultyList, 1.5);
 			//Console.Write("slider ");
@@ -136,6 +138,8 @@
 			beatmap.DiffRating.DoublesDifficulty = doublesDifficulty;
 			beatmap.DiffRating.SlidersDifficulty = slidersDifficulty;
 			beatmap.DiffRating.TotalDifficulty = totalDifficulty;
+			beatmap.DiffRating.StreamsAverageBPM = streamsAvgBPM > 0 ? streamsAvgBPM : burstsAvgBPM;
+			beatmap.DiffRating.StreamsMaxBPM = streamsMaxBPM > 0 ? streamsMaxBPM : burstsMaxBPM;
 			beatmap.IsAnalyzed = true;
 			/*
 			Console.WriteLine("\n{1:000} jumps diff    = {0:0.0}", jumpsDifficulty, jumpDifficultyList.Count);
@@ -158,12 +162,15 @@
 
 		#region Difficulty calculations
 
-		static double GetStreamsDifficulty(List<Shape> streams, double minStreamMs, Beatmap map) {
+		private readonly record struct StreamsResult(double Difficulty, double AverageBPM, double MaxBPM);
+
+		static StreamsResult GetStreamsDifficulty(List<Shape> streams, double minStreamMs, Beatmap map) {
 			if (map is null || streams is null || streams.Count == 0)
-				return 0;
+				return default;
 
 			double avgObjects = 0;
 			double avgBPM = 0;
+			double maxBPM = 0;
 			double avgDistancePx = 0;
 			double numStreams = 0; // double for fewer type casts
 			var streamDiffs = new List<double>();
@@ -189,6 +196,7 @@
 					avgObjects = RollingAverage(avgObjects, stream.NumObjects, numStreams);
 					avgBPM = RollingAverage(avgBPM, streamBPM, numStreams);
 					avgDistancePx = RollingAverage(avgDistancePx, stream.AvgDistancePx, numStreams);
+					maxBPM = Math.Max(maxBPM, streamBPM);
 					numStreams++;
 				}
 			}
@@ -197,9 +205,9 @@
 
 			//Console.Write("stream ");
 			if (streamDiffs.Count != 0)
-				return GetWeightedSumOfList(streamDiffs, 1.5);
+				return new StreamsResult(GetWeightedSumOfList(streamDiffs, 1.5), avgBPM, maxBPM);
 			else
-				return 0;
+				return default;
 		}
 
 		static double GetDoublesDifficulty(List<Shape> doubles, double minDoubleMs, Beatmap map) {

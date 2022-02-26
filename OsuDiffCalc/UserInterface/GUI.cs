@@ -76,9 +76,13 @@
 
 			// attach event handlers for text box updates
 			Settings_StarTargetMinTextbox.TextChanged += SettingsTextbox_TextChanged;
+			Settings_StarTargetMinTextbox.LostFocus += SettingsTextbox_TextChanged;
 			Settings_StarTargetMaxTextbox.TextChanged += SettingsTextbox_TextChanged;
+			Settings_StarTargetMaxTextbox.LostFocus += SettingsTextbox_TextChanged;
 			Settings_UpdateIntervalNormalTextbox.TextChanged += SettingsTextbox_TextChanged;
+			Settings_UpdateIntervalNormalTextbox.LostFocus += SettingsTextbox_TextChanged;
 			Settings_UpdateIntervalMinimizedTextbox.TextChanged += SettingsTextbox_TextChanged;
+			Settings_UpdateIntervalMinimizedTextbox.LostFocus += SettingsTextbox_TextChanged;
 
 			ChartStyleDropdown.Items.Clear();
 			ChartStyleDropdown.Items.AddRange(new object[] {
@@ -506,6 +510,7 @@
 				if (!_chartedBeatmap.DiffRating.IsNormalized)
 					_chartedBeatmap.DiffRating.NormalizeSeries();
 				Invoke((MethodInvoker)delegate {
+					SetText(StreamBpmLabel, $"{_chartedBeatmap.DiffRating.StreamsMaxBPM:f1}");
 					// remove any unexpected series
 					Series[] allSeries = new[] {
 						_chartedBeatmap.DiffRating.JumpsSeries,

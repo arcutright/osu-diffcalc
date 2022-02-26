@@ -22,14 +22,14 @@
 		/// the contents of this method with the code editor.
 		/// </summary>
 		private void InitializeComponent() {
-			System.Windows.Forms.ListViewItem listViewItem1 = new System.Windows.Forms.ListViewItem("Jumps");
-			System.Windows.Forms.ListViewItem listViewItem2 = new System.Windows.Forms.ListViewItem("Streams");
-			System.Windows.Forms.ListViewItem listViewItem3 = new System.Windows.Forms.ListViewItem("Bursts");
-			System.Windows.Forms.ListViewItem listViewItem4 = new System.Windows.Forms.ListViewItem("Sliders");
-			System.Windows.Forms.ListViewItem listViewItem5 = new System.Windows.Forms.ListViewItem("Doubles");
-			System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-			System.Windows.Forms.DataVisualization.Charting.Legend legend1 = new System.Windows.Forms.DataVisualization.Charting.Legend();
-			System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
+			System.Windows.Forms.ListViewItem listViewItem26 = new System.Windows.Forms.ListViewItem("Jumps");
+			System.Windows.Forms.ListViewItem listViewItem27 = new System.Windows.Forms.ListViewItem("Streams");
+			System.Windows.Forms.ListViewItem listViewItem28 = new System.Windows.Forms.ListViewItem("Bursts");
+			System.Windows.Forms.ListViewItem listViewItem29 = new System.Windows.Forms.ListViewItem("Sliders");
+			System.Windows.Forms.ListViewItem listViewItem30 = new System.Windows.Forms.ListViewItem("Doubles");
+			System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea6 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+			System.Windows.Forms.DataVisualization.Charting.Legend legend6 = new System.Windows.Forms.DataVisualization.Charting.Legend();
+			System.Windows.Forms.DataVisualization.Charting.Series series6 = new System.Windows.Forms.DataVisualization.Charting.Series();
 			this.openFromFile = new System.Windows.Forms.Button();
 			this.scaleRatings = new System.Windows.Forms.CheckBox();
 			this.difficultyDisplayPanel = new System.Windows.Forms.FlowLayoutPanel();
@@ -54,6 +54,8 @@
 			this.label3 = new System.Windows.Forms.Label();
 			this.label4 = new System.Windows.Forms.Label();
 			this.label5 = new System.Windows.Forms.Label();
+			this.StreamBpmLabel = new System.Windows.Forms.Label();
+			this.label7 = new System.Windows.Forms.Label();
 			this.Settings_StarTargetMinTextbox = new OsuDiffCalc.UserInterface.DoubleTextBox();
 			this.Settings_StarTargetMaxTextbox = new OsuDiffCalc.UserInterface.DoubleTextBox();
 			this.Settings_UpdateIntervalNormalTextbox = new OsuDiffCalc.UserInterface.IntTextBox();
@@ -229,6 +231,8 @@
 			// chartsTab
 			// 
 			this.chartsTab.BackColor = System.Drawing.Color.Silver;
+			this.chartsTab.Controls.Add(this.StreamBpmLabel);
+			this.chartsTab.Controls.Add(this.label7);
 			this.chartsTab.Controls.Add(this.ChartStyleDropdown);
 			this.chartsTab.Controls.Add(this.label1);
 			this.chartsTab.Controls.Add(this.ChartedMapDropdown);
@@ -287,21 +291,21 @@
             this.column});
 			this.seriesSelect.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
 			this.seriesSelect.HideSelection = false;
-			listViewItem1.Checked = true;
-			listViewItem1.StateImageIndex = 1;
-			listViewItem2.Checked = true;
-			listViewItem2.StateImageIndex = 1;
-			listViewItem3.Checked = true;
-			listViewItem3.StateImageIndex = 1;
-			listViewItem4.Checked = true;
-			listViewItem4.StateImageIndex = 1;
-			listViewItem5.StateImageIndex = 0;
+			listViewItem26.Checked = true;
+			listViewItem26.StateImageIndex = 1;
+			listViewItem27.Checked = true;
+			listViewItem27.StateImageIndex = 1;
+			listViewItem28.Checked = true;
+			listViewItem28.StateImageIndex = 1;
+			listViewItem29.Checked = true;
+			listViewItem29.StateImageIndex = 1;
+			listViewItem30.StateImageIndex = 0;
 			this.seriesSelect.Items.AddRange(new System.Windows.Forms.ListViewItem[] {
-            listViewItem1,
-            listViewItem2,
-            listViewItem3,
-            listViewItem4,
-            listViewItem5});
+            listViewItem26,
+            listViewItem27,
+            listViewItem28,
+            listViewItem29,
+            listViewItem30});
 			this.seriesSelect.LabelWrap = false;
 			this.seriesSelect.Location = new System.Drawing.Point(326, 95);
 			this.seriesSelect.Margin = new System.Windows.Forms.Padding(2);
@@ -324,26 +328,26 @@
 			// 
 			this.Chart.BackColor = System.Drawing.Color.Transparent;
 			this.Chart.BorderlineColor = System.Drawing.Color.LightGray;
-			chartArea1.AxisX.LabelStyle.Format = "#";
-			chartArea1.AxisX.MajorGrid.LineColor = System.Drawing.Color.DimGray;
-			chartArea1.AxisX.Title = "X=Time, Y=Diff";
-			chartArea1.AxisX.TitleAlignment = System.Drawing.StringAlignment.Near;
-			chartArea1.AxisY.MajorGrid.LineColor = System.Drawing.Color.DimGray;
-			chartArea1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(32)))), ((int)(((byte)(32)))), ((int)(((byte)(32)))));
-			chartArea1.Name = "ChartArea";
-			this.Chart.ChartAreas.Add(chartArea1);
-			legend1.BackColor = System.Drawing.Color.Gainsboro;
-			legend1.Name = "Legend1";
-			this.Chart.Legends.Add(legend1);
+			chartArea6.AxisX.LabelStyle.Format = "#";
+			chartArea6.AxisX.MajorGrid.LineColor = System.Drawing.Color.DimGray;
+			chartArea6.AxisX.Title = "X=Time, Y=Diff";
+			chartArea6.AxisX.TitleAlignment = System.Drawing.StringAlignment.Near;
+			chartArea6.AxisY.MajorGrid.LineColor = System.Drawing.Color.DimGray;
+			chartArea6.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(32)))), ((int)(((byte)(32)))), ((int)(((byte)(32)))));
+			chartArea6.Name = "ChartArea";
+			this.Chart.ChartAreas.Add(chartArea6);
+			legend6.BackColor = System.Drawing.Color.Gainsboro;
+			legend6.Name = "Legend1";
+			this.Chart.Legends.Add(legend6);
 			this.Chart.Location = new System.Drawing.Point(-16, -4);
 			this.Chart.Margin = new System.Windows.Forms.Padding(0);
 			this.Chart.Name = "Chart";
 			this.Chart.Palette = System.Windows.Forms.DataVisualization.Charting.ChartColorPalette.Pastel;
-			series1.ChartArea = "ChartArea";
-			series1.Legend = "Legend1";
-			series1.Name = "Series1";
-			series1.YValuesPerPoint = 6;
-			this.Chart.Series.Add(series1);
+			series6.ChartArea = "ChartArea";
+			series6.Legend = "Legend1";
+			series6.Name = "Series1";
+			series6.YValuesPerPoint = 6;
+			this.Chart.Series.Add(series6);
 			this.Chart.Size = new System.Drawing.Size(427, 219);
 			this.Chart.TabIndex = 0;
 			this.Chart.Text = "Chart";
@@ -391,6 +395,26 @@
 			this.label5.Size = new System.Drawing.Size(152, 13);
 			this.label5.TabIndex = 5;
 			this.label5.Text = "Update interval, minimized (ms)";
+			// 
+			// StreamBpmLabel
+			// 
+			this.StreamBpmLabel.BackColor = System.Drawing.Color.WhiteSmoke;
+			this.StreamBpmLabel.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.StreamBpmLabel.Location = new System.Drawing.Point(359, 74);
+			this.StreamBpmLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+			this.StreamBpmLabel.Name = "StreamBpmLabel";
+			this.StreamBpmLabel.Size = new System.Drawing.Size(34, 18);
+			this.StreamBpmLabel.TabIndex = 12;
+			this.StreamBpmLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+			// 
+			// label7
+			// 
+			this.label7.AutoSize = true;
+			this.label7.Location = new System.Drawing.Point(292, 77);
+			this.label7.Name = "label7";
+			this.label7.Size = new System.Drawing.Size(69, 13);
+			this.label7.TabIndex = 13;
+			this.label7.Text = "Stream BPM:";
 			// 
 			// Settings_StarTargetMinTextbox
 			// 
@@ -479,5 +503,7 @@
 		private IntTextBox Settings_UpdateIntervalNormalTextbox;
 		private DoubleTextBox Settings_StarTargetMaxTextbox;
 		private System.Windows.Forms.ComboBox ChartStyleDropdown;
+		private System.Windows.Forms.Label label7;
+		private System.Windows.Forms.Label StreamBpmLabel;
 	}
 }
