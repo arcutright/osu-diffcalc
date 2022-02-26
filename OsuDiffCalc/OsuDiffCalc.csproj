@@ -119,6 +119,7 @@
     </Compile>
     <Compile Include="Properties\Settings.cs" />
     <Compile Include="Properties\PortableSettingsProvider.cs" />
+    <Compile Include="UserInterface\CustomToolTip.cs" />
     <Compile Include="UserInterface\DoubleTextBox.cs" />
     <Compile Include="UserInterface\GUI.cs">
       <SubType>Form</SubType>

@@ -60,6 +60,9 @@
 			if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 				Thread.CurrentThread.Name = "GUIThread";
 			InitializeComponent();
+
+			// attach extra event handlers
+			Chart.MouseMove += Chart_MouseMove;
 		}
 
 		private void GUI_Load(object sender, EventArgs eArgs) {
@@ -375,6 +378,114 @@
 			SeriesChartType = (SeriesChartType?)ChartStyleDropdown.SelectedItem ?? this.SeriesChartType;
 			RefreshChart();
 		}
+
+		private readonly CustomToolTip _customChartToolTip = new() { Font = new Font("Consolas", 9) };
+		private readonly ToolTip _basicChartToolTip = new();
+		private readonly StringBuilder _chartToolTipSb = new();
+		private Point? _chartMousePrevPosition = null;
+
+		private void Chart_MouseMove(object sender, MouseEventArgs e) {
+			if (sender is not Chart chart || e is null)
+				return;
+			var pos = e.Location;
+			if (_chartMousePrevPosition.HasValue && pos == _chartMousePrevPosition.Value)
+				return;
+			// reset tooltip
+			_basicChartToolTip.RemoveAll();
+			_customChartToolTip.RemoveAll();
+			_chartToolTipSb.Clear();
+			_chartMousePrevPosition = pos;
+
+			const double marginX = 1.5; // time in seconds
+
+			// find nearest series x-value to our cursor (that we have data for) and build a tooltip from each of the series' points
+			var results = chart.HitTest(pos.X, pos.Y, false, ChartElementType.PlottingArea);
+			foreach (var result in results) {
+				if (result.Object is null) continue;
+				double pointX = result.ChartArea.AxisX.PixelPositionToValue(pos.X);
+
+				int guessIndex = -1; // used to cache the point index that we are "nearest". will only be calculated for the first series
+				foreach (var series in chart.Series) {
+					if (series is null || !series.Enabled) continue;
+					int n = series.Points.Count;
+					if (guessIndex == -1) {
+						double bestDelta = double.MaxValue;
+						// TODO: could probably make a better starting guess than 0, but x-spacing of points is not guaranteed
+						for (int i = 0; i < n; ++i) {
+							var point = series.Points[i];
+							double delta = Math.Abs(pointX - point.XValue);
+							if (point.XValue < pointX || delta < bestDelta) {
+								if (delta < bestDelta) {
+									bestDelta = delta;
+									guessIndex = i;
+								}
+							}
+							else if (delta > bestDelta) {
+								break;
+							}
+						}
+						// don't show anything when no points within margin
+						if (bestDelta > marginX)
+							return;
+					}
+					if (guessIndex != -1) {
+						// find the closest non-zero rating within our margin
+						int i = guessIndex;
+						bool found = false;
+
+						// try to find first non-zero rating at or to the right of guessIndex, within our margin
+						for (; i < n; ++i) {
+							var pt = series.Points[i];
+							double delta = Math.Abs(pt.XValue - pointX);
+							if (delta > marginX) {
+								// don't search outside our margin
+								break;
+							}
+							else if (pt.YValues[0] != 0) {
+								// found non-zero point i >= guessIndex
+								found = true;
+								break;
+							}
+						}
+						if (!found) {
+							// if we didn't find a non-zero point to the right of guessIndex, check to the left
+							for (i = guessIndex - 1; i >= 0; --i) {
+								var pt = series.Points[i];
+								double delta = Math.Abs(pointX - pt.XValue);
+								if (delta > marginX) {
+									// don't search outside our margin
+									break; 
+								}
+								else if (pt.YValues[0] != 0) {
+									// found non-zero point i < guessIndex
+									break;
+								}
+							}
+						}
+						double xValue = pointX;
+						double yValue = 0;
+						if (i >= 0 && i < n) {
+							var point = series.Points[i];
+							xValue = point.XValue;
+							yValue = point.YValues[0];
+						}
+						if (_chartToolTipSb.Length == 0)
+							_chartToolTipSb.AppendLine($"Time: {xValue:0.#}");
+						if (yValue == 0)
+							_chartToolTipSb.AppendLine($"{series.Name,8}:");
+						else
+							_chartToolTipSb.AppendLine($"{series.Name,8}: {yValue,4:0.0}");
+					}
+				}
+			}
+			// show tooltip
+			var tooltip = SeriesChartType is SeriesChartType.SplineArea or SeriesChartType.SplineRange
+				? _basicChartToolTip
+				: _customChartToolTip;
+			if (_chartToolTipSb.Length != 0)
+				tooltip.Show(_chartToolTipSb.ToString(), chart, pos.X + 8, pos.Y - 15);
+		}
+
 		#endregion
 
 		#region Private Helpers
@@ -407,6 +518,7 @@
 				});
 				return;
 			}
+
 			// sort by difficulty
 			set.Sort(false);
 
