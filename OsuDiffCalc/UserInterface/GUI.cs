@@ -44,6 +44,8 @@
 		//display variables
 		private Beatmap _chartedBeatmap;
 		private Mapset _displayedMapset;
+		private TabPage _prevTab;
+		private bool _isChangingTab = false;
 		private bool _pauseAllTasks = false;
 
 		private const int INITIAL_TIMEOUT_MS =
@@ -59,10 +61,8 @@
 
 			if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 				Thread.CurrentThread.Name = "GUIThread";
-			InitializeComponent();
 
-			// attach extra event handlers
-			Chart.MouseMove += Chart_MouseMove;
+			InitializeComponent();
 		}
 
 		private void GUI_Load(object sender, EventArgs eArgs) {
@@ -101,6 +101,20 @@
 
 			_isLoaded = true;
 			StartTasksIfNeeded();
+
+			// attach extra event handlers
+			Chart.MouseMove += Chart_MouseMove;
+			MainTabControl.SelectedIndexChanged += MainTabControl_TabChanged;
+
+			_prevTab = MainTabControl.SelectedTab;
+			Refresh();
+		}
+
+		private void MainTabControl_TabChanged(object sender, EventArgs e) {
+			if (_isChangingTab)
+				_isChangingTab = false;
+			else
+				_prevTab = MainTabControl.SelectedTab;
 		}
 
 		public Properties.Settings Settings => Properties.Settings.Default;
@@ -250,13 +264,16 @@
 		}
 
 		protected override async void OnFormClosing(FormClosingEventArgs e) {
-			try {
-				if (e.CloseReason == CloseReason.UserClosing) {
-					await Task.WhenAll(StopAutoWindowUpdater(), StopAutoBeatmapAnalyzer());
+			if (e?.CloseReason == CloseReason.UserClosing) {
+				try {
+						// detach heavy event handlers
+						Chart.MouseMove -= Chart_MouseMove;
+						// wait for work to end
+						await Task.WhenAll(StopAutoWindowUpdater(), StopAutoBeatmapAnalyzer());
 				}
-				base.OnFormClosing(e);
+				catch { }
 			}
-			catch { }
+			base.OnFormClosing(e);
 		}
 
 		#region Controls
@@ -873,6 +890,7 @@
 					if (TopMost) {
 						Invoke((MethodInvoker)delegate {
 							TopMost = false;
+							if (MainTabControl.SelectedTab != _prevTab) MainTabControl.SelectTab(_prevTab);
 						});
 					}
 					_isOsuPresent = false;
@@ -905,15 +923,25 @@
 					_isOsuPresent = true;
 					_isInGame = true;
 					_inGameWindowTitle = windowTitle;
-					_inGameBeatmap = _displayedMapset?.Beatmaps.FirstOrDefault(map => windowTitle.EndsWith(map.Version + "]", StringComparison.Ordinal));
 
-					if (_chartedBeatmap != _inGameBeatmap) {
-						Invoke((MethodInvoker)delegate {
+					// find in-game beatmap
+					_inGameBeatmap = _displayedMapset?.Beatmaps.FirstOrDefault(map => windowTitle.EndsWith(map.Version + "]", StringComparison.Ordinal));
+					Invoke((MethodInvoker)delegate {
+						// switch to charts tab if we aren't on it
+						_prevTab = MainTabControl.SelectedTab;
+						if (_prevTab != chartsTab) {
+							_isChangingTab = true;
+							MainTabControl.SelectTab(chartsTab);
+						}
+
+						// switch charted beatmap to in-game map
+						if (_chartedBeatmap != _inGameBeatmap || _prevTab != chartsTab) {
 							UpdateChartOptions();
 							ChartedMapDropdown.SelectedIndex = _displayedMapset.IndexOf(_inGameBeatmap);
 							RefreshChart();
-						});
-					}
+						}
+					});
+
 					Console.WriteLine($"In game, window title: '{windowTitle}'");
 					Console.WriteLine($"  => beatmap: '{_inGameBeatmap?.Version}'");
 				}
@@ -922,6 +950,7 @@
 					Invoke((MethodInvoker)delegate {
 						if (!TopMost) TopMost = IsAlwaysOnTop;
 						if (_didMinimize && !Visible) Visible = true;
+						if (MainTabControl.SelectedTab != _prevTab) MainTabControl.SelectTab(_prevTab);
 						_isOsuPresent = true;
 						_isInGame = false;
 						_didMinimize = false;
