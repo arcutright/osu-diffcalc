@@ -26,7 +26,7 @@
 		private bool _isOsuPresent = false;
 		private bool _isOnSameScreen = true;
 		private bool _didMinimize = false;
-		private int? _osuPid = null;
+		private Process _osuProcess = null;
 		private bool _isInGame = false;
 		private string _inGameWindowTitle = null;
 		private Beatmap _inGameBeatmap = null;
@@ -862,12 +862,14 @@
 				if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 					Thread.CurrentThread.Name = "AutoWindowTickThread";
 
-				var osuProcess = Finder.GetOsuProcess(_guiPid, _osuPid);
-				string windowTitle =  osuProcess?.MainWindowTitle;
-				_osuPid = osuProcess?.Id;
+				// ensure we have the correct pid for osu (in case player restarted osu, etc)
+				_osuProcess = Finder.GetOsuProcess(_guiPid, _osuProcess);
+				cancelToken.ThrowIfCancellationRequested();
+				string windowTitle =  _osuProcess?.MainWindowTitle;
 
 				//update visibility
-				if (!_osuPid.HasValue || string.IsNullOrEmpty(windowTitle)) {
+				if (_osuProcess is null || _osuProcess.HasExited || string.IsNullOrEmpty(windowTitle)) {
+					// osu not found
 					if (TopMost) {
 						Invoke((MethodInvoker)delegate {
 							TopMost = false;
@@ -878,10 +880,17 @@
 					_didMinimize = false;
 				}
 				else if (windowTitle.IndexOf('[') != -1) {
-					if (_isInGame && windowTitle == _inGameWindowTitle)
+					// osu found and we may be in-game
+
+					if (_isInGame && windowTitle == _inGameWindowTitle) {
+						// definitely in-game
 						return;
+					}
+
+					// osu found but we don't yet know the in-game beatmap (or we aren't in-game and the window has a '[' in it)
+					// try to figure out what map is being played. This work will only happen once.
 					try {
-						var osuScreenBounds = Screen.FromHandle(osuProcess.MainWindowHandle)?.Bounds;
+						var osuScreenBounds = Screen.FromHandle(_osuProcess.MainWindowHandle)?.Bounds;
 						var thisScreenBounds = Screen.FromHandle(_guiProcess.MainWindowHandle)?.Bounds;
 						_isOnSameScreen = thisScreenBounds == osuScreenBounds;
 					}
@@ -909,6 +918,7 @@
 					Console.WriteLine($"  => beatmap: '{_inGameBeatmap?.Version}'");
 				}
 				else {
+					// osu found but we aren't in game
 					Invoke((MethodInvoker)delegate {
 						if (!TopMost) TopMost = IsAlwaysOnTop;
 						if (_didMinimize && !Visible) Visible = true;
@@ -917,33 +927,40 @@
 						_didMinimize = false;
 
 						try {
-							var osuScreenBounds = Screen.FromHandle(osuProcess.MainWindowHandle)?.Bounds;
+							var osuScreenBounds = Screen.FromHandle(_osuProcess.MainWindowHandle)?.Bounds;
 							var thisScreenBounds = Screen.FromHandle(_guiProcess.MainWindowHandle)?.Bounds;
 							_isOnSameScreen = thisScreenBounds == osuScreenBounds;
-							if (_isOnSameScreen) {
+							if (!_isOnSameScreen) {
+								// if we are not in game and osu is on a different screen, do nothing
+							}
+							else {
+								// if we are not in game and we are on the same screen
 								int numScreens = Screen.AllScreens.Length;
-								bool isOsuFullScreen = NativeMethods.IsFullScreen(osuProcess);
+								bool isOsuFullScreen = NativeMethods.IsFullScreen(_osuProcess);
 								if (numScreens > 1 && isOsuFullScreen) {
+									// move to a different screen if osu is full screen
+									// (we can't act as an overlay with WinForms UI, would require a rewrite in DirectX or something)
 									var otherScreen = Screen.AllScreens.First(s => s.Bounds != osuScreenBounds);
 									NativeMethods.TryMoveToScreen(Program.ConsoleWindowHandle, otherScreen);
 									NativeMethods.TryMoveToScreen(_guiProcess, otherScreen);
 									//TopMost = false;
 								}
 								else if (!isOsuFullScreen) {
-									//TopMost = IsAlwaysOnTop;
+									// if osu is not full screen ("borderless fullscreen" or windowed), we can be on top via the TopMost property
+									// this lets the player see this program but they can move it somewhere unobtrusive and it won't steal mouse/keyboard focus
+									TopMost = IsAlwaysOnTop;
 								}
 								else {
+									// osu is full screen and the player only has 1 screen. no good way to resolve this, see DirectX note above
+
 									// TODO: find way to forward mouse/kb inputs to osu process when using this technique
-									NativeMethods.ForceForegroundWindow(_guiProcess, osuProcess);
+									NativeMethods.ForceForegroundWindow(_guiProcess, _osuProcess);
 
 									// seizure warning
 									//NativeMethods.MakeForegroundWindow(_guiProcess);
 									//NativeMethods.MakeForegroundWindow2(_guiProcess);
 									//NativeMethods.MakeForegroundWindow3(_guiProcess);
 								}
-							}
-							else {
-								//TopMost = false;
 							}
 						}
 						catch { }
@@ -1025,9 +1042,9 @@
 					useWindowTitleForDirectory = false;
 				}
 				else {
-					var osuProcess = Finder.GetOsuProcess(_guiPid, _osuPid);
-					_osuPid = osuProcess?.Id;
-					_currentMapsetDirectory = Finder.GetOsuBeatmapDirectory(_osuPid);
+					_osuProcess ??= Finder.GetOsuProcess(_guiPid, _osuProcess); // secondary HOT PATH
+					cancelToken.ThrowIfCancellationRequested();
+					_currentMapsetDirectory = Finder.GetOsuBeatmapDirectory(_osuProcess?.Id); // true HOT PATH
 				}
 				sw.Stop();
 				SetText(timeDisplay1, $"{sw.ElapsedMilliseconds} ms");

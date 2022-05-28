@@ -31,6 +31,7 @@ namespace OsuDiffCalc.FileFinder {
 	using System.Collections.Generic;
 	using System.Diagnostics;
 	using System.IO;
+	using System.Linq;
 	using System.Runtime.CompilerServices;
 	using System.Runtime.ConstrainedExecution;
 	using System.Runtime.InteropServices;
@@ -85,53 +86,53 @@ namespace OsuDiffCalc.FileFinder {
 			private static readonly string[] handleTypeTokens = new string[] {
 						"", "", "Directory", "SymbolicLink", "Token",
 						"Process", "Thread", "Unknown7", "Event", "EventPair", "Mutant",
-						"Unknown11", "Semaphore", "Timer", "Profile", "WindowStation",
-						"Desktop", "Section", "Key", "Port", "WaitablePort",
-						"Unknown21", "Unknown22", "Unknown23", "Unknown24",
-						"IoCompletion", "File" };
-
-			[StructLayout(LayoutKind.Sequential)]
-			private struct SYSTEM_HANDLE_ENTRY {
-				public int OwnerPid;
-				public byte ObjectType;
-				public byte HandleFlags;
-				public short HandleValue;
-				public int ObjectPointer;
-				public int AccessMask;
-			}
+				"Unknown11", "Semaphore", "Timer", "Profile", "WindowStation",
+				"Desktop", "Section", "Key", "Port", "WaitablePort",
+				"Unknown21", "Unknown22", "Unknown23", "Unknown24",
+				"IoCompletion", "File"
+			};
 
 			/// <summary> 
 			/// Gets the open files enumerator. 
 			/// </summary> 
 			/// <param name="processId">The process id.</param> 
 			/// <returns></returns> 
-			public static IEnumerable<String> GetOpenFilesEnumerator(int processId) {
-				return new OpenFiles(processId);
+			public static IEnumerable<string> GetOpenFilesEnumerator(int processId, HashSet<string> fileExtensionFilter = null) {
+				return new OpenFiles(processId, fileExtensionFilter);
 			}
 
-			public static List<Process> GetProcessesUsingFile(string fName) {
+			public static List<Process> GetProcessesUsingFile(string fName, IEqualityComparer<string> fNameComparer = null) {
+				fNameComparer ??= EqualityComparer<string>.Default;
 				var result = new List<Process>();
 				foreach (var p in Process.GetProcesses()) {
 					try {
-						if ((GetOpenFilesEnumerator(p.Id) as List<string>).Contains(fName)) {
+						if (GetOpenFilesEnumerator(p.Id).Contains(fName, fNameComparer))
 							result.Add(p);
-						}
+						else
+							p.Dispose();
 					}
-					catch { }//some processes will fail 
+					catch {
+						// some processes will fail 
+						p.Dispose();
+					} 
 				}
 				return result;
 			}
 
 			private sealed class OpenFiles : IEnumerable<string> {
 				private readonly int _processId;
+				private readonly HashSet<string> _fileExtensionFilter;
+				private readonly bool _useFileExtensionFilter;
 
-				internal OpenFiles(int processId) {
+				internal OpenFiles(int processId, HashSet<string> fileExtensionFilter) {
 					_processId = processId;
+					_fileExtensionFilter = fileExtensionFilter;
+					_useFileExtensionFilter = fileExtensionFilter is not null && fileExtensionFilter.Count != 0;
 				}
 
-				public IEnumerator<String> GetEnumerator() {
+				public IEnumerator<string> GetEnumerator() {
 					NT_STATUS ret;
-					int length = 0x10000;
+					int length = 0x10000; // 2^16
 					// Loop, probing for required memory. 
 					do {
 						IntPtr ptr = IntPtr.Zero;
@@ -151,11 +152,12 @@ namespace OsuDiffCalc.FileFinder {
 								length = ((returnLength + 0xffff) & ~0xffff);
 							}
 							else if (ret == NT_STATUS.STATUS_SUCCESS) {
-								int handleCount = Marshal.ReadInt32(ptr);
+								// SYSTEM_HANDLE_INFORMATION struct is { numberOfEntries; entry[] }
+								int numHandleEntries = Marshal.ReadInt32(ptr);
 								int offset = sizeof(int);
-								int size = Marshal.SizeOf(typeof(SYSTEM_HANDLE_ENTRY));
-								for (int i = 0; i < handleCount; i++) {
-									var handleEntry = (SYSTEM_HANDLE_ENTRY)Marshal.PtrToStructure((IntPtr)((int)ptr + offset), typeof(SYSTEM_HANDLE_ENTRY));
+								int handleEntrySize = Marshal.SizeOf<SYSTEM_HANDLE_TABLE_ENTRY_INFO>();
+								for (int i = 0; i < numHandleEntries; i++) {
+									var handleEntry = Marshal.PtrToStructure<SYSTEM_HANDLE_TABLE_ENTRY_INFO>(ptr + offset);
 									if (handleEntry.OwnerPid == _processId) {
 										var handle = (IntPtr)handleEntry.HandleValue;
 
@@ -163,23 +165,26 @@ namespace OsuDiffCalc.FileFinder {
 												handleType == SystemHandleType.OB_TYPE_FILE) {
 											if (GetFileNameFromHandle(handle, handleEntry.OwnerPid, out string devicePath)) {
 												if (ConvertDevicePathToDosPath(devicePath, out string dosPath)) {
-													if (File.Exists(dosPath)) {
-														yield return dosPath; // return new FileInfo(dosPath); 
-													}
-													else if (Directory.Exists(dosPath)) {
-														yield return dosPath; // new DirectoryInfo(dosPath); 
-													}
+													// only return paths to files which match the filter
+													if (!_useFileExtensionFilter || _fileExtensionFilter.Contains(Path.GetExtension(dosPath)))
+														yield return dosPath;
+													//if (File.Exists(dosPath)) {
+													//	yield return new FileInfo(dosPath); 
+													//}
+													//else if (Directory.Exists(dosPath)) {
+													//	yield return new DirectoryInfo(dosPath); 
+													//}
 												}
 											}
 										}
 									}
-									offset += size;
+									offset += handleEntrySize;
 								}
 							}
 						}
 						finally {
 							// CER guarantees that the allocated memory is freed,  
-							// if an asynchronous exception occurs.  
+							// if an asynchronous exception occurs.
 							Marshal.FreeHGlobal(ptr);
 							//sw.Flush(); 
 							//sw.Close(); 
@@ -258,8 +263,8 @@ namespace OsuDiffCalc.FileFinder {
 
 			private static void GetFileNameFromHandle(object state) {
 				var s = (FileNameFromHandleState)state;
-				s.RetValue = GetFileNameFromHandle(s.Handle, out string fileName);
-				s.FileName = fileName;
+					s.RetValue = GetFileNameFromHandle(s.Handle, out string fileName);
+					s.FileName = fileName;
 				s.Set();
 			}
 
@@ -418,6 +423,61 @@ namespace OsuDiffCalc.FileFinder {
 		#endregion
 
 		#region Internal structures
+
+		/// <summary>
+		/// Undocumented win32 type optionally returned by NtQuerySystemInfo
+		/// </summary>
+		/// <remarks>
+		/// <br/> https://www.geoffchappell.com/studies/windows/km/ntoskrnl/api/ex/sysinfo/handle_table_entry.htm
+		/// <br/> https://www.codeproject.com/Articles/18975/Listing-Used-Files
+		/// </remarks>
+		[StructLayout(LayoutKind.Sequential)]
+		private struct SYSTEM_HANDLE_INFORMATION {
+			public uint NumberOfHandles;
+			public SYSTEM_HANDLE_TABLE_ENTRY_INFO[] Handles;
+		}
+
+		[StructLayout(LayoutKind.Sequential)]
+		private struct SYSTEM_HANDLE_TABLE_ENTRY_INFO {
+			public uint OwnerPid;
+			public byte ObjectType;
+			public byte HandleFlags;
+			public ushort HandleValue;
+			public IntPtr ObjectPointer;
+			public uint AccessMask;
+		}
+
+		/// <summary>
+		/// Undocumented win32 struct optionally returned by NtQueryObject
+		/// </summary>
+		/// <remarks> https://www.geoffchappell.com/studies/windows/km/ntoskrnl/api/ob/obquery/basic.htm?tx=135 </remarks>
+		[StructLayout(LayoutKind.Sequential)]
+		internal struct OBJECT_BASIC_INFORMATION {
+			public uint Attributes;
+			public uint GrantedAccess;
+			public uint HandleCount;
+			public uint PointerCount;
+			public uint PagedPoolCharge;
+			public uint NonPagedPoolCharge;
+			[MarshalAs(UnmanagedType.U4, SizeConst = 3)]
+			public uint[] Reserved;
+			public uint TotalNumberOfHandles;
+			public uint UnknownAt0x20;
+			public uint NameInfoSize;
+			public uint TypeInfoSize;
+			public uint SecurityDescriptorSize;
+			public long CreationTime;
+		}
+
+		/// <summary>
+		/// Undocumented win32 struct optionally returned by NtQueryObject
+		/// </summary>
+		/// <remarks> https://www.geoffchappell.com/studies/windows/km/ntoskrnl/api/ob/obquery/handle_flag.htm?tx=135 </remarks>
+		[StructLayout(LayoutKind.Sequential)]
+		internal struct OBJECT_HANDLE_FLAG_INFORMATION {
+			public bool Inherit;
+			public bool ProtectFromClose;
+		}
 
 		internal enum NT_STATUS {
 			STATUS_SUCCESS = 0x00000000,
