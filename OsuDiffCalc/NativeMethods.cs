@@ -10,6 +10,13 @@
 	using System.Windows.Forms;
 
 	internal static class NativeMethods {
+		const bool SetLastError
+#if DEBUG
+		= true;
+#else
+		= false;
+#endif
+
 		internal static bool TryMoveToScreen(int pid, int screenId) {
 			return TryMoveToScreen(Process.GetProcessById(pid), screenId);
 		}
@@ -309,7 +316,7 @@
 		///     </para>
 		///     http://pinvoke.net/default.aspx/user32/SetForegroundWindow.html
 		/// </remarks> 
-		[DllImport("user32.dll", SetLastError = true)]
+		[DllImport("user32.dll", SetLastError = SetLastError)]
 		private static extern int SetForegroundWindow([In] IntPtr hwnd);
 
 		/// <summary>
@@ -346,7 +353,7 @@
 		/// </para>
 		/// https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-allowsetforegroundwindow
 		/// </remarks>
-		[DllImport("user32.dll", SetLastError = true)]
+		[DllImport("user32.dll", SetLastError = SetLastError)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		private static extern bool AllowSetForegroundWindow([In] int dwProcessId);
 
@@ -360,7 +367,7 @@
 		/// This function is provided so applications can prevent other applications from making a foreground change 
 		/// that can interrupt its interaction with the user.
 		/// </remarks>
-		[DllImport("user32.dll", SetLastError = true)]
+		[DllImport("user32.dll", SetLastError = SetLastError)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		private static extern bool LockSetForegroundWindow([In] LSFWCode uLockCode);
 
@@ -400,7 +407,7 @@
 		/// </list>
 		/// https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-showwindow
 		/// </remarks>
-		[DllImportAttribute("user32.dll", SetLastError = true)]
+		[DllImportAttribute("user32.dll", SetLastError = SetLastError)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		private static extern bool ShowWindow([In] IntPtr hWnd, [In] ShowWindowCommand nCmdShow);
 
@@ -408,7 +415,7 @@
 		/// Sets the process-default DPI awareness to system-DPI awareness. 
 		/// This is equivalent to calling SetProcessDpiAwarenessContext with a DPI_AWARENESS_CONTEXT value of DPI_AWARENESS_CONTEXT_SYSTEM_AWARE. 
 		/// </summary>
-		[DllImport("user32.dll", SetLastError = true)]
+		[DllImport("user32.dll", SetLastError = SetLastError)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		internal static extern bool SetProcessDPIAware();
 
@@ -420,7 +427,7 @@
 		/// Until the thread terminates, the thread identifier uniquely identifies the thread throughout the system. <br/>
 		/// https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getcurrentthreadid
 		/// </remarks>
-		[DllImport("kernel32.dll", SetLastError = true)]
+		[DllImport("kernel32.dll", SetLastError = SetLastError)]
 		internal static extern uint GetCurrentThreadId();
 
 		/// <summary>
@@ -436,12 +443,12 @@
 		/// BringWindowToTop does not make a window a top-level window.</para>
 		/// https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-bringwindowtotop
 		/// </remarks>
-		[DllImport("user32.dll", SetLastError = true)]
+		[DllImport("user32.dll", SetLastError = SetLastError)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		private static extern bool BringWindowToTop([In] IntPtr hWnd);
 
 		/// <inheritdoc cref="BringWindowToTop(IntPtr)"/>
-		[DllImport("user32.dll", SetLastError = true)]
+		[DllImport("user32.dll", SetLastError = SetLastError)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		private static extern bool BringWindowToTop([In] HandleRef hWnd);
 
@@ -455,11 +462,11 @@
 		/// http://msdn.microsoft.com/en-us/library/ms633522%28v=vs.85%29.aspx <br/>
 		/// http://pinvoke.net/default.aspx/user32/GetWindowThreadProcessId.html
 		/// </remarks>
-		[DllImport("user32.dll", SetLastError = true)]
+		[DllImport("user32.dll", SetLastError = SetLastError)]
 		internal static extern uint GetWindowThreadProcessId([In] IntPtr hWnd, [Out] out uint lpdwProcessId);
 
 		/// <summary> When you don't want the ProcessId, use this overload and pass IntPtr.Zero for the second parameter </summary>
-		[DllImport("user32.dll", SetLastError = true)]
+		[DllImport("user32.dll", SetLastError = SetLastError)]
 		private static extern uint GetWindowThreadProcessId([In] IntPtr hWnd, IntPtr ProcessId);
 
 		private static uint GetWindowThreadProcessId([In] IntPtr hWnd) => GetWindowThreadProcessId(hWnd, IntPtr.Zero);
@@ -474,7 +481,7 @@
 		///     C++ ( Type: Type: HWND )<br /> The return value is a handle to the foreground window. The foreground window
 		///     can be NULL in certain circumstances, such as when a window is losing activation.
 		/// </returns>
-		[DllImport("user32.dll", SetLastError = true)]
+		[DllImport("user32.dll", SetLastError = SetLastError)]
 		private static extern IntPtr GetForegroundWindow();
 
 		/// <summary>
@@ -503,7 +510,7 @@
 		/// </c>
 		/// https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-attachthreadinput
 		/// </remarks>
-		[DllImport("user32.dll", SetLastError = true)]
+		[DllImport("user32.dll", SetLastError = SetLastError)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		private static extern bool AttachThreadInput([In] uint idAttach, [In] uint idAttachTo, [In] bool fAttach);
 
@@ -692,15 +699,15 @@
 		///     SetForegroundWindow permission.
 		///     </para>
 		/// </remarks>
-		[DllImport("user32.dll", SetLastError = true)]
+		[DllImport("user32.dll", SetLastError = SetLastError)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		static extern bool SetWindowPos([In] IntPtr hWnd, [In] IntPtr hWndInsertAfter, [In] int x, [In] int y, [In] int cx, [In] int cy, [In] SetWindowPosFlags uFlags);
 
-		[DllImport("user32.dll", SetLastError = true)]
+		[DllImport("user32.dll", SetLastError = SetLastError)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		private static extern bool GetWindowRect([In] IntPtr hwnd, [Out] out RECT lpRect);
 
-		[DllImport("user32.dll", SetLastError = true)]
+		[DllImport("user32.dll", SetLastError = SetLastError)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		private static extern bool GetWindowRect(HandleRef hWnd, [In, Out] ref RECT rect);
 
@@ -816,7 +823,7 @@
 		/// <br/> https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-findwindowa
 		/// <br/> https://www.pinvoke.net/default.aspx/user32/FindWindow.html
 		/// </remarks>
-		[DllImport("user32.dll", SetLastError = true)]
+		[DllImport("user32.dll", SetLastError = SetLastError)]
 		internal static extern IntPtr FindWindow([In] string lpClassName, [In] string lpWindowName);
 
 		/// <inheritdoc cref="FindWindow(string, string)"/>
@@ -849,12 +856,12 @@
 		///   <br/> https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-enumwindows 
 		///   <br/> https://www.pinvoke.net/default.aspx/user32/EnumWindows.html
 		/// </remarks>
-		[DllImport("user32.dll", EntryPoint = "EnumWindows", ExactSpelling = false, SetLastError = true, CharSet = CharSet.Auto)]
+		[DllImport("user32.dll", EntryPoint = "EnumWindows", ExactSpelling = false, SetLastError = SetLastError, CharSet = CharSet.Auto)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, [MarshalAs(UnmanagedType.Struct)] ref EnumWindowsData lParam);
 
 		/// <inheritdoc cref="EnumWindows(EnumWindowsProc, ref EnumWindowsData)"/>
-		[DllImport("user32.dll", EntryPoint = "EnumWindows", ExactSpelling = false, SetLastError = true, CharSet = CharSet.Auto)]
+		[DllImport("user32.dll", EntryPoint = "EnumWindows", ExactSpelling = false, SetLastError = SetLastError, CharSet = CharSet.Auto)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		static extern bool EnumWindowsMany(EnumWindowsProcMany lpEnumFunc, [MarshalAs(UnmanagedType.Struct)] ref EnumWindowsDataMany lParam);
 
@@ -881,12 +888,12 @@
 		///   is enumerated or the callback function returns FALSE. 
 		///   <br/> https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-enumdesktopwindows
 		/// </remarks>
-		[DllImport("user32.dll", EntryPoint = "EnumDesktopWindows", ExactSpelling = false, CharSet = CharSet.Auto, SetLastError = true)]
+		[DllImport("user32.dll", EntryPoint = "EnumDesktopWindows", ExactSpelling = false, CharSet = CharSet.Auto, SetLastError = SetLastError)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		static extern bool EnumDesktopWindows(IntPtr hDesktop, EnumWindowsProc lpfn, [MarshalAs(UnmanagedType.Struct)] ref EnumWindowsData lParam);
 
 		/// <inheritdoc cref="EnumDesktopWindows(IntPtr, EnumWindowsProc, ref EnumWindowsData)"/>
-		[DllImport("user32.dll", EntryPoint = "EnumDesktopWindows", ExactSpelling = false, CharSet = CharSet.Auto, SetLastError = true)]
+		[DllImport("user32.dll", EntryPoint = "EnumDesktopWindows", ExactSpelling = false, CharSet = CharSet.Auto, SetLastError = SetLastError)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		static extern bool EnumDesktopWindowsMany(IntPtr hDesktop, EnumWindowsProcMany lpfn, [MarshalAs(UnmanagedType.Struct)] ref EnumWindowsDataMany lParam);
 
@@ -1018,7 +1025,7 @@
 		/// <remarks>
 		///   https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getclassname
 		/// </remarks>
-		[DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+		[DllImport("user32.dll", SetLastError = SetLastError, CharSet = CharSet.Auto)]
 		public static extern int GetClassName([In] IntPtr hWnd, [Out] StringBuilder lpClassName, [In] int nMaxCount);
 
 		/// <summary>
@@ -1064,7 +1071,7 @@
 		///     <br/>
 		///     https://www.pinvoke.net/default.aspx/user32/GetWindowText.html
 		/// </remarks>
-		[DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+		[DllImport("user32.dll", SetLastError = SetLastError, CharSet = CharSet.Auto)]
 		internal static extern int GetWindowText([In] IntPtr hWnd, [Out] StringBuilder lpString, [In] int nMaxCount);
 
 		/// <summary>
@@ -1100,7 +1107,7 @@
 		///   https://www.pinvoke.net/default.aspx/user32/GetWindowTextLength.html <br/>
 		///   https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getwindowtextlengtha
 		/// </remarks>
-		[DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+		[DllImport("user32.dll", SetLastError = SetLastError, CharSet = CharSet.Auto)]
 		internal static extern int GetWindowTextLength(IntPtr hWnd);
 
 		/// <summary>
@@ -1124,7 +1131,7 @@
 		///   </para>
 		///   https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-iswindowvisible
 		/// </remarks>
-		[DllImport("user32.dll", SetLastError = true)]
+		[DllImport("user32.dll", SetLastError = SetLastError)]
 		internal static extern bool IsWindowVisible(IntPtr hWnd);
 
 		#endregion
@@ -1153,16 +1160,16 @@
 		///   </para>
 		///   https://docs.microsoft.com/en-us/windows/console/getconsolewindow
 		/// </remarks>
-		[DllImport("kernel32.dll")]
+		[DllImport("kernel32.dll", SetLastError = SetLastError)]
 		internal static extern IntPtr GetConsoleWindow();
 
 		// https://stackoverflow.com/a/28616832
 		// https://docs.microsoft.com/en-us/windows/console/console-functions
 
-		//[DllImport("kernel32.dll", SetLastError = true)]
+		//[DllImport("kernel32.dll", SetLastError = SetLastError)]
 		//private static extern bool AttachConsole(uint dwProcessId);
 
-		//[DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+		//[DllImport("kernel32.dll", SetLastError = SetLastError, ExactSpelling = true)]
 		//private static extern bool FreeConsole();
 
 		//[DllImport("kernel32.dll")]

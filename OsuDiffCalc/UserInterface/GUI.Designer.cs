@@ -39,8 +39,8 @@
 			this.timeDisplay1 = new System.Windows.Forms.Label();
 			this.label2 = new System.Windows.Forms.Label();
 			this.AutoBeatmapCheckbox = new System.Windows.Forms.CheckBox();
-			this.tabs = new System.Windows.Forms.TabControl();
-			this.resultsTab = new System.Windows.Forms.TabPage();
+            this.MainTabControl = new System.Windows.Forms.TabControl();
+            this.resultsTab = new System.Windows.Forms.TabPage();
 			this.EnableXmlCheckbox = new System.Windows.Forms.CheckBox();
 			this.AlwaysOnTopCheckbox = new System.Windows.Forms.CheckBox();
 			this.chartsTab = new System.Windows.Forms.TabPage();
@@ -60,7 +60,7 @@
 			this.Settings_StarTargetMaxTextbox = new OsuDiffCalc.UserInterface.DoubleTextBox();
 			this.Settings_UpdateIntervalNormalTextbox = new OsuDiffCalc.UserInterface.IntTextBox();
 			this.Settings_UpdateIntervalMinimizedTextbox = new OsuDiffCalc.UserInterface.IntTextBox();
-			this.tabs.SuspendLayout();
+            this.MainTabControl.SuspendLayout();
 			this.resultsTab.SuspendLayout();
 			this.chartsTab.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.Chart)).BeginInit();
@@ -168,18 +168,18 @@
 			this.AutoBeatmapCheckbox.UseVisualStyleBackColor = true;
 			this.AutoBeatmapCheckbox.CheckedChanged += new System.EventHandler(this.AutoBeatmapCheckbox_CheckedChanged);
 			// 
-			// tabs
-			// 
-			this.tabs.Controls.Add(this.resultsTab);
-			this.tabs.Controls.Add(this.chartsTab);
-			this.tabs.Controls.Add(this.settingsTab);
-			this.tabs.Location = new System.Drawing.Point(-1, 2);
-			this.tabs.Margin = new System.Windows.Forms.Padding(2);
-			this.tabs.Name = "tabs";
-			this.tabs.SelectedIndex = 0;
-			this.tabs.Size = new System.Drawing.Size(403, 237);
-			this.tabs.TabIndex = 15;
-			// 
+            // MainTabControl
+            // 
+            this.MainTabControl.Controls.Add(this.resultsTab);
+            this.MainTabControl.Controls.Add(this.chartsTab);
+            this.MainTabControl.Controls.Add(this.settingsTab);
+            this.MainTabControl.Location = new System.Drawing.Point(-1, 2);
+            this.MainTabControl.Margin = new System.Windows.Forms.Padding(2);
+            this.MainTabControl.Name = "MainTabControl";
+            this.MainTabControl.SelectedIndex = 0;
+            this.MainTabControl.Size = new System.Drawing.Size(403, 237);
+            this.MainTabControl.TabIndex = 15;
+            // 
 			// resultsTab
 			// 
 			this.resultsTab.BackColor = System.Drawing.Color.Silver;
@@ -455,14 +455,14 @@
 			this.AutoSize = true;
 			this.BackColor = System.Drawing.Color.Silver;
 			this.ClientSize = new System.Drawing.Size(398, 235);
-			this.Controls.Add(this.tabs);
+            this.Controls.Add(this.MainTabControl);
 			this.ForeColor = System.Drawing.SystemColors.ControlText;
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
 			this.Name = "GUI";
 			this.Text = "osu! Difficulty Calculator";
 			this.TransparencyKey = System.Drawing.Color.Fuchsia;
 			this.Load += new System.EventHandler(this.GUI_Load);
-			this.tabs.ResumeLayout(false);
+            this.MainTabControl.ResumeLayout(false);
 			this.resultsTab.ResumeLayout(false);
 			this.resultsTab.PerformLayout();
 			this.chartsTab.ResumeLayout(false);
@@ -484,7 +484,7 @@
 		private System.Windows.Forms.Label timeDisplay1;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.CheckBox AutoBeatmapCheckbox;
-		private System.Windows.Forms.TabControl tabs;
+		private System.Windows.Forms.TabControl MainTabControl;
 		private System.Windows.Forms.TabPage resultsTab;
 		private System.Windows.Forms.TabPage chartsTab;
 		private System.Windows.Forms.DataVisualization.Charting.Chart Chart;

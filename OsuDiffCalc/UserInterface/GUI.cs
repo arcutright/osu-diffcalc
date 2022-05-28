@@ -21,11 +21,7 @@
 		/// <summary> System-wide pid for the ui thread </summary>
 		private readonly int _guiPid;
 
-		private bool _isLoaded = false;
-		private bool _isMinimized = false;
-		private bool _isOsuPresent = false;
-		private bool _isOnSameScreen = true;
-		private bool _didMinimize = false;
+		// osu state variables
 		private Process _osuProcess = null;
 		private bool _isInGame = false;
 		private string _inGameWindowTitle = null;
@@ -46,7 +42,13 @@
 		private Mapset _displayedMapset;
 		private TabPage _prevTab;
 		private bool _isChangingTab = false;
+		private bool _isLoaded = false;
+		private bool _isMinimized = false;
+		private bool _isOsuPresent = false;
+		private bool _isOnSameScreen = true;
+		private bool _didMinimize = false;
 		private bool _pauseAllTasks = false;
+
 
 		private const int INITIAL_TIMEOUT_MS =
 #if DEBUG
@@ -330,19 +332,6 @@
 				_checkedChanging = true;
 
 				Invoke((MethodInvoker)delegate {
-					//foreach (ListViewItem sel in seriesSelect.SelectedItems) {
-					//	sel.Checked = !sel.Checked;
-					//}
-					//var selectedItemsText = new List<string>();
-					//foreach (ListViewItem sel in seriesSelect.SelectedItems) {
-					//	sel.Checked = true;
-					//	sel.Selected = false;
-					//}
-					//foreach (ListViewItem sel in seriesSelect.CheckedItems) {
-					//	if (!selectedItemsText.Contains(sel.Text))
-					//		selectedItemsText.Add(sel.Text);
-					//	sel.Selected = false;
-					//}
 					Series series = _chartedBeatmap.DiffRating.GetSeriesByName(e.Item.Text);
 					if (series is null)
 						return;
@@ -847,9 +836,15 @@
 					if (!_pauseAllTasks)
 						await AutoWindowUpdaterThreadTick(cancelToken, timeoutMs);
 					sw.Stop();
-					cancelToken.ThrowIfCancellationRequested();
-					int updateInterval = !_isMinimized && Visible ? UpdateIntervalNormalMs : UpdateIntervalMinimizedMs;
-					await Task.Delay(Math.Max(updateInterval, timeoutMs - (int)sw.ElapsedMilliseconds));
+
+					int updateInterval;
+					if (!_isOsuPresent)
+						updateInterval = UpdateIntervalOsuNotFoundMs;
+					else if (!_isInGame && !_isMinimized && Visible)
+						updateInterval = UpdateIntervalNormalMs;
+					else
+						updateInterval = UpdateIntervalMinimizedMs;
+					await Task.Delay(Math.Max(updateInterval, timeoutMs - (int)sw.ElapsedMilliseconds), cancelToken);
 				}
 				cancelToken.ThrowIfCancellationRequested();
 			}
@@ -860,17 +855,18 @@
 		private async Task AutoWindowUpdaterThreadTick(CancellationToken cancelToken, int timeoutMs) {
 			//Console.Write("auto window  ");
 			try {
-				var t = new Thread(ts) {
-					IsBackground = true,
-					Priority = ThreadPriority.Lowest
-				};
-				t.Start();
-				var joinTask = Task.Run(t.Join, cancelToken);
-				await Task.WhenAny(joinTask, Task.Delay(timeoutMs, cancelToken));
-				if (t.IsAlive) {
-					t.Interrupt();
-					t.Abort();
-				}
+				//var t = new Thread(ts) {
+				//	IsBackground = true,
+				//	Priority = ThreadPriority.Lowest
+				//};
+				//t.Start();
+				//var joinTask = Task.Run(t.Join, cancelToken);
+				//await Task.WhenAny(joinTask, Task.Delay(timeoutMs, cancelToken));
+				//if (t.IsAlive) {
+				//	t.Interrupt();
+				//	t.Abort();
+				//}
+				await Task.Run(ts, cancelToken);
 			}
 			catch (OperationCanceledException) { throw; }
 			catch { }
@@ -1025,13 +1021,21 @@
 					Thread.CurrentThread.Name = "AutoBeatmapAnalyzerThread";
 				var sw = new Stopwatch();
 				while (!cancelToken.IsCancellationRequested) {
-					sw.Restart();
-					if (!_pauseAllTasks)
-						await AutoBeatmapAnalyzerThreadTick(cancelToken, timeoutMs);
-					sw.Stop();
-					cancelToken.ThrowIfCancellationRequested();
-					int updateInterval = !_isMinimized && Visible ? UpdateIntervalNormalMs : UpdateIntervalMinimizedMs;
-					await Task.Delay(Math.Max(updateInterval, timeoutMs - (int)sw.ElapsedMilliseconds));
+					if (_isOsuPresent && !_isInGame && !_isMinimized && Visible) {
+						sw.Restart();
+						if (!_pauseAllTasks)
+							await AutoBeatmapAnalyzerThreadTick(cancelToken, timeoutMs);
+						sw.Stop();
+					}
+
+					int updateInterval;
+					if (!_isOsuPresent)
+						updateInterval = UpdateIntervalOsuNotFoundMs;
+					else if (!_isInGame && !_isMinimized && Visible)
+						updateInterval = UpdateIntervalNormalMs;
+					else
+						updateInterval = UpdateIntervalMinimizedMs;
+					await Task.Delay(Math.Max(updateInterval, timeoutMs - (int)sw.ElapsedMilliseconds), cancelToken);
 				}
 				cancelToken.ThrowIfCancellationRequested();
 			}
@@ -1044,17 +1048,18 @@
 			if (!_isOsuPresent || _isInGame || _isMinimized || !Visible)
 				return;
 			try {
-				var t = new Thread(ts) {
-					IsBackground = true,
-					Priority = ThreadPriority.BelowNormal
-				};
-				t.Start();
-				var joinTask = Task.Run(t.Join, cancelToken);
-				await Task.WhenAny(joinTask, Task.Delay(timeoutMs, cancelToken));
-				if (t.IsAlive) {
-					t.Interrupt();
-					t.Abort();
-				}
+				//var t = new Thread(ts) {
+				//	IsBackground = true,
+				//	Priority = ThreadPriority.BelowNormal
+				//};
+				//t.Start();
+				//var joinTask = Task.Run(t.Join, cancelToken);
+				//await Task.WhenAny(joinTask, Task.Delay(timeoutMs, cancelToken));
+				//if (t.IsAlive) {
+				//	t.Interrupt();
+				//	t.Abort();
+				//}
+				await Task.Run(ts, cancelToken);
 			}
 			catch (OperationCanceledException) { throw; }
 			catch { }
