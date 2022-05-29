@@ -14,6 +14,40 @@ namespace OsuDiffCalc.FileFinder {
 	using System.Text;
 	using System.Threading;
 
+	// see https://docs.microsoft.com/en-us/dotnet/framework/interop/marshalling-data-with-platform-invoke
+	// from WinDef.h.                S/U is signed/unsigned
+	// Type                        | S/U | x86    | x64
+	// ----------------------------+-----+--------+-------
+	// BYTE, BOOLEAN               | U   | 8 bit  | 8 bit
+	// ----------------------------+-----+--------+-------
+	// SHORT                       | S   | 16 bit | 16 bit
+	// USHORT, WORD                | U   | 16 bit | 16 bit
+	// ----------------------------+-----+--------+-------
+	// INT, LONG                   | S   | 32 bit | 32 bit
+	// UINT, ULONG, DWORD          | U   | 32 bit | 32 bit
+	// ----------------------------+-----+--------+-------
+	// INT_PTR, LONG_PTR, LPARAM   | S   | 32 bit | 64 bit
+	// UINT_PTR, ULONG_PTR, WPARAM | U   | 32 bit | 64 bit
+	// ----------------------------+-----+--------+-------
+	// LONGLONG                    | S   | 64 bit | 64 bit
+	// ULONGLONG, QWORD            | U   | 64 bit | 64 bit
+	using HANDLE = System.IntPtr;
+	using PVOID = System.IntPtr;
+	using DWORD = System.UInt32;
+	using WORD = System.UInt16;
+	using ULONG = System.UInt32;
+	using UINT = System.UInt32;
+	using USHORT = System.UInt16;
+	using LONG = System.Int32;
+	using INT = System.Int32;
+	using SHORT = System.Int16;
+	using UCHAR = System.Byte;
+	using CHAR = System.Byte;
+	using CCHAR = System.Byte;
+	using BOOL = System.Boolean;
+	using BYTE = System.Byte;
+	using BOOLEAN = System.Byte; // true = 1, false = 0
+
 	public class Win32Processes {
 #region Visible structure
 		//[ComVisible(true), EventTrackingEnabled(true)] 
@@ -128,9 +162,10 @@ namespace OsuDiffCalc.FileFinder {
 							}
 							else if (ret == NT_STATUS.STATUS_SUCCESS) {
 								// SYSTEM_HANDLE_INFORMATION struct is { numberOfEntries; entry[] }
-								int numHandleEntries = Marshal.ReadInt32(ptr);
-								int offset = sizeof(int);
-								int handleEntrySize = Marshal.SizeOf<SYSTEM_HANDLE_TABLE_ENTRY_INFO>();
+								int numHandleEntries = (int)Marshal.ReadIntPtr(ptr);
+								int offset = Marshal.SizeOf<IntPtr>();
+
+								int handleEntrySize = Marshal.SizeOf<SYSTEM_HANDLE_TABLE_ENTRY_INFO>(); // x64: 24, x86: 16
 								for (int i = 0; i < numHandleEntries; i++) {
 									var handleEntry = Marshal.PtrToStructure<SYSTEM_HANDLE_TABLE_ENTRY_INFO>(ptr + offset);
 									if (handleEntry.OwnerPid == _processId) {
@@ -270,7 +305,8 @@ namespace OsuDiffCalc.FileFinder {
 						ret = NativeMethods.NtQueryObject(handle, OBJECT_INFORMATION_CLASS.ObjectNameInformation, ptr, length, out length);
 					}
 					if (ret == NT_STATUS.STATUS_SUCCESS) {
-						fileName = Marshal.PtrToStringUni(ptr + 8, (length - 9) / 2);
+						var ustrSize = Marshal.SizeOf<UNICODE_STRING>(); // x86: 8, x64: 16
+						fileName = Marshal.PtrToStringUni(ptr + ustrSize, (length - ustrSize - 1) / 2);
 						return fileName.Length != 0;
 					}
 				}
@@ -338,8 +374,11 @@ namespace OsuDiffCalc.FileFinder {
 						finally {
 							ptr = Marshal.AllocHGlobal(length);
 						}
-						if (NativeMethods.NtQueryObject(handle, OBJECT_INFORMATION_CLASS.ObjectTypeInformation, ptr, length, out length) == NT_STATUS.STATUS_SUCCESS)
-							return Marshal.PtrToStringUni(ptr + 0x60);
+						if (NativeMethods.NtQueryObject(handle, OBJECT_INFORMATION_CLASS.ObjectTypeInformation, ptr, length, out var length2) == NT_STATUS.STATUS_SUCCESS) {
+							// length2 in x86: 108, x64: 120
+							var objectTypeInfoSize = Marshal.SizeOf<OBJECT_TYPE_INFORMATION>(); // x86: 96, x64: 104
+							return Marshal.PtrToStringUni(ptr + objectTypeInfoSize);
+						}
 					}
 					finally {
 						Marshal.FreeHGlobal(ptr);
@@ -394,6 +433,8 @@ namespace OsuDiffCalc.FileFinder {
 
 #region Internal structures
 
+		// https://docs.microsoft.com/en-us/dotnet/framework/interop/marshalling-data-with-platform-invoke\
+
 		/// <summary>
 		/// Undocumented win32 type optionally returned by NtQuerySystemInfo
 		/// </summary>
@@ -403,18 +444,26 @@ namespace OsuDiffCalc.FileFinder {
 		/// </remarks>
 		[StructLayout(LayoutKind.Sequential)]
 		private struct SYSTEM_HANDLE_INFORMATION {
-			public uint NumberOfHandles;
+			public IntPtr NumberOfHandles; // source says ULONG but I see 32 bit: 4 byte, 64 bit: 8 byte
 			public SYSTEM_HANDLE_TABLE_ENTRY_INFO[] Handles;
 		}
 
+		/// <summary>
+		/// Undocumented win32 type optionally returned by NtQuerySystemInfo
+		/// </summary>
+		/// <remarks>
+		/// <br/> https://www.geoffchappell.com/studies/windows/km/ntoskrnl/api/ex/sysinfo/handle_table_entry.htm
+		/// <br/> https://www.codeproject.com/Articles/18975/Listing-Used-Files
+		/// </remarks>
 		[StructLayout(LayoutKind.Sequential)]
 		private struct SYSTEM_HANDLE_TABLE_ENTRY_INFO {
-			public uint OwnerPid;
-			public byte ObjectType;
-			public byte HandleFlags;
-			public ushort HandleValue;
-			public IntPtr ObjectPointer;
-			public uint AccessMask;
+			public USHORT OwnerPid;
+			public USHORT CreatorBackTraceIndex;
+			public UCHAR ObjectType;
+			public UCHAR HandleFlags;
+			public USHORT HandleValue;
+			public PVOID ObjectPointer;
+			public ACCESS_MASK GrantedAccess;
 		}
 
 		/// <summary>
@@ -437,6 +486,146 @@ namespace OsuDiffCalc.FileFinder {
 			public uint TypeInfoSize;
 			public uint SecurityDescriptorSize;
 			public long CreationTime;
+		}
+
+		/// <summary>
+		/// win32 struct
+		/// </summary>
+		/// <remarks> https://docs.microsoft.com/en-us/windows/win32/winprog/windows-data-types#unicde_string </remarks>
+		[StructLayout(LayoutKind.Sequential)]
+		internal struct UNICODE_STRING {
+			public USHORT Length;
+			public USHORT MaximumLength;
+			public IntPtr Buffer; // wchar_t*
+		}
+
+		/// <summary>
+		/// The ACCESS_MASK data type is a DWORD value that defines standard, specific, and generic rights.
+		/// These rights are used in access control entries (ACEs) and are the primary means of specifying
+		/// the requested or granted access to an object.
+		/// </summary>
+		/// <remarks> 
+		/// The bits are allocated as follows:
+		/// <code>
+		/// 0-15  | Specific rights. Contains the access mask specific to the object type associated with the mask.
+		/// 16-23 | Standard rights. Contains the object's standard access rights.
+		/// 24    | Access system security (ACCESS_SYSTEM_SECURITY). It is used to indicate access to a system access control list (SACL).
+		///         This type of access requires the calling process to have the SE_SECURITY_NAME (Manage auditing and security log) privilege.
+		///         If this flag is set in the access mask of an audit access ACE (successful or unsuccessful access), the SACL access will be audited.
+		/// 25    | Maximum allowed(MAXIMUM_ALLOWED)
+		/// 26-27 | Reserved
+		/// 28    | Generic all (GENERIC_ALL).
+		/// 29    | Generic execute (GENERIC_EXECUTE).
+		/// 30    | Generic write (GENERIC_WRITE).
+		/// 31    | Generic read (GENERIC_READ).
+		/// </code>
+		/// Standard rights bits, 16-23, contain the object's standard access rights and can be a combination of the following flags:
+		/// <code>
+		/// 16 | DELETE: Delete access
+		/// 17 | READ_CONTROL: Read access to the owner, group, and discretionary access control list (DACL) of the security descriptor.
+		/// 18 | WRITE_DAC: Write access to the DACL.
+		/// 19 | WRITE_OWNER: Write access to owner.
+		/// 20 | SYNCHRONIZE: Sychronize access.
+		/// </code>
+		/// <br/> https://docs.microsoft.com/en-us/windows/win32/secauthz/access-mask
+		/// </remarks>
+		internal enum ACCESS_MASK : DWORD {
+			DELETE                   = 0x00010000,
+			READ_CONTROL             = 0x00020000,
+			WRITE_DAC                = 0x00040000,
+			WRITE_OWNER              = 0x00080000,
+			SYNCHRONIZE              = 0x00100000,
+			STANDARD_RIGHTS_REQUIRED = 0x000F0000,
+			STANDARD_RIGHTS_READ     = READ_CONTROL,
+			STANDARD_RIGHTS_WRITE    = READ_CONTROL,
+			STANDARD_RIGHTS_EXECUTE  = READ_CONTROL,
+			STANDARD_RIGHTS_ALL      = 0x001F0000,
+			SPECIFIC_RIGHTS_ALL      = 0x0000FFFF,
+		}
+
+		/// <summary>
+		/// The GENERIC_MAPPING structure defines the mapping of generic access rights to specific and standard
+		/// access rights for an object. When a client application requests generic access to an object, that
+		/// request is mapped to the access rights defined in this structure.
+		/// </summary>
+		/// <remarks> https://docs.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-generic_mapping </remarks>
+		[StructLayout(LayoutKind.Sequential)]
+		internal struct GENERIC_MAPPING {
+			/// <summary> Specifies an access mask defining read access to an object. </summary>
+			public ACCESS_MASK GenericRead;
+			/// <summary> Specifies an access mask defining write access to an object. </summary>
+			public ACCESS_MASK GenericWrite;
+			/// <summary> Specifies an access mask defining execute access to an object. </summary>
+			public ACCESS_MASK GenericExecute;
+			/// <summary> Specifies an access mask defining all possible types of access to an object. </summary>
+			public ACCESS_MASK GenericAll;
+		}
+
+		/// <summary>
+		/// Undocumented win32 struct optionally returned by NtQueryObject
+		/// </summary>
+		/// <remarks>
+		/// <br/> https://www.geoffchappell.com/studies/windows/km/ntoskrnl/api/ob/obquery/type.htm?tx=135
+		/// <br/> https://processhacker.sourceforge.io/doc/struct___o_b_j_e_c_t___t_y_p_e___i_n_f_o_r_m_a_t_i_o_n.html
+		/// </remarks>
+		[StructLayout(LayoutKind.Sequential)]
+		internal struct OBJECT_TYPE_INFORMATION {
+			public UNICODE_STRING TypeName;
+			public ULONG TotalNumberOfObjects;
+			public ULONG TotalNumberOfHandles;
+			public ULONG TotalPagedPoolUsage;
+			public ULONG TotalNonPagedPoolUsage;
+			public ULONG TotalNamePoolUsage;
+			public ULONG TotalHandleTableUsage;
+			public ULONG HighWaterNumberOfObjects;
+			public ULONG HighWaterNumberOfHandles;
+			public ULONG HighWaterPagedPoolUsage;
+			public ULONG HighWaterNonPagedPoolUsage;
+			public ULONG HighWaterNamePoolUsage;
+			public ULONG HighWaterHandleTableUsage;
+			public ULONG InvalidAttributes;
+			public GENERIC_MAPPING GenericMapping;
+			public ULONG ValidAccessMask;
+			public BOOLEAN SecurityRequired;
+			public BOOLEAN MaintainHandleCount;
+			public UCHAR TypeIndex; // since WINBLUE
+			public CHAR ReservedByte;
+			public ULONG PoolType;
+			public ULONG DefaultPagedPoolCharge;
+			public ULONG DefaultNonPagedPoolCharge;
+		}
+
+		/// <summary>
+		/// Undocumented win32 struct optionally returned by NtQueryObject
+		/// </summary>
+		[StructLayout(LayoutKind.Sequential)]
+		internal struct OBJECT_NAME_INFORMATION {
+			public UNICODE_STRING Name;
+			public IntPtr NameBuffer; // wchar
+		}
+
+		/// <summary>
+		/// Undocumented win32 struct optionally returned by NtQueryObject
+		/// </summary>
+		public struct OBJECT_DATA_INFORMATION {
+			public BOOLEAN InheritHandle;
+			public BOOLEAN ProtectFromClose;
+		}
+
+		/// <summary>
+		/// Undocumented win32 struct optionally returned by NtQueryObject
+		/// </summary>
+		/// <remarks>
+		/// https://processhacker.sourceforge.io/doc/ntbasic_8h_source.html#l00186
+		/// </remarks>
+		[StructLayout(LayoutKind.Sequential)]
+		public struct OBJECT_ATTRIBUTES {
+			public ULONG Length;
+			public HANDLE RootDirectory;
+			public IntPtr ObjectName; // PUNICODE_STRING
+			public ULONG Attributes;
+			public PVOID SecurityDescriptor; // PSECURITY_DESCRIPTOR;
+			public PVOID SecurityQualityOfService; // PSECURITY_QUALITY_OF_SERVICE
 		}
 
 		/// <summary>
@@ -685,6 +874,7 @@ namespace OsuDiffCalc.FileFinder {
 			ObjectHandleFlagInformation    = 4,
 			ObjectSessionInformation       = 5,
 			ObjectSessionObjectInformation = 6,
+			MaxObjectInfoClass             = 7,
 		}
 
 		/// <summary> Standard access rights used by all objects. </summary>
@@ -912,11 +1102,11 @@ namespace OsuDiffCalc.FileFinder {
 			/// </remarks>
 			[DllImport("ntdll.dll", SetLastError = SetLastError)]
 			internal static extern NT_STATUS NtQueryObject(
-				[In] IntPtr Handle,
+				[In] HANDLE Handle,
 				[In] OBJECT_INFORMATION_CLASS ObjectInformationClass,
-				[Out] IntPtr ObjectInformation,
-				[In] int ObjectInformationLength,
-				[Out] out int ReturnLength
+				[Out] PVOID ObjectInformation,
+				[In] int ObjectInformationLength, // ULONG
+				[Out] out int ReturnLength // PULONG, optional
 			);
 
 			/// <summary>
