@@ -664,7 +664,7 @@
 
 		private void UpdateChartOptions(bool fullSet = true) {
 			//if fullSet = false, the only option should be manually chosen map(s)
-			if (fullSet) {
+			if (fullSet && _displayedMapset is not null) {
 				bool showFamiliarRating = ShowFamiliarRating;
 				var newMapOptions = _displayedMapset.Beatmaps.Select(
 					map => showFamiliarRating ? map.GetFamiliarizedDisplayString() : map.GetDiffDisplayString()
@@ -740,7 +740,8 @@
 						string displayString = ShowFamiliarRating ? map.GetFamiliarizedDisplayString() : map.GetDiffDisplayString();
 						ChartedMapDropdown.Items.Add(displayString);
 					}
-					ChartedMapDropdown.SelectedIndex = 0;
+					if (ChartedMapDropdown.Items.Count != 0)
+						ChartedMapDropdown.SelectedIndex = 0;
 				});
 			}
 		}
@@ -886,7 +887,11 @@
 					if (TopMost) {
 						Invoke((MethodInvoker)delegate {
 							TopMost = false;
-							if (MainTabControl.SelectedTab != _prevTab) MainTabControl.SelectTab(_prevTab);
+							if (MainTabControl.SelectedTab != _prevTab) {
+								var prevFgWindow = NativeMethods.GetForegroundWindow();
+								MainTabControl.SelectTab(_prevTab);
+								NativeMethods.MakeForegroundWindow(prevFgWindow);
+							}
 						});
 					}
 					_isOsuPresent = false;
@@ -927,13 +932,16 @@
 						_prevTab = MainTabControl.SelectedTab;
 						if (_prevTab != chartsTab) {
 							_isChangingTab = true;
+							var prevFgWindow = NativeMethods.GetForegroundWindow();
 							MainTabControl.SelectTab(chartsTab);
+							NativeMethods.MakeForegroundWindow(prevFgWindow);
 						}
 
 						// switch charted beatmap to in-game map
 						if (_chartedBeatmap != _inGameBeatmap || _prevTab != chartsTab) {
 							UpdateChartOptions();
-							ChartedMapDropdown.SelectedIndex = _displayedMapset.IndexOf(_inGameBeatmap);
+							if (_displayedMapset is not null)
+								ChartedMapDropdown.SelectedIndex = _displayedMapset.IndexOf(_inGameBeatmap);
 							RefreshChart();
 						}
 					});
@@ -946,7 +954,11 @@
 					Invoke((MethodInvoker)delegate {
 						if (!TopMost) TopMost = IsAlwaysOnTop;
 						if (_didMinimize && !Visible) Visible = true;
-						if (MainTabControl.SelectedTab != _prevTab) MainTabControl.SelectTab(_prevTab);
+						if (MainTabControl.SelectedTab != _prevTab) {
+							var prevFgWindow = NativeMethods.GetForegroundWindow();
+							MainTabControl.SelectTab(_prevTab);
+							NativeMethods.MakeForegroundWindow(prevFgWindow);
+						}
 						_isOsuPresent = true;
 						_isInGame = false;
 						_didMinimize = false;
@@ -1021,10 +1033,11 @@
 					Thread.CurrentThread.Name = "AutoBeatmapAnalyzerThread";
 				var sw = new Stopwatch();
 				while (!cancelToken.IsCancellationRequested) {
-					if (_isOsuPresent && !_isInGame && !_isMinimized && Visible) {
+					bool needsAnalyze = _isOsuPresent && !_isMinimized
+						&& ((Visible && !_isInGame) || (_isInGame && _prevMapsetDirectory is null));
+					if (needsAnalyze && !_pauseAllTasks) {
 						sw.Restart();
-						if (!_pauseAllTasks)
-							await AutoBeatmapAnalyzerThreadTick(cancelToken, timeoutMs);
+						await AutoBeatmapAnalyzerThreadTick(cancelToken, timeoutMs);
 						sw.Stop();
 					}
 
@@ -1045,8 +1058,6 @@
 
 		private async Task AutoBeatmapAnalyzerThreadTick(CancellationToken cancelToken, int timeoutMs) {
 			bool useWindowTitleForDirectory = false;
-			if (!_isOsuPresent || _isInGame || _isMinimized || !Visible)
-				return;
 			try {
 				//var t = new Thread(ts) {
 				//	IsBackground = true,

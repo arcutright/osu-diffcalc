@@ -145,11 +145,22 @@
 			}
 		}
 
+		/// <inheritdoc cref="MakeForegroundWindow(IntPtr)"/>
+		internal static void MakeForegroundWindow(Process process) {
+			if (process is not null) {
+				process.Refresh();
+				if (!process.HasExited)
+					MakeForegroundWindow(process.MainWindowHandle);
+			}
+		}
+
 		/// <summary>
 		/// works but constantly captures mouse/kb
 		/// </summary>
-		internal static void MakeForegroundWindow(Process process) {
-			var hWnd = process.MainWindowHandle;
+		internal static void MakeForegroundWindow(IntPtr hWnd) {
+			var fgWindow = GetForegroundWindow();
+			if (hWnd == fgWindow) return;
+
 			var flags = SetWindowPosFlags.SWP_NOMOVE | SetWindowPosFlags.SWP_NOSIZE
 				| SetWindowPosFlags.SWP_SHOWWINDOW 
 				//| SetWindowPosFlags.SWP_NOACTIVATE
@@ -482,7 +493,7 @@
 		///     can be NULL in certain circumstances, such as when a window is losing activation.
 		/// </returns>
 		[DllImport("user32.dll", SetLastError = SetLastError)]
-		private static extern IntPtr GetForegroundWindow();
+		internal static extern IntPtr GetForegroundWindow();
 
 		/// <summary>
 		/// Attaches or detaches the input processing mechanism of one thread to that of another thread.
