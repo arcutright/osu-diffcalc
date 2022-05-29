@@ -4,6 +4,7 @@
 	using System.Diagnostics;
 	using System.IO;
 	using System.Linq;
+	using System.Runtime.CompilerServices;
 
 	class Finder {
 		public static IEnumerable<string> GetOpenFilesUsedByProcess(string processName, params string[] filetypeFilter) {
@@ -18,11 +19,16 @@
 			return Array.Empty<string>();
 		}
 
-		private static readonly HashSet<string> _osuOpenFileTypes = new(StringComparer.OrdinalIgnoreCase){ 
+		private static readonly HashSet<string> _osuOpenFileTypes = new(StringComparer.OrdinalIgnoreCase){
 			".mp3", ".ogg", ".oga", ".mogg", ".wma", ".wav", ".flac", ".aac", ".alac", ".wv", // audio
 			".avi", ".flv", ".mp4", ".mkv", ".mov", ".wmv", ".webm", ".gifv", ".vob", ".ogv",  // video
 			".mpg", ".mpeg", ".m4v", ".3gp", ".mov", ".qt", ".flv", // video
 		};
+		//private static readonly HashSet<string> _osuOpenFileTypes = new(StringComparer.OrdinalIgnoreCase){
+		//	".mp3", ".ogg", ".wav", ".aac", // audio
+		//	".mp4", ".avi", ".mov", ".flv", ".webm", // video mentioned in osu!lazer source code
+		//	".mkv", ".wmv", ".mpg", ".mpeg", ".mov", // other common video types
+		//};
 
 		/// <summary>
 		/// Gets current/active beatmap directory based on osu!'s open file hooks
@@ -40,7 +46,9 @@
 					if (beatmapFiles.Any())
 						return dirPath;
 				}
-			catch { 
+				return null;
+			}
+			catch {
 				return null;
 			}
 		}
@@ -68,38 +76,84 @@
 					if (process is not null && !process.HasExited)
 						return process;
 				}
-				catch (Exception ex) when (ex is ArgumentException or InvalidOperationException) {
-					int yy = 1;
-				} 
+				catch (ArgumentException) {
+					// The process specified by the processId parameter is not running. The identifier might be expired.
+				}
+				catch (InvalidOperationException) {
+					// The process was not started by this object.
+				}
 			}
-			try {
-				// TODO: rewrite without linq (consider using win32 api funcs?) to reduce cpu/memory usage
-				var consolePid = Program.ConsolePid;
-				var processes =
-					(from p in Process.GetProcessesByName("osu!")
-					 where p.Id != consolePid && p.Id != guiPid && Path.GetFileName(p.MainModule.FileVersionInfo.ProductName).ToLower() == "osu!"
-					 select p).ToList();
+			return GetOsuProcess(guiPid);
+		}
 
-				int n = processes.Count;
-				if (n == 0)
-					return null;
-				else if (n == 1)
-					return processes[0];
+		/// <summary>
+		/// Get a reference to the osu! process. Returns <see langword="null"/> if it cannot be found.
+		/// </summary>
+		static Process GetOsuProcess(int guiPid) {
+			Process result = null;
+			int consolePid = Program.ConsolePid;
 
-				var processesUsingFiles =
-					from p in processes
-					// filter to processes with open audio files
-					from file in Win32Processes.DetectOpenFiles.GetOpenFilesEnumerator(p.Id, _osuOpenFileTypes)
-					// filter to processes whose directory contains .osu files
-					let dirPath = Path.GetDirectoryName(file)
-					let beatmapFiles = Directory.EnumerateFiles(dirPath, "*.osu", SearchOption.TopDirectoryOnly)
-					where beatmapFiles.Any()
-					select p;
-				return processesUsingFiles.FirstOrDefault() ?? processes.FirstOrDefault();
+			// filter list of running processes to those which may be osu processes (checks names, etc)
+			var processesToInterrogate = new List<Process>();
+			var processes = Process.GetProcesses(".");
+			int i = 0;
+			for (; i < processes.Length; ++i) {
+				var p = processes[i];
+				if (MayBeOsuProcess(p, consolePid, guiPid))
+					processesToInterrogate.Add(p);
+				else
+					p.Dispose();
 			}
-			catch (Exception ex) {
+
+			// interrogate "may be osu processes" to see which one is osu!
+			int n = processesToInterrogate.Count;
+			if (n == 0)
 				return null;
+			else if (n == 1) // if only 1, don't try to do open file handle checks
+				return processesToInterrogate[0];
+			else {
+				// find first "may be osu process" that has open handles to music/video files with .osu files in the same dir
+				for (i = 0; i < n; ++i) {
+					var p = processesToInterrogate[i];
+					if (HasOpenOsuFiles(p)) {
+						result = p;
+						++i;
+						break;
+					}
+					else
+						p.Dispose();
+				}
+				// dispose other processes
+				for (; i < n; ++i) {
+					processesToInterrogate[i].Dispose();
+				}
 			}
+			return result;
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		static bool MayBeOsuProcess(Process p, int consolePid, int guiPid) {
+			// pre-filter against known pid(s), or wrongly-named processes
+			return p is not null
+				&& p.Id != consolePid
+				&& p.Id != guiPid
+				&& string.Equals("osu!", p.ProcessName, StringComparison.OrdinalIgnoreCase)
+				&& string.Equals("osu!", Path.GetFileName(p.MainModule.FileVersionInfo.ProductName), StringComparison.OrdinalIgnoreCase);
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		static bool HasOpenOsuFiles(Process p) {
+			// filter to processes who have open files which osu might use
+			if (p is not null) {
+				foreach (var file in Win32Processes.DetectOpenFiles.GetOpenFilesEnumerator(p.Id, _osuOpenFileTypes)) {
+					// whose directory contains .osu files
+					var dirPath = Path.GetDirectoryName(file);
+					var beatmapFiles = Directory.EnumerateFiles(dirPath, "*.osu", SearchOption.TopDirectoryOnly);
+					if (beatmapFiles.Any())
+						return true;
+				}
+			}
+			return false;
 		}
 	}
 }
