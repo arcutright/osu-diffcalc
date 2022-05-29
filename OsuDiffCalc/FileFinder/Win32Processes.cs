@@ -49,7 +49,12 @@ namespace OsuDiffCalc.FileFinder {
 	using BOOLEAN = System.Byte; // true = 1, false = 0
 
 	public class Win32Processes {
-#region Visible structure
+		private static readonly int _intPtrSize = Marshal.SizeOf<IntPtr>(); // x86: 4, x64: 8
+		private static readonly int _ustrSize = Marshal.SizeOf<UNICODE_STRING>(); // x86: 8, x64: 16
+		private static readonly int _handleEntrySize = Marshal.SizeOf<SYSTEM_HANDLE_TABLE_ENTRY_INFO>(); // x86: 16, x64: 24
+		private static readonly int _objectTypeInfoSize = Marshal.SizeOf<OBJECT_TYPE_INFORMATION>(); // x86: 96, x64: 104
+
+		#region Visible structure
 		//[ComVisible(true), EventTrackingEnabled(true)] 
 		public class DetectOpenFiles// : ServicedComponent 
 		{
@@ -84,21 +89,43 @@ namespace OsuDiffCalc.FileFinder {
 				OB_TYPE_UNKNOWN_22,
 				OB_TYPE_UNKNOWN_23,
 				OB_TYPE_UNKNOWN_24,
-				//OB_TYPE_CONTROLLER, 
-				//OB_TYPE_DEVICE, 
-				//OB_TYPE_DRIVER, 
+				OB_TYPE_CONTROLLER,
+				OB_TYPE_DEVICE,
+				OB_TYPE_DRIVER,
 				OB_TYPE_IO_COMPLETION,
 				OB_TYPE_FILE
 			};
 
-			private const int handleTypeTokenCount = 27;
-			private static readonly string[] handleTypeTokens = new string[] {
-				"", "", "Directory", "SymbolicLink", "Token",
-				"Process", "Thread", "Unknown7", "Event", "EventPair", "Mutant",
-				"Unknown11", "Semaphore", "Timer", "Profile", "WindowStation",
-				"Desktop", "Section", "Key", "Port", "WaitablePort",
-				"Unknown21", "Unknown22", "Unknown23", "Unknown24",
-				"IoCompletion", "File"
+			private static readonly Dictionary<string, SystemHandleType> _handleTypeTokens = new() {
+				{ "", SystemHandleType.OB_TYPE_TYPE },
+				{ "Directory", SystemHandleType.OB_TYPE_DIRECTORY },
+				{ "SymbolicLink", SystemHandleType.OB_TYPE_SYMBOLIC_LINK },
+				{ "Token", SystemHandleType.OB_TYPE_TOKEN },
+				{ "Process",SystemHandleType.OB_TYPE_PROCESS },
+				{ "Thread", SystemHandleType.OB_TYPE_THREAD },
+				{ "Unknown7", SystemHandleType.OB_TYPE_UNKNOWN_7 },
+				{ "Event", SystemHandleType.OB_TYPE_EVENT },
+				{ "EventPair", SystemHandleType.OB_TYPE_EVENT_PAIR },
+				{ "Mutant", SystemHandleType.OB_TYPE_MUTANT },
+				{ "Unknown11", SystemHandleType.OB_TYPE_UNKNOWN_11 },
+				{ "Semaphore", SystemHandleType.OB_TYPE_SEMAPHORE },
+				{ "Timer", SystemHandleType.OB_TYPE_TIMER },
+				{ "Profile", SystemHandleType.OB_TYPE_PROFILE },
+				{ "WindowStation", SystemHandleType.OB_TYPE_WINDOW_STATION },
+				{ "Desktop", SystemHandleType.OB_TYPE_DESKTOP },
+				{ "Section", SystemHandleType.OB_TYPE_SECTION },
+				{ "Key", SystemHandleType.OB_TYPE_KEY },
+				{ "Port", SystemHandleType.OB_TYPE_PORT },
+				{ "WaitablePort", SystemHandleType.OB_TYPE_WAITABLE_PORT },
+				{ "Unknown21", SystemHandleType.OB_TYPE_UNKNOWN_21 },
+				{ "Unknown22", SystemHandleType.OB_TYPE_UNKNOWN_22 },
+				{ "Unknown23", SystemHandleType.OB_TYPE_UNKNOWN_23 },
+				{ "Unknown24", SystemHandleType.OB_TYPE_UNKNOWN_24 },
+				{ "IoCompletion", SystemHandleType.OB_TYPE_IO_COMPLETION },
+				{ "File", SystemHandleType.OB_TYPE_FILE },
+				{ "Controller", SystemHandleType.OB_TYPE_CONTROLLER },
+				{ "Device", SystemHandleType.OB_TYPE_DEVICE },
+				{ "Driver", SystemHandleType.OB_TYPE_DRIVER },
 			};
 
 			/// <summary> 
@@ -144,7 +171,7 @@ namespace OsuDiffCalc.FileFinder {
 					int length = 0x10000; // 2^16
 					// Loop, probing for required memory. 
 					do {
-						IntPtr ptr = IntPtr.Zero;
+						var ptr = IntPtr.Zero;
 						RuntimeHelpers.PrepareConstrainedRegions();
 						try {
 							RuntimeHelpers.PrepareConstrainedRegions();
@@ -155,41 +182,43 @@ namespace OsuDiffCalc.FileFinder {
 								// asynchronous exception occurs. 
 								ptr = Marshal.AllocHGlobal(length);
 							}
-							ret = NativeMethods.NtQuerySystemInformation(SYSTEM_INFORMATION_CLASS.SystemHandleInformation, ptr, length, out int returnLength);
+							ret = NativeMethods.NtQuerySystemInformation(SYSTEM_INFORMATION_CLASS.SystemHandleInformation, ptr, length, out int returnLength); // HOT PATH
 							if (ret == NT_STATUS.STATUS_INFO_LENGTH_MISMATCH) {
 								// Round required memory up to the nearest 64KB boundary. 
 								length = ((returnLength + 0xffff) & ~0xffff);
 							}
 							else if (ret == NT_STATUS.STATUS_SUCCESS) {
+								// by using direct offests and avoiding Marshal.PtrToStructure<>(), this runs ~2x faster, at the cost of readability
+
 								// SYSTEM_HANDLE_INFORMATION struct is { numberOfEntries; entry[] }
 								int numHandleEntries = (int)Marshal.ReadIntPtr(ptr);
-								int offset = Marshal.SizeOf<IntPtr>();
+								int offset = _intPtrSize;
 
-								int handleEntrySize = Marshal.SizeOf<SYSTEM_HANDLE_TABLE_ENTRY_INFO>(); // x64: 24, x86: 16
 								for (int i = 0; i < numHandleEntries; i++) {
-									var handleEntry = Marshal.PtrToStructure<SYSTEM_HANDLE_TABLE_ENTRY_INFO>(ptr + offset);
-									if (handleEntry.OwnerPid == _processId) {
-										var handle = (IntPtr)handleEntry.HandleValue;
+									var ownerPid = (uint)Marshal.ReadInt16(ptr + offset); // read the SYSTEM_HANDLE_TABLE_ENTRY_INFO.OwnerPid
+									if (ownerPid == _processId) {
+										var handle = (IntPtr)Marshal.ReadInt16(ptr + offset + 6); // read the SYSTEM_HANDLE_TABLE_ENTRY_INFO.HandleValue
 
-										bool isFileHandle = GetHandleType(handle, handleEntry.OwnerPid, out SystemHandleType handleType)
+										bool isFileHandle = GetHandleType(handle, ownerPid, out SystemHandleType handleType) // HOT PATH
 											&& handleType == SystemHandleType.OB_TYPE_FILE;
 										if (isFileHandle) {
-											if (GetFileNameFromHandle(handle, handleEntry.OwnerPid, out string devicePath)) {
-												if (ConvertDevicePathToDosPath(devicePath, out string dosPath)) {
-													// only return paths to files which match the filter
-													if (!_useFileExtensionFilter || _fileExtensionFilter.Contains(Path.GetExtension(dosPath)))
+											if (GetFileNameFromHandle(handle, ownerPid, out string devicePath)) {
+												// only inspect paths to file types which match the filter
+												if (!_useFileExtensionFilter || _fileExtensionFilter.Contains(Path.GetExtension(devicePath))) {
+													if (ConvertDevicePathToDosPath(devicePath, out string dosPath)) {
 														yield return dosPath;
-													//if (File.Exists(dosPath)) {
-													//	yield return new FileInfo(dosPath); 
-													//}
-													//else if (Directory.Exists(dosPath)) {
-													//	yield return new DirectoryInfo(dosPath); 
-													//}
+														//if (File.Exists(dosPath)) {
+														//	yield return new FileInfo(dosPath); 
+														//}
+														//else if (Directory.Exists(dosPath)) {
+														//	yield return new DirectoryInfo(dosPath); 
+														//}
+													}
 												}
 											}
 										}
 									}
-									offset += handleEntrySize;
+									offset += _handleEntrySize;
 								}
 							}
 						}
@@ -305,8 +334,7 @@ namespace OsuDiffCalc.FileFinder {
 						ret = NativeMethods.NtQueryObject(handle, OBJECT_INFORMATION_CLASS.ObjectNameInformation, ptr, length, out length);
 					}
 					if (ret == NT_STATUS.STATUS_SUCCESS) {
-						var ustrSize = Marshal.SizeOf<UNICODE_STRING>(); // x86: 8, x64: 16
-						fileName = Marshal.PtrToStringUni(ptr + ustrSize, (length - ustrSize - 1) / 2);
+						fileName = Marshal.PtrToStringUni(ptr + _ustrSize, (length - _ustrSize - 1) / 2);
 						return fileName.Length != 0;
 					}
 				}
@@ -321,8 +349,8 @@ namespace OsuDiffCalc.FileFinder {
 			}
 
 			private static bool GetHandleType(IntPtr handle, uint processId, out SystemHandleType handleType) {
-				string token = GetHandleTypeToken(handle, processId);
-				return GetHandleTypeFromToken(token, out handleType);
+				string token = GetHandleTypeToken(handle, processId); // HOT PATH: 16.2%
+				return GetHandleTypeFromToken(token, out handleType); // HOT PATH: 0.4%
 			}
 
 			private static bool GetHandleType(IntPtr handle, out SystemHandleType handleType) {
@@ -331,32 +359,31 @@ namespace OsuDiffCalc.FileFinder {
 			}
 
 			private static bool GetHandleTypeFromToken(string token, out SystemHandleType handleType) {
-				for (int i = 1; i < handleTypeTokenCount; i++) {
-					if (handleTypeTokens[i] == token) {
-						handleType = (SystemHandleType)i;
-						return true;
-					}
+				if (_handleTypeTokens.TryGetValue(token, out handleType))
+					return true;
+				else {
+					handleType = SystemHandleType.OB_TYPE_UNKNOWN;
+					return false;
 				}
-				handleType = SystemHandleType.OB_TYPE_UNKNOWN;
-				return false;
 			}
 
 			private static string GetHandleTypeToken(IntPtr handle, uint processId) {
-				IntPtr currentProcess = NativeMethods.GetCurrentProcess();
+				IntPtr currentProcess = NativeMethods.GetCurrentProcess(); // HOT PATH: 0.4%
 				bool remote = (processId != NativeMethods.GetProcessId(currentProcess));
 				SafeProcessHandle processHandle = null;
 				SafeObjectHandle objectHandle = null;
 				try {
 					if (remote) {
-						processHandle = NativeMethods.OpenProcess(ProcessAccessRights.PROCESS_DUP_HANDLE, true, processId);
-						if (NativeMethods.DuplicateHandle(processHandle.DangerousGetHandle(), handle, currentProcess, out objectHandle, 0, false, DuplicateHandleOptions.DUPLICATE_SAME_ACCESS)) {
+						processHandle = NativeMethods.OpenProcess(ProcessAccessRights.PROCESS_DUP_HANDLE, true, processId); // HOT PATH: 9.4%
+						if (NativeMethods.DuplicateHandle(processHandle.DangerousGetHandle(), handle, currentProcess, out objectHandle, 0, false, DuplicateHandleOptions.DUPLICATE_SAME_ACCESS)) { // HOT PATH: 2.6%
 							handle = objectHandle.DangerousGetHandle();
 						}
 					}
-					return GetHandleTypeToken(handle);
+					return GetHandleTypeToken(handle); // HOT PATH: 1.9%
 				}
 				finally {
 					if (remote) {
+						// HOT PATH: 1.9% (combined)
 						processHandle?.Close();
 						objectHandle?.Close();
 					}
@@ -376,8 +403,7 @@ namespace OsuDiffCalc.FileFinder {
 						}
 						if (NativeMethods.NtQueryObject(handle, OBJECT_INFORMATION_CLASS.ObjectTypeInformation, ptr, length, out var length2) == NT_STATUS.STATUS_SUCCESS) {
 							// length2 in x86: 108, x64: 120
-							var objectTypeInfoSize = Marshal.SizeOf<OBJECT_TYPE_INFORMATION>(); // x86: 96, x64: 104
-							return Marshal.PtrToStringUni(ptr + objectTypeInfoSize);
+							return Marshal.PtrToStringUni(ptr + _objectTypeInfoSize);
 						}
 					}
 					finally {
