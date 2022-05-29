@@ -50,10 +50,13 @@
 		/// </summary>
 		/// <param name="lastOsuProcess"> last process reference of osu!, if available </param>
 		public static Process GetOsuProcess(int guiPid, Process lastOsuProcess) {
-			if (lastOsuProcess is not null && !lastOsuProcess.HasExited)
+			lastOsuProcess?.Refresh();
+			if (lastOsuProcess?.HasExited == false)
 				return lastOsuProcess;
-			else
+			else {
+				lastOsuProcess?.Dispose();
 				return GetOsuProcess(guiPid);
+			}
 		}
 
 		/// <inheritdoc cref="GetOsuProcess(int, Process)"/>
