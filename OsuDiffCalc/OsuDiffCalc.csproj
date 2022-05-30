@@ -78,6 +78,7 @@
   <ItemGroup>
     <Compile Include="CSharp9Features.cs" />
     <Compile Include="FileFinder\Finder.cs" />
+    <Compile Include="FileFinder\ShortcutHelper.cs" />
     <Compile Include="FileFinder\Win32Processes.cs" />
     <Compile Include="FileProcessor\Analyzer.cs" />
     <Compile Include="FileProcessor\AnalyzerObjects\DifficultyRating.cs" />

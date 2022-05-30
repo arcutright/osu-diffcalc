@@ -5,34 +5,55 @@
 	using System.Diagnostics;
 	using System.IO;
 	using System.Linq;
+	using System.Text.RegularExpressions;
 	using System.Threading;
 	using System.Threading.Tasks;
 	using FileFinder;
 
 	class MapsetManager {
-		private static List<Mapset> _allMapsets = new List<Mapset>();
+		private static List<Mapset> _allMapsets = new();
+		private static readonly Regex _titleRegex = new(@"(.*)\s*\[\s*(.*)\s*\]");
 
 		public static void Clear() {
 			_allMapsets.Clear();
 		}
 
-		//get mapset directory based on osu's window title (only works while user is playing a map)
-		public static string GetCurrentMapsetDirectory(string inGameWindowTitle, string prevMapsetDirectory) {
+		/// <summary>
+		/// [Dirty hack] Get mapset directory based on osu's window title
+		/// (only works while user is playing a map and doesn't work 100% of the time)
+		/// </summary>
+		/// <returns>
+		/// Path to current mapset directory, or null if it couldn't be determined
+		/// </returns>
+		public static string GetCurrentMapsetDirectory(Process osuProcess, string inGameWindowTitle, string prevMapsetDirectory) {
 			try {
-				//title info is organized: artist - song title [difficulty]
+				// in game window title is: `osu! - artist - song title [difficulty]`
 				string titleInfo = inGameWindowTitle[(inGameWindowTitle.IndexOf('-')+1)..].Trim();
-				string mapsetDirectoryTitle = titleInfo[..titleInfo.LastIndexOf('[')].Trim();
-				string diffName = titleInfo.Substring(titleInfo.LastIndexOf('[')+1, titleInfo.LastIndexOf(']'));
-				string songsDirectoryX = Path.GetDirectoryName(prevMapsetDirectory);
-				string songsDirectory = prevMapsetDirectory[..prevMapsetDirectory.LastIndexOf('\\')];
-				var possibleMapsetDirectories = Directory.EnumerateDirectories(songsDirectory, $"*{mapsetDirectoryTitle}*", SearchOption.TopDirectoryOnly);
+				var match = _titleRegex.Match(titleInfo);
+				if (!match.Success)
+					return null;
+
+				// TODO: for improved dirty hack, read the osu songs database to find this song
+
+				// find path to osu! Songs folder (where all the beatmaps live)
+				string songsDir;
+				if (string.IsNullOrEmpty(prevMapsetDirectory))
+					songsDir = Finder.GetOsuSongsDirectory(osuProcess);
+				else
+					songsDir = Path.GetDirectoryName(prevMapsetDirectory);
+
+				// look for a directory in the Songs folder with the mapset title from the in-game window
+				string mapsetTitle = match.Groups[1].Value.Trim();
+				string diffName = match.Groups[2].Value.Trim();
+				var possibleMapsetDirectories = Directory.EnumerateDirectories(songsDir, $"*{mapsetTitle}*", SearchOption.TopDirectoryOnly);
 				foreach (string directory in possibleMapsetDirectories) {
-					if (Directory.EnumerateFiles(directory, $"*{diffName}*.osu", SearchOption.TopDirectoryOnly).Any()) {
+					// name match for the .osu map file
+					if (Directory.EnumerateFiles(directory, $"*{diffName}*.osu", SearchOption.TopDirectoryOnly).Any())
 						return directory;
-					}
 				}
 			}
-			catch { }
+			catch {
+			}
 			return null;
 		}
 

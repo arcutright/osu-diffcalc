@@ -515,9 +515,11 @@
 		}
 
 		private void DisplayMapset(Mapset set) {
-			if (set is null) {
-				Invoke((MethodInvoker)delegate {
-					ClearBeatmapDisplay();
+			var prevFgWindow = NativeMethods.GetForegroundWindow();
+			try {
+				if (set is null) {
+					Invoke((MethodInvoker)delegate {
+						ClearBeatmapDisplay();
 					ChartedMapDropdown.Items.Clear();
 					_displayedMapset = null;
 					_chartedBeatmap = null;
@@ -543,8 +545,12 @@
 
 				_chartedBeatmap = _inGameBeatmap ?? set.Beatmaps.FirstOrDefault();
 				UpdateChartOptions();
-				RefreshChart();
-			});
+					RefreshChart();
+				});
+			}
+			finally {
+				NativeMethods.MakeForegroundWindow(prevFgWindow);
+			}
 		}
 
 		private Label MakeLabel(string text, int fontSize, string toolTipStr = "") {
@@ -876,7 +882,7 @@
 				if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 					Thread.CurrentThread.Name = "AutoWindowTickThread";
 
-				// ensure we have the correct pid for osu (in case player restarted osu, etc)
+				// ensure we have the correct process for osu (in case player restarted osu, etc)
 				_osuProcess = Finder.GetOsuProcess(_guiPid, _osuProcess);
 				cancelToken.ThrowIfCancellationRequested();
 				string windowTitle =  _osuProcess?.MainWindowTitle;
@@ -898,75 +904,48 @@
 					_isInGame = false;
 					_didMinimize = false;
 				}
-				else if (windowTitle.IndexOf('[') != -1) {
+				else {
 					// osu found and we may be in-game
+					_isOsuPresent = true;
 
 					if (_isInGame && windowTitle == _inGameWindowTitle) {
 						// definitely in-game
 						return;
 					}
 
-					// osu found but we don't yet know the in-game beatmap (or we aren't in-game and the window has a '[' in it)
-					// try to figure out what map is being played. This work will only happen once.
-					try {
-						var osuScreenBounds = Screen.FromHandle(_osuProcess.MainWindowHandle)?.Bounds;
-						var thisScreenBounds = Screen.FromHandle(_guiProcess.MainWindowHandle)?.Bounds;
-						_isOnSameScreen = thisScreenBounds == osuScreenBounds;
-					}
-					catch { }
-					if (!_isMinimized) _didMinimize = _isOnSameScreen;
-					if (_isOnSameScreen) {
-						Invoke((MethodInvoker)delegate {
-							if (Visible) Visible = false;
-							if (TopMost) TopMost = false;
-						});
-					}
-					_isOsuPresent = true;
-					_isInGame = true;
-					_inGameWindowTitle = windowTitle;
-
-					// find in-game beatmap
-					_inGameBeatmap = _displayedMapset?.Beatmaps.FirstOrDefault(map => windowTitle.EndsWith(map.Version + "]", StringComparison.Ordinal));
 					Invoke((MethodInvoker)delegate {
-						// switch to charts tab if we aren't on it
-						_prevTab = MainTabControl.SelectedTab;
-						if (_prevTab != chartsTab) {
-							_isChangingTab = true;
-							var prevFgWindow = NativeMethods.GetForegroundWindow();
-							MainTabControl.SelectTab(chartsTab);
-							NativeMethods.MakeForegroundWindow(prevFgWindow);
-						}
+						// crappy way to check if osu is in-game
+						_isInGame = windowTitle.IndexOf('[') != -1;
+						if (_isInGame)
+							_inGameWindowTitle = windowTitle;
+						else
+							_inGameWindowTitle = null;
 
-						// switch charted beatmap to in-game map
-						if (_chartedBeatmap != _inGameBeatmap || _prevTab != chartsTab) {
-							UpdateChartOptions();
-							if (_displayedMapset is not null)
-								ChartedMapDropdown.SelectedIndex = _displayedMapset.IndexOf(_inGameBeatmap);
-							RefreshChart();
-						}
-					});
-
-					Console.WriteLine($"In game, window title: '{windowTitle}'");
-					Console.WriteLine($"  => beatmap: '{_inGameBeatmap?.Version}'");
-				}
-				else {
-					// osu found but we aren't in game
-					Invoke((MethodInvoker)delegate {
-						if (!TopMost) TopMost = IsAlwaysOnTop;
-						if (_didMinimize && !Visible) Visible = true;
-						if (MainTabControl.SelectedTab != _prevTab) {
-							var prevFgWindow = NativeMethods.GetForegroundWindow();
-							MainTabControl.SelectTab(_prevTab);
-							NativeMethods.MakeForegroundWindow(prevFgWindow);
-						}
-						_isOsuPresent = true;
-						_isInGame = false;
-						_didMinimize = false;
-
+						// find the screen bounds of each process
+						Rectangle? osuScreenBounds = null, thisScreenBounds;
 						try {
-							var osuScreenBounds = Screen.FromHandle(_osuProcess.MainWindowHandle)?.Bounds;
-							var thisScreenBounds = Screen.FromHandle(_guiProcess.MainWindowHandle)?.Bounds;
+							thisScreenBounds = Screen.FromHandle(_guiProcess.MainWindowHandle)?.Bounds;
+							if (_osuProcess is not null)
+								osuScreenBounds = Screen.FromHandle(_osuProcess.MainWindowHandle)?.Bounds;
 							_isOnSameScreen = thisScreenBounds == osuScreenBounds;
+						}
+						catch { }
+
+						if (!_isInGame) {
+							// not in game
+							// unminimize if it was auto-minimized, change back to prev user tab if we auto-changed to the charts tab
+							if (!TopMost) TopMost = IsAlwaysOnTop;
+							if (_didMinimize && !Visible) Visible = true;
+							if (MainTabControl.SelectedTab != _prevTab) {
+								var prevFgWindow = NativeMethods.GetForegroundWindow();
+								MainTabControl.SelectTab(_prevTab);
+								NativeMethods.MakeForegroundWindow(prevFgWindow);
+							}
+							_didMinimize = false;
+						}
+
+						// try to move to a secondary screen
+						try {
 							if (!_isOnSameScreen) {
 								// if we are not in game and osu is on a different screen, do nothing
 							}
@@ -974,7 +953,7 @@
 								// if we are not in game and we are on the same screen
 								int numScreens = Screen.AllScreens.Length;
 								bool isOsuFullScreen = NativeMethods.IsFullScreen(_osuProcess);
-								if (numScreens > 1 && isOsuFullScreen) {
+								if (numScreens > 1 && (isOsuFullScreen || _isInGame)) {
 									// move to a different screen if osu is full screen
 									// (we can't act as an overlay with WinForms UI, would require a rewrite in DirectX or something)
 									var otherScreen = Screen.AllScreens.First(s => s.Bounds != osuScreenBounds);
@@ -982,13 +961,13 @@
 									NativeMethods.TryMoveToScreen(_guiProcess, otherScreen);
 									//TopMost = false;
 								}
-								else if (!isOsuFullScreen) {
-									// if osu is not full screen ("borderless fullscreen" or windowed), we can be on top via the TopMost property
-									// this lets the player see this program but they can move it somewhere unobtrusive and it won't steal mouse/keyboard focus
-									TopMost = IsAlwaysOnTop;
+								else if (_isInGame) {
+									if (!_isMinimized) _didMinimize = _isOnSameScreen;
+									if (TopMost) TopMost = false;
+									if (Visible) Visible = false;
 								}
-								else {
-									// osu is full screen and the player only has 1 screen. no good way to resolve this, see DirectX note above
+								else if (numScreens == 1 && isOsuFullScreen) {
+									// osu is full screen, not in game, and the player only has 1 screen. no good way to resolve this, see DirectX note above
 
 									// TODO: find way to forward mouse/kb inputs to osu process when using this technique
 									NativeMethods.ForceForegroundWindow(_guiProcess, _osuProcess);
@@ -1001,6 +980,31 @@
 							}
 						}
 						catch { }
+
+						// if we are in-game, switch to charts tab if we aren't on it
+						if (_isInGame) {
+							_prevTab = MainTabControl.SelectedTab;
+							if (_prevTab != chartsTab) {
+								_isChangingTab = true;
+								var prevFgWindow = NativeMethods.GetForegroundWindow();
+								MainTabControl.SelectTab(chartsTab);
+								NativeMethods.MakeForegroundWindow(prevFgWindow);
+							}
+
+							// try to figure out what map is being played. This work will only happen once.
+							_inGameBeatmap = _displayedMapset?.Beatmaps.FirstOrDefault(map => windowTitle.EndsWith(map.Version + "]", StringComparison.Ordinal));
+
+							// switch charted beatmap to in-game map
+							if (_chartedBeatmap != _inGameBeatmap || _prevTab != chartsTab) {
+								UpdateChartOptions();
+								if (_displayedMapset is not null)
+									ChartedMapDropdown.SelectedIndex = _displayedMapset.IndexOf(_inGameBeatmap);
+								RefreshChart();
+							}
+
+							Console.WriteLine($"In game, window title: '{windowTitle}'");
+							Console.WriteLine($"  => beatmap: '{_inGameBeatmap?.Version}'");
+						}
 					});
 				}
 			}
@@ -1057,7 +1061,6 @@
 		}
 
 		private async Task AutoBeatmapAnalyzerThreadTick(CancellationToken cancelToken, int timeoutMs) {
-			bool useWindowTitleForDirectory = false;
 			try {
 				//var t = new Thread(ts) {
 				//	IsBackground = true,
@@ -1079,18 +1082,14 @@
 				if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 					Thread.CurrentThread.Name = "AutoBeatmapTickThread";
 
-				//timing
 				var sw = Stopwatch.StartNew();
-				if (useWindowTitleForDirectory) {
-					// TODO: this branch is unused since the program is always minimized when in-game
-					_currentMapsetDirectory = MapsetManager.GetCurrentMapsetDirectory(_inGameWindowTitle, _prevMapsetDirectory);
-					useWindowTitleForDirectory = false;
-				}
-				else {
-					_osuProcess ??= Finder.GetOsuProcess(_guiPid, _osuProcess); // secondary HOT PATH
-					cancelToken.ThrowIfCancellationRequested();
-					_currentMapsetDirectory = Finder.GetOsuBeatmapDirectory(_osuProcess?.Id); // true HOT PATH
-				}
+
+				_osuProcess ??= Finder.GetOsuProcess(_guiPid, _osuProcess); // secondary HOT PATH
+				cancelToken.ThrowIfCancellationRequested();
+				_currentMapsetDirectory = Finder.GetOsuBeatmapDirectory(_osuProcess?.Id); // true HOT PATH
+				if (_currentMapsetDirectory is null && _isInGame)
+					_currentMapsetDirectory = MapsetManager.GetCurrentMapsetDirectory(_osuProcess, _inGameWindowTitle, _prevMapsetDirectory);
+
 				sw.Stop();
 				SetText(timeDisplay1, $"{sw.ElapsedMilliseconds} ms");
 

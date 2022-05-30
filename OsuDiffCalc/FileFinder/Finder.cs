@@ -5,21 +5,13 @@
 	using System.IO;
 	using System.Linq;
 	using System.Runtime.CompilerServices;
+	using System.Text;
 
 	class Finder {
-		public static IEnumerable<string> GetOpenFilesUsedByProcess(string processName, params string[] filetypeFilter) {
-			var filters = filetypeFilter.Select(x => x.ToLower()).ToHashSet();
-			try {
-				return from p in Process.GetProcessesByName(processName)
-							 // filter to processes with open audio files
-							 from file in Win32Processes.DetectOpenFiles.GetOpenFilesEnumerator(p.Id, filters)
-							 select file;
-			}
-			catch { }
-			return Array.Empty<string>();
-		}
+		private static string _osuSongsDirectory = null;
 
-		private static readonly HashSet<string> _osuOpenFileTypes = new(StringComparer.OrdinalIgnoreCase){
+		private static readonly HashSet<string> _osuOpenFileTypes = new(StringComparer.OrdinalIgnoreCase) {
+			".osu", // osu map file
 			".mp3", ".ogg", ".oga", ".mogg", ".wma", ".wav", ".flac", ".aac", ".alac", ".wv", // audio
 			".avi", ".flv", ".mp4", ".mkv", ".mov", ".wmv", ".webm", ".gifv", ".vob", ".ogv",  // video
 			".mpg", ".mpeg", ".m4v", ".3gp", ".mov", ".qt", ".flv", // video
@@ -29,6 +21,45 @@
 		//	".mp4", ".avi", ".mov", ".flv", ".webm", // video mentioned in osu!lazer source code
 		//	".mkv", ".wmv", ".mpg", ".mpeg", ".mov", // other common video types
 		//};
+
+		/// <summary>
+		/// [Dirty hack] Get path to osu! Songs folder, where the beatmaps are stored. This should only be used as a fallback.
+		/// </summary>
+		/// <param name="osuProcess">If we have a reference to the osu! process we can use it to be a little more predictable</param>
+		public static string GetOsuSongsDirectory(Process osuProcess = null) {
+			if (_osuSongsDirectory is not null)
+				return _osuSongsDirectory;
+
+			// find the path to the main osu! directory (where osu!.exe lives)
+			string osuDir = null;
+			if (osuProcess is not null)
+				osuDir = Path.GetDirectoryName(osuProcess.MainModule.FileName);
+			else {
+				// TODO: look for handlers for the osu file types (.osu, .osk, .osz) to find the true osu! path
+				// otherwise try the most common paths first
+				osuDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "osu!");
+				if (!Directory.Exists(osuDir))
+					osuDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "osu!");
+
+				// look for osu! entry in start menu
+				string startMenuPath = Environment.GetFolderPath(Environment.SpecialFolder.StartMenu);
+				string shortcut = Directory.GetFiles(startMenuPath, "*osu*.lnk", SearchOption.AllDirectories)
+					.OrderBy(s => s.Length + (s.ToLower().Contains("osu!") ? 0 : 1)) // poor man's edit distance
+					.FirstOrDefault();
+				if (shortcut is not null)
+					osuDir = Path.Combine(Path.GetDirectoryName(ShortcutHelper.ResolveShortcut(shortcut)));
+			}
+
+			// TODO: support alternate songs directories by parsing 'osu!.<User>.cfg' for 'BeatmapDirectory = <Songs>' line
+			string songsDir = Path.Combine(osuDir, "Songs");
+
+			if (Directory.Exists(songsDir)) {
+				_osuSongsDirectory = songsDir;
+				return songsDir;
+			}
+			else
+				return null;
+		}
 
 		/// <summary>
 		/// Gets current/active beatmap directory based on osu!'s open file hooks
