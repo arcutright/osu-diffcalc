@@ -182,7 +182,7 @@ namespace OsuDiffCalc.FileFinder {
 								// asynchronous exception occurs. 
 								ptr = Marshal.AllocHGlobal(length);
 							}
-							ret = NativeMethods.NtQuerySystemInformation(SYSTEM_INFORMATION_CLASS.SystemHandleInformation, ptr, length, out int returnLength); // HOT PATH
+							ret = NativeMethods.NtQuerySystemInformation(SYSTEM_INFORMATION_CLASS.SystemHandleInformation, ptr, length, out int returnLength); // HOT PATH: 23.8%
 							if (ret == NT_STATUS.STATUS_INFO_LENGTH_MISMATCH) {
 								// Round required memory up to the nearest 64KB boundary. 
 								length = ((returnLength + 0xffff) & ~0xffff);
@@ -199,10 +199,10 @@ namespace OsuDiffCalc.FileFinder {
 									if (ownerPid == _processId) {
 										var handle = (IntPtr)Marshal.ReadInt16(ptr + offset + 6); // read the SYSTEM_HANDLE_TABLE_ENTRY_INFO.HandleValue
 
-										bool isFileHandle = GetHandleType(handle, ownerPid, out SystemHandleType handleType) // HOT PATH
+										bool isFileHandle = GetHandleType(handle, ownerPid, out SystemHandleType handleType) // HOT PATH: 20%
 											&& handleType == SystemHandleType.OB_TYPE_FILE;
 										if (isFileHandle) {
-											if (GetFileNameFromHandle(handle, ownerPid, out string devicePath)) {
+											if (GetFileNameFromHandle(handle, ownerPid, out string devicePath)) { // HOT PATH: 1.6%
 												// only inspect paths to file types which match the filter
 												if (!_useFileExtensionFilter || _fileExtensionFilter.Contains(Path.GetExtension(devicePath))) {
 													if (ConvertDevicePathToDosPath(devicePath, out string dosPath)) {
@@ -349,8 +349,8 @@ namespace OsuDiffCalc.FileFinder {
 			}
 
 			private static bool GetHandleType(IntPtr handle, uint processId, out SystemHandleType handleType) {
-				string token = GetHandleTypeToken(handle, processId); // HOT PATH: 16.2%
-				return GetHandleTypeFromToken(token, out handleType); // HOT PATH: 0.4%
+				string token = GetHandleTypeToken(handle, processId); // HOT PATH: 19.8%
+				return GetHandleTypeFromToken(token, out handleType);
 			}
 
 			private static bool GetHandleType(IntPtr handle, out SystemHandleType handleType) {
@@ -368,22 +368,22 @@ namespace OsuDiffCalc.FileFinder {
 			}
 
 			private static string GetHandleTypeToken(IntPtr handle, uint processId) {
-				IntPtr currentProcess = NativeMethods.GetCurrentProcess(); // HOT PATH: 0.4%
-				bool remote = (processId != NativeMethods.GetProcessId(currentProcess));
+				IntPtr currentProcess = NativeMethods.GetCurrentProcess();
+				bool remote = (processId != NativeMethods.GetProcessId(currentProcess)); // HOT PATH: 0.6%
 				SafeProcessHandle processHandle = null;
 				SafeObjectHandle objectHandle = null;
 				try {
 					if (remote) {
-						processHandle = NativeMethods.OpenProcess(ProcessAccessRights.PROCESS_DUP_HANDLE, true, processId); // HOT PATH: 9.4%
-						if (NativeMethods.DuplicateHandle(processHandle.DangerousGetHandle(), handle, currentProcess, out objectHandle, 0, false, DuplicateHandleOptions.DUPLICATE_SAME_ACCESS)) { // HOT PATH: 2.6%
+						processHandle = NativeMethods.OpenProcess(ProcessAccessRights.PROCESS_DUP_HANDLE, true, processId); // HOT PATH: 12.6%
+						if (NativeMethods.DuplicateHandle(processHandle.DangerousGetHandle(), handle, currentProcess, out objectHandle, 0, false, DuplicateHandleOptions.DUPLICATE_SAME_ACCESS)) { // HOT PATH: 1.8%
 							handle = objectHandle.DangerousGetHandle();
 						}
 					}
-					return GetHandleTypeToken(handle); // HOT PATH: 1.9%
+					return GetHandleTypeToken(handle); // HOT PATH: 2.5%
 				}
 				finally {
 					if (remote) {
-						// HOT PATH: 1.9% (combined)
+						// HOT PATH: 2% (combined)
 						processHandle?.Close();
 						objectHandle?.Close();
 					}

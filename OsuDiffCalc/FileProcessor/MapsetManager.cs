@@ -11,7 +11,7 @@
 	using FileFinder;
 
 	class MapsetManager {
-		private static List<Mapset> _allMapsets = new();
+		private static readonly List<Mapset> _allMapsets = new();
 		private static readonly Regex _titleRegex = new(@"(.*)\s*\[\s*(.*)\s*\]");
 
 		public static void Clear() {
@@ -48,7 +48,8 @@
 				var possibleMapsetDirectories = Directory.EnumerateDirectories(songsDir, $"*{mapsetTitle}*", SearchOption.TopDirectoryOnly);
 				foreach (string directory in possibleMapsetDirectories) {
 					// name match for the .osu map file
-					if (Directory.EnumerateFiles(directory, $"*{diffName}*.osu", SearchOption.TopDirectoryOnly).Any())
+					var beatmapFiles = Directory.EnumerateFiles(directory, $"*{diffName}*.osu", SearchOption.TopDirectoryOnly);
+					if (beatmapFiles.Any())
 						return directory;
 				}
 			}
@@ -64,21 +65,20 @@
 			try {
 				if (Directory.Exists(directory)) {
 					//initalize allMapsets array from xml if needed
-					if (!SavefileXMLManager.IsInitialized && enableXml)
-						SavefileXMLManager.Parse(ref _allMapsets);
-					if (enableXml)
+					if (enableXml) {
+						if (!SavefileXMLManager.IsInitialized)
+							SavefileXMLManager.Parse(_allMapsets);
 						Console.WriteLine("xml analyzed");
+					}
 
 					//parse the mapset by iterating on the directory's .osu files
-					var mapPaths = Directory.EnumerateFiles(directory, "*", SearchOption.TopDirectoryOnly)
-						.Where(path => path.EndsWith(".osu", StringComparison.OrdinalIgnoreCase))
-						.ToArray();
+					var mapPaths = Directory.GetFiles(directory, "*.osu", SearchOption.TopDirectoryOnly);
 					Console.WriteLine("got osu files");
 
 					Mapset set = BuildSet(mapPaths);
 					Console.WriteLine("set built");
 
-					if (set.Beatmaps.Count > 0) {
+					if (set.Beatmaps.Any()) {
 						set = AnalyzeMapset(set, clearLists, enableXml);
 						Console.WriteLine("mapset analyzed");
 					}
@@ -158,8 +158,7 @@
 			var allMaps = new List<Beatmap>();
 			foreach (string mapPath in mapPaths) {
 				if (string.IsNullOrEmpty(mapPath)) continue;
-				Beatmap map = Parser.ParseBasicMetadata(mapPath);
-				if (map is not null)
+				if (Parser.ParseBasicMetadata(mapPath) is Beatmap map)
 					allMaps.Add(map);
 			}
 			return new Mapset(allMaps);
@@ -172,28 +171,26 @@
 			if (index != -1) {
 				//Console.Write("mapset has been analyzed...");
 				//check for missing versions (difficulties)
-				List<Beatmap> missingMaps = GetMissingAnalyzedDiffs(set, index);
+				var missingMaps = GetMissingAnalyzedDiffs(set, index);
 				if (missingMaps.Any()) {
 					_allMapsets[index].IsAnalyzed = false;
 					//Console.Write("some maps are missing...");
-
+					Parallel.ForEach(missingMaps, map => AnalyzeMap(map));
 					foreach (Beatmap map in missingMaps) {
-						if (AnalyzeMap(map, clearLists))
+						if (map.IsAnalyzed)
 							_allMapsets[index].Add(map);
 					}
 					//Console.WriteLine("missing maps analyzed");
 				}
 				else {
-					//Console.WriteLine("no maps are missing");
+					Console.WriteLine("found cached result, no maps are missing");
 					saveToXml = false;
 				}
 				set = _allMapsets[index];
 			}
 			else {
 				//Console.WriteLine("mapset not analyzed...");
-				foreach (Beatmap map in set.Beatmaps) {
-					AnalyzeMap(map);
-				}
+				Parallel.ForEach(set.Beatmaps, map => AnalyzeMap(map));
 				_allMapsets.Add(set);
 				//Console.WriteLine("analyzed");
 			}
@@ -206,32 +203,26 @@
 			return set;
 		}
 
-
-		private static int CheckForMapset(Mapset set, bool completeOnly = false) {
+		private static int CheckForMapset(Mapset set) {
 			if (!_allMapsets.Any())
 				return -1;
-			int i = 0;
-			foreach (var stored in _allMapsets) {
-				if (stored.Title == set.Title && set.Artist == stored.Artist && set.Creator == stored.Creator) {
-					if (completeOnly) {
-						if (set.Beatmaps.Count == stored.Beatmaps.Count)
-							return i;
-					}
-					else
-						return i;
-				}
-				i++;
+			// TODO: may be slow once cache is large, could replace with custom hash function + hashset
+			for (int i = 0; i < _allMapsets.Count; ++i) {
+				var stored = _allMapsets[i];
+				if (stored.Title == set.Title && set.Artist == stored.Artist && set.Creator == stored.Creator)
+					return i;
 			}
 			return -1;
 		}
 
-		private static List<Beatmap> GetMissingAnalyzedDiffs(Mapset set, int indexForAllMapsetsSearch) {
-			var missing = new List<Beatmap>();
+		private static IList<Beatmap> GetMissingAnalyzedDiffs(Mapset set, int indexForAllMapsetsSearch) {
 			if (indexForAllMapsetsSearch >= _allMapsets.Count)
-				return missing;
+				return Array.Empty<Beatmap>();
 
+			var missing = new List<Beatmap>();
 			Mapset searching = _allMapsets[indexForAllMapsetsSearch];
 			if (set.Title == searching.Title && set.Artist == searching.Artist && set.Creator == searching.Creator) {
+				// TODO: may be slow for large sets (lots of diffs)
 				foreach (Beatmap toFind in set.Beatmaps) {
 					bool found = false;
 					foreach (Beatmap storedMap in searching.Beatmaps) {

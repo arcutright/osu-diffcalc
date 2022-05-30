@@ -13,11 +13,12 @@
 		}
 
 		public Mapset(IEnumerable<Beatmap> maps) {
-			if (maps is not null) {
-				foreach (var map in maps) {
-					if (map is not null)
-						Add(map);
-				}
+			Beatmaps.AddRange(maps);
+			var firstMap = maps.FirstOrDefault();
+			if (firstMap is not null && Title is null && Artist is null && Creator is null) {
+				Title = firstMap.Title;
+				Artist = firstMap.Artist;
+				Creator = firstMap.Creator;
 			}
 		}
 

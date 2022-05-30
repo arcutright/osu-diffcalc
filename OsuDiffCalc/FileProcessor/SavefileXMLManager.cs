@@ -18,7 +18,7 @@
 			_document.Save(_xmlSaveFilePath);
 		}
 
-		public static bool Parse(ref List<Mapset> allMapsets) {
+		public static bool Parse(List<Mapset> allMapsets) {
 			try {
 				//find and load xml
 				LoadXML();
