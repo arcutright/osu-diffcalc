@@ -12,7 +12,7 @@ namespace OsuDiffCalc.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.0.3.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.2.0.0")]
     public sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
@@ -25,31 +25,31 @@ namespace OsuDiffCalc.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("600")]
-        public int AutoUpdateIntervalNormalMs {
+        [global::System.Configuration.DefaultSettingValueAttribute("400")]
+        public int UpdateIntervalNormalMs {
             get {
-                return ((int)(this["AutoUpdateIntervalNormalMs"]));
+                return ((int)(this["UpdateIntervalNormalMs"]));
             }
             set {
-                this["AutoUpdateIntervalNormalMs"] = value;
+                this["UpdateIntervalNormalMs"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("600")]
-        public int AutoUpdateIntervalMinimizedMs {
+        public int UpdateIntervalMinimizedMs {
             get {
-                return ((int)(this["AutoUpdateIntervalMinimizedMs"]));
+                return ((int)(this["UpdateIntervalMinimizedMs"]));
             }
             set {
-                this["AutoUpdateIntervalMinimizedMs"] = value;
+                this["UpdateIntervalMinimizedMs"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("3.5")]
+        [global::System.Configuration.DefaultSettingValueAttribute("4")]
         public double FamiliarStarTargetMinimum {
             get {
                 return ((double)(this["FamiliarStarTargetMinimum"]));
@@ -128,6 +128,18 @@ namespace OsuDiffCalc.Properties {
             }
             set {
                 this["SeriesChartType"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("3000")]
+        public int UpdateIntervalOsuNotFoundMs {
+            get {
+                return ((int)(this["UpdateIntervalOsuNotFoundMs"]));
+            }
+            set {
+                this["UpdateIntervalOsuNotFoundMs"] = value;
             }
         }
     }

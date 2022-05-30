@@ -1,7 +1,8 @@
 namespace OsuDiffCalc.UserInterface {
+	using System;
 	using System.Globalization;
 	using System.ComponentModel;
-	using System;
+	using System.Windows.Forms;
 
 	[DesignerCategory("")]
 	public abstract class NumericTextBox<T> : ValidatingTextBox {
@@ -9,10 +10,12 @@ namespace OsuDiffCalc.UserInterface {
 
 		public NumericTextBox() : base() {
 			AllowNegative = true;
+			TextAlign = HorizontalAlignment.Right;
 		}
 
 		public NumericTextBox(bool allowNegative) : base() {
 			AllowNegative = allowNegative;
+			TextAlign = HorizontalAlignment.Right;
 		}
 
 		public bool AllowNegative {

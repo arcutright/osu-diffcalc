@@ -73,11 +73,13 @@
 			int y = Screen.PrimaryScreen.Bounds.Y + (Screen.PrimaryScreen.Bounds.Height - Height) / 2;
 			Location = new Point(x, y);
 			TopMost = IsAlwaysOnTop;
+
 			// initialize text box text
 			SetText(Settings_StarTargetMinTextbox, $"{Settings.FamiliarStarTargetMinimum:f2}");
 			SetText(Settings_StarTargetMaxTextbox, $"{Settings.FamiliarStarTargetMaximum:f2}");
-			SetText(Settings_UpdateIntervalNormalTextbox, $"{Settings.AutoUpdateIntervalNormalMs}");
-			SetText(Settings_UpdateIntervalMinimizedTextbox, $"{Settings.AutoUpdateIntervalMinimizedMs}");
+			SetText(Settings_UpdateIntervalNormalTextbox, $"{Settings.UpdateIntervalNormalMs}");
+			SetText(Settings_UpdateIntervalMinimizedTextbox, $"{Settings.UpdateIntervalMinimizedMs}");
+			SetText(Settings_UpdateIntervalOsuNotFoundTextbox, $"{Settings.UpdateIntervalOsuNotFoundMs}");
 
 			// attach event handlers for text box updates
 			Settings_StarTargetMinTextbox.TextChanged += SettingsTextbox_TextChanged;
@@ -88,6 +90,8 @@
 			Settings_UpdateIntervalNormalTextbox.LostFocus += SettingsTextbox_TextChanged;
 			Settings_UpdateIntervalMinimizedTextbox.TextChanged += SettingsTextbox_TextChanged;
 			Settings_UpdateIntervalMinimizedTextbox.LostFocus += SettingsTextbox_TextChanged;
+			Settings_UpdateIntervalOsuNotFoundTextbox.TextChanged += SettingsTextbox_TextChanged;
+			Settings_UpdateIntervalOsuNotFoundTextbox.LostFocus += SettingsTextbox_TextChanged;
 
 			ChartStyleDropdown.Items.Clear();
 			ChartStyleDropdown.Items.AddRange(new object[] {
@@ -184,26 +188,6 @@
 
 		#region Settings page input box and checkbox backing properties
 
-		public int UpdateIntervalNormalMs {
-			get => Settings.AutoUpdateIntervalNormalMs;
-			set {
-				if (UpdateIntervalNormalMs == value) return;
-				Settings.AutoUpdateIntervalNormalMs = value;
-				SetText(Settings_UpdateIntervalNormalTextbox, $"{value}");
-				Settings.Save();
-			}
-		}
-
-		public int UpdateIntervalMinimizedMs {
-			get => Settings.AutoUpdateIntervalMinimizedMs;
-			set {
-				if (UpdateIntervalMinimizedMs == value) return;
-				Settings.AutoUpdateIntervalMinimizedMs = value;
-				SetText(Settings_UpdateIntervalMinimizedTextbox, $"{value}");
-				Settings.Save();
-			}
-		}
-
 		public double FamiliarStarTargetMininum {
 			get => Settings.FamiliarStarTargetMinimum;
 			set {
@@ -220,6 +204,36 @@
 				if (FamiliarStarTargetMaximum == value) return;
 				Settings.FamiliarStarTargetMaximum = value;
 				SetText(Settings_StarTargetMaxTextbox, $"{value:f2}");
+				Settings.Save();
+			}
+		}
+
+		public int UpdateIntervalNormalMs {
+			get => Settings.UpdateIntervalNormalMs;
+			set {
+				if (UpdateIntervalNormalMs == value) return;
+				Settings.UpdateIntervalNormalMs = value;
+				SetText(Settings_UpdateIntervalNormalTextbox, $"{value}");
+				Settings.Save();
+			}
+		}
+
+		public int UpdateIntervalMinimizedMs {
+			get => Settings.UpdateIntervalMinimizedMs;
+			set {
+				if (UpdateIntervalMinimizedMs == value) return;
+				Settings.UpdateIntervalMinimizedMs = value;
+				SetText(Settings_UpdateIntervalMinimizedTextbox, $"{value}");
+				Settings.Save();
+			}
+		}
+
+		public int UpdateIntervalOsuNotFoundMs {
+			get => Settings.UpdateIntervalOsuNotFoundMs;
+			set {
+				if (UpdateIntervalOsuNotFoundMs == value) return;
+				Settings.UpdateIntervalOsuNotFoundMs = value;
+				SetText(Settings_UpdateIntervalOsuNotFoundTextbox, $"{value}");
 				Settings.Save();
 			}
 		}
@@ -520,31 +534,31 @@
 				if (set is null) {
 					Invoke((MethodInvoker)delegate {
 						ClearBeatmapDisplay();
-					ChartedMapDropdown.Items.Clear();
-					_displayedMapset = null;
-					_chartedBeatmap = null;
-				});
-				return;
-			}
-
-			// sort by difficulty
-			set.Sort(false);
-
-			Invoke((MethodInvoker)delegate {
-				// display all maps
-				ClearBeatmapDisplay();
-				foreach (Beatmap map in set.Beatmaps) {
-					AddBeatmapToDisplay(map);
+						ChartedMapDropdown.Items.Clear();
+						_displayedMapset = null;
+						_chartedBeatmap = null;
+					});
+					return;
 				}
-				_displayedMapset = set;
 
-				var inGameBeatmap = !string.IsNullOrEmpty(_inGameWindowTitle) ? set?.Beatmaps.FirstOrDefault(map => _inGameWindowTitle.EndsWith(map.Version + "]", StringComparison.Ordinal)) : null;
-				if (inGameBeatmap != _inGameBeatmap)
-					Console.WriteLine($"in game beatmap: '{_inGameBeatmap?.Version}'");
-				_inGameBeatmap = inGameBeatmap;
+				// sort by difficulty
+				set.Sort(false);
 
-				_chartedBeatmap = _inGameBeatmap ?? set.Beatmaps.FirstOrDefault();
-				UpdateChartOptions();
+				Invoke((MethodInvoker)delegate {
+					// display all maps
+					ClearBeatmapDisplay();
+					foreach (Beatmap map in set.Beatmaps) {
+						AddBeatmapToDisplay(map);
+					}
+					_displayedMapset = set;
+
+					var inGameBeatmap = !string.IsNullOrEmpty(_inGameWindowTitle) ? set?.Beatmaps.FirstOrDefault(map => _inGameWindowTitle.EndsWith(map.Version + "]", StringComparison.Ordinal)) : null;
+					if (inGameBeatmap != _inGameBeatmap)
+						Console.WriteLine($"in game beatmap: '{_inGameBeatmap?.Version}'");
+					_inGameBeatmap = inGameBeatmap;
+
+					_chartedBeatmap = _inGameBeatmap ?? set.Beatmaps.FirstOrDefault();
+					UpdateChartOptions();
 					RefreshChart();
 				});
 			}
@@ -887,7 +901,7 @@
 				cancelToken.ThrowIfCancellationRequested();
 				string windowTitle =  _osuProcess?.MainWindowTitle;
 
-				//update visibility
+				// update visibility
 				if (_osuProcess is null || _osuProcess.HasExited || string.IsNullOrEmpty(windowTitle)) {
 					// osu not found
 					if (TopMost) {

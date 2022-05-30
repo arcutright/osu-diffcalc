@@ -2,14 +2,14 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="OsuDiffCalc.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="AutoUpdateIntervalNormalMs" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">600</Value>
+    <Setting Name="UpdateIntervalNormalMs" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">400</Value>
     </Setting>
-    <Setting Name="AutoUpdateIntervalMinimizedMs" Type="System.Int32" Scope="User">
+    <Setting Name="UpdateIntervalMinimizedMs" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">600</Value>
     </Setting>
     <Setting Name="FamiliarStarTargetMinimum" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">3.5</Value>
+      <Value Profile="(Default)">4</Value>
     </Setting>
     <Setting Name="FamiliarStarTargetMaximum" Type="System.Double" Scope="User">
       <Value Profile="(Default)">7.5</Value>
@@ -28,6 +28,9 @@
     </Setting>
     <Setting Name="SeriesChartType" Type="System.Windows.Forms.DataVisualization.Charting.SeriesChartType" Scope="User">
       <Value Profile="(Default)">StackedColumn</Value>
+    </Setting>
+    <Setting Name="UpdateIntervalOsuNotFoundMs" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">3000</Value>
     </Setting>
   </Settings>
 </SettingsFile>
