@@ -1,4 +1,4 @@
-﻿namespace OsuDiffCalc.FileFinder {
+﻿namespace OsuDiffCalc.Utility {
 	using System;
 	using System.Collections.Generic;
 	using System.IO;
@@ -9,17 +9,19 @@
 
 #pragma warning disable IDE1006 // Naming Styles
 
-	/// <summary>
-	/// Most of this code is from https://stackoverflow.com/a/220870 (CC by-sa 3.0 https://stackoverflow.com/users/17174/sam-saffron)
-	/// </summary>
 	internal class ShortcutHelper {
-		public static string ResolveShortcut(string filename) {
+		/// <summary>
+		/// Resolve a windows shortcut file to see what it points to
+		/// </summary>
+		/// <param name="shortcutPath">Path to .lnk shortcut</param>
+		/// <returns></returns>
+		public static string ResolveShortcut(string shortcutPath) {
 			var link = new ShellLink();
-			((IPersistFile)link).Load(filename, STGM_READ);
+			((IPersistFile)link).Load(shortcutPath, STGM_READ);
 			// TODO: if I can get hold of the hwnd call resolve first. This handles moved and renamed files.
 			// ((IShellLinkW)link).Resolve(hwnd, 0) 
 			var sb = new StringBuilder(2048);
-			((IShellLinkW)link).GetPath(sb, sb.Capacity, out var data, 0);
+			((IShellLinkW)link).GetPath(sb, sb.Capacity, out _, 0);
 			return sb.ToString();
 		}
 
@@ -38,11 +40,13 @@
 
 		#region Signitures imported from http://pinvoke.net
 
+		// Most of this code is from https://stackoverflow.com/a/220870 (CC by-sa 3.0 https://stackoverflow.com/users/17174/sam-saffron)
+
 		[DllImport("shfolder.dll", CharSet = CharSet.Auto)]
-		internal static extern int SHGetFolderPath(IntPtr hwndOwner, int nFolder, IntPtr hToken, int dwFlags, StringBuilder lpszPath);
+		private static extern int SHGetFolderPath(IntPtr hwndOwner, int nFolder, IntPtr hToken, int dwFlags, StringBuilder lpszPath);
 
 		[Flags()]
-		enum SLGP_FLAGS {
+		private enum SLGP_FLAGS {
 			/// <summary>Retrieves the standard short (8.3 format) file name</summary>
 			SLGP_SHORTPATH = 0x1,
 			/// <summary>Retrieves the Universal Naming Convention (UNC) path name of the file</summary>
@@ -52,7 +56,7 @@
 		}
 
 		[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-		struct WIN32_FIND_DATAW {
+		private struct WIN32_FIND_DATAW {
 			public uint dwFileAttributes;
 			public long ftCreationTime;
 			public long ftLastAccessTime;
@@ -68,7 +72,7 @@
 		}
 
 		[Flags()]
-		enum SLR_FLAGS {
+		private enum SLR_FLAGS {
 			/// <summary>
 			/// Do not display a dialog box if the link cannot be resolved. When SLR_NO_UI is set,
 			/// the high-order word of fFlags can be set to a time-out value that specifies the
@@ -103,7 +107,7 @@
 
 		/// <summary>The IShellLink interface allows Shell links to be created, modified, and resolved</summary>
 		[ComImport(), InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("000214F9-0000-0000-C000-000000000046")]
-		interface IShellLinkW {
+		private interface IShellLinkW {
 			/// <summary>Retrieves the path and file name of a Shell link object</summary>
 			void GetPath([Out(), MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszFile, int cchMaxPath, out WIN32_FIND_DATAW pfd, SLGP_FLAGS fFlags);
 			/// <summary>Retrieves the list of item identifiers for a Shell link object</summary>
@@ -145,14 +149,14 @@
 		}
 
 		[ComImport, Guid("0000010c-0000-0000-c000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-		public interface IPersist {
+		private interface IPersist {
 			[PreserveSig]
 			void GetClassID(out Guid pClassID);
 		}
 
 
 		[ComImport, Guid("0000010b-0000-0000-C000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-		public interface IPersistFile : IPersist {
+		private interface IPersistFile : IPersist {
 			new void GetClassID(out Guid pClassID);
 			[PreserveSig]
 			int IsDirty();
@@ -171,11 +175,10 @@
 		}
 
 		const uint STGM_READ = 0;
-		const int MAX_PATH = 260;
 
 		// CLSID_ShellLink from ShlGuid.h 
 		[ComImport(), Guid("00021401-0000-0000-C000-000000000046")]
-		public class ShellLink {
+		private class ShellLink {
 		}
 
 		#endregion

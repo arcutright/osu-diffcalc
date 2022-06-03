@@ -70,7 +70,7 @@
 			try {
 				// filter to processes with open audio files
 				int pid = osuPid.Value;
-				foreach (var file in Win32Processes.DetectOpenFiles.GetOpenFilesEnumerator(pid, _osuOpenFileTypes)) { // HOT PATH
+				foreach (var file in OpenFilesDetector.GetOpenFilesEnumerator(pid, _osuOpenFileTypes)) { // HOT PATH
 					var dirPath = Path.GetDirectoryName(file);
 					// filter to processes whose directory contains .osu files
 					var beatmapFiles = Directory.EnumerateFiles(dirPath, "*.osu", SearchOption.TopDirectoryOnly);
@@ -176,7 +176,7 @@
 		static bool HasOpenOsuFiles(Process p) {
 			// filter to processes who have open files which osu might use
 			if (p is not null) {
-				foreach (var file in Win32Processes.DetectOpenFiles.GetOpenFilesEnumerator(p.Id, _osuOpenFileTypes)) {
+				foreach (var file in OpenFilesDetector.GetOpenFilesEnumerator(p.Id, _osuOpenFileTypes)) {
 					// whose directory contains .osu files
 					var dirPath = Path.GetDirectoryName(file);
 					var beatmapFiles = Directory.EnumerateFiles(dirPath, "*.osu", SearchOption.TopDirectoryOnly);

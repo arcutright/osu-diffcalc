@@ -13,6 +13,7 @@
 	using System.Windows.Forms.DataVisualization.Charting;
 	using FileFinder;
 	using FileProcessor;
+	using OsuDiffCalc.Utility;
 
 	public partial class GUI : Form {
 		private const int LABEL_FONT_SIZE = 12;
@@ -48,7 +49,6 @@
 		private bool _isOnSameScreen = true;
 		private bool _didMinimize = false;
 		private bool _pauseAllTasks = false;
-
 
 		private const int INITIAL_TIMEOUT_MS =
 #if DEBUG
@@ -529,7 +529,7 @@
 		}
 
 		private void DisplayMapset(Mapset set) {
-			var prevFgWindow = NativeMethods.GetForegroundWindow();
+			var prevFgWindow = WindowHelper.GetForegroundWindow();
 			try {
 				if (set is null) {
 					Invoke((MethodInvoker)delegate {
@@ -563,7 +563,7 @@
 				});
 			}
 			finally {
-				NativeMethods.MakeForegroundWindow(prevFgWindow);
+				WindowHelper.MakeForegroundWindow(prevFgWindow);
 			}
 		}
 
@@ -908,9 +908,9 @@
 						Invoke((MethodInvoker)delegate {
 							TopMost = false;
 							if (MainTabControl.SelectedTab != _prevTab) {
-								var prevFgWindow = NativeMethods.GetForegroundWindow();
+								var prevFgWindow = WindowHelper.GetForegroundWindow();
 								MainTabControl.SelectTab(_prevTab);
-								NativeMethods.MakeForegroundWindow(prevFgWindow);
+								WindowHelper.MakeForegroundWindow(prevFgWindow);
 							}
 						});
 					}
@@ -951,9 +951,9 @@
 							if (!TopMost) TopMost = IsAlwaysOnTop;
 							if (_didMinimize && !Visible) Visible = true;
 							if (MainTabControl.SelectedTab != _prevTab) {
-								var prevFgWindow = NativeMethods.GetForegroundWindow();
+								var prevFgWindow = WindowHelper.GetForegroundWindow();
 								MainTabControl.SelectTab(_prevTab);
-								NativeMethods.MakeForegroundWindow(prevFgWindow);
+								WindowHelper.MakeForegroundWindow(prevFgWindow);
 							}
 							_didMinimize = false;
 						}
@@ -966,13 +966,13 @@
 							else {
 								// if we are not in game and we are on the same screen
 								int numScreens = Screen.AllScreens.Length;
-								bool isOsuFullScreen = NativeMethods.IsFullScreen(_osuProcess);
+								bool isOsuFullScreen = WindowHelper.IsFullScreen(_osuProcess);
 								if (numScreens > 1 && (isOsuFullScreen || _isInGame)) {
 									// move to a different screen if osu is full screen
 									// (we can't act as an overlay with WinForms UI, would require a rewrite in DirectX or something)
 									var otherScreen = Screen.AllScreens.First(s => s.Bounds != osuScreenBounds);
-									NativeMethods.TryMoveToScreen(Program.ConsoleWindowHandle, otherScreen);
-									NativeMethods.TryMoveToScreen(_guiProcess, otherScreen);
+									WindowHelper.TryMoveToScreen(Program.ConsoleWindowHandle, otherScreen);
+									WindowHelper.TryMoveToScreen(_guiProcess, otherScreen);
 									//TopMost = false;
 								}
 								else if (_isInGame) {
@@ -984,12 +984,12 @@
 									// osu is full screen, not in game, and the player only has 1 screen. no good way to resolve this, see DirectX note above
 
 									// TODO: find way to forward mouse/kb inputs to osu process when using this technique
-									NativeMethods.ForceForegroundWindow(_guiProcess, _osuProcess);
+									WindowHelper.ForceForegroundWindow(_guiProcess, _osuProcess);
 
 									// seizure warning
-									//NativeMethods.MakeForegroundWindow(_guiProcess);
-									//NativeMethods.MakeForegroundWindow2(_guiProcess);
-									//NativeMethods.MakeForegroundWindow3(_guiProcess);
+									//WindowHelper.MakeForegroundWindow(_guiProcess);
+									//WindowHelper.MakeForegroundWindow2(_guiProcess);
+									//WindowHelper.MakeForegroundWindow3(_guiProcess);
 								}
 							}
 						}
@@ -1000,9 +1000,9 @@
 							_prevTab = MainTabControl.SelectedTab;
 							if (_prevTab != chartsTab) {
 								_isChangingTab = true;
-								var prevFgWindow = NativeMethods.GetForegroundWindow();
+								var prevFgWindow = WindowHelper.GetForegroundWindow();
 								MainTabControl.SelectTab(chartsTab);
-								NativeMethods.MakeForegroundWindow(prevFgWindow);
+								WindowHelper.MakeForegroundWindow(prevFgWindow);
 							}
 
 							// try to figure out what map is being played. This work will only happen once.
