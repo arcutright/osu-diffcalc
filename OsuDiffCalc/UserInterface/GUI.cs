@@ -1100,7 +1100,7 @@
 
 				_osuProcess ??= Finder.GetOsuProcess(_guiPid, _osuProcess); // secondary HOT PATH
 				cancelToken.ThrowIfCancellationRequested();
-				_currentMapsetDirectory = Finder.GetOsuBeatmapDirectory(_osuProcess?.Id); // true HOT PATH
+				_currentMapsetDirectory = Finder.GetActiveBeatmapDirectory(_osuProcess?.Id); // true HOT PATH
 				if (_currentMapsetDirectory is null && _isInGame)
 					_currentMapsetDirectory = MapsetManager.GetCurrentMapsetDirectory(_osuProcess, _inGameWindowTitle, _prevMapsetDirectory);
 

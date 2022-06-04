@@ -3,7 +3,6 @@
 	using System.Windows.Forms;
 	using System.Threading;
 	using UserInterface;
-	using System.Diagnostics;
 
 	class Program {
 		/// <summary> System-wide pid for the console window thread </summary>
@@ -29,7 +28,7 @@
 #endif
 			settings.Upgrade();
 
-			var hWndConsole = NativeMethods.GetConsoleWindow();
+			IntPtr hWndConsole = NativeMethods.GetConsoleWindow();
 			int consolePid = -1;
 			if (hWndConsole != IntPtr.Zero) {
 				NativeMethods.GetWindowThreadProcessId(hWndConsole, out uint nativePid);

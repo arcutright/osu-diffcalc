@@ -6,8 +6,11 @@
 	using System.Linq;
 	using System.Runtime.CompilerServices;
 	using System.Text;
+	using System.Text.RegularExpressions;
+	using Utility;
 
 	class Finder {
+		private static string _osuDirectory = null;
 		private static string _osuSongsDirectory = null;
 
 		private static readonly HashSet<string> _osuOpenFileTypes = new(StringComparer.OrdinalIgnoreCase) {
@@ -23,35 +26,80 @@
 		//};
 
 		/// <summary>
-		/// [Dirty hack] Get path to osu! Songs folder, where the beatmaps are stored. This should only be used as a fallback.
+		/// Get path to osu! main folder, where the executable lives
+		/// </summary>
+		/// <param name="osuProcess">If we have a reference to the osu! process we can use it to be a little more predictable</param>
+		public static string GetOsuDirectory(Process osuProcess = null) {
+			if (_osuDirectory is not null)
+				return _osuDirectory;
+
+			// find the path to the main osu! directory (where osu!.exe lives)
+			string osuDir = null;
+			if (osuProcess is not null)
+				osuDir = Path.GetDirectoryName(osuProcess.MainModule.FileName);
+
+			if (!Directory.Exists(osuDir)) {
+				// try the most common paths first
+				osuDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "osu!");
+				if (!Directory.Exists(osuDir)) {
+					osuDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "osu!");
+
+					// fallback: look for handlers for osu file types
+					if (!Directory.Exists(osuDir)) {
+						var osuExePath = AssociatedApplicationHelper.FindAssociatedApplication(".osz") ?? AssociatedApplicationHelper.FindAssociatedApplication(".osk");
+						osuDir = Path.GetDirectoryName(osuExePath);
+
+						// fallback: look for osu! shortcut entry in start menu
+						if (!Directory.Exists(osuDir)) {
+							string startMenuPath = Environment.GetFolderPath(Environment.SpecialFolder.StartMenu);
+							string shortcut = Directory.GetFiles(startMenuPath, "*osu*.lnk", SearchOption.AllDirectories)
+																.OrderBy(s => s.Length + (s.ToLower().Contains("osu!") ? 0 : 1)) // poor man's edit distance
+							                  .FirstOrDefault();
+							if (shortcut is not null)
+								osuDir = Path.Combine(Path.GetDirectoryName(ShortcutHelper.ResolveShortcut(shortcut)));
+						}
+					}
+				}
+			}
+
+			if (Directory.Exists(osuDir)) {
+				_osuDirectory = osuDir;
+				return osuDir;
+			}
+			else
+				return null;
+		}
+
+		/// <summary>
+		/// Get path to osu! Songs folder, where the beatmaps are stored
 		/// </summary>
 		/// <param name="osuProcess">If we have a reference to the osu! process we can use it to be a little more predictable</param>
 		public static string GetOsuSongsDirectory(Process osuProcess = null) {
 			if (_osuSongsDirectory is not null)
 				return _osuSongsDirectory;
 
-			// find the path to the main osu! directory (where osu!.exe lives)
-			string osuDir = null;
-			if (osuProcess is not null)
-				osuDir = Path.GetDirectoryName(osuProcess.MainModule.FileName);
-			else {
-				// TODO: look for handlers for the osu file types (.osu, .osk, .osz) to find the true osu! path
-				// otherwise try the most common paths first
-				osuDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "osu!");
-				if (!Directory.Exists(osuDir))
-					osuDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "osu!");
+			var osuDir = GetOsuDirectory(osuProcess);
+			var songsDir = Path.Combine(osuDir, "Songs"); // default value
 
-				// look for osu! entry in start menu
-				string startMenuPath = Environment.GetFolderPath(Environment.SpecialFolder.StartMenu);
-				string shortcut = Directory.GetFiles(startMenuPath, "*osu*.lnk", SearchOption.AllDirectories)
-					.OrderBy(s => s.Length + (s.ToLower().Contains("osu!") ? 0 : 1)) // poor man's edit distance
-					.FirstOrDefault();
-				if (shortcut is not null)
-					osuDir = Path.Combine(Path.GetDirectoryName(ShortcutHelper.ResolveShortcut(shortcut)));
+			// parse user config file in case they have a custom BeatmapDirectory
+			try {
+				var cfgFile = new FileInfo(Path.Combine(osuDir, $"osu!.{Environment.UserName}.cfg"));
+				if (cfgFile.Exists) {
+					var beatmapDirRegex = new Regex(@"^\s*BeatmapDirectory\s*[=:]\s*(.*)$");
+					foreach (var line in File.ReadLines(cfgFile.FullName)) {
+						var match = beatmapDirRegex.Match(line);
+						if (match.Success) {
+							var beatmapDirResult = match.Groups[1].Value.Trim().Trim('"');
+							if (Path.IsPathRooted(beatmapDirResult))
+								songsDir = beatmapDirResult;
+							else
+								songsDir = Path.Combine(osuDir, beatmapDirResult);
+							break;
+						}
+					}
+				}
 			}
-
-			// TODO: support alternate songs directories by parsing 'osu!.<User>.cfg' for 'BeatmapDirectory = <Songs>' line
-			string songsDir = Path.Combine(osuDir, "Songs");
+			catch { }
 
 			if (Directory.Exists(songsDir)) {
 				_osuSongsDirectory = songsDir;
@@ -64,7 +112,7 @@
 		/// <summary>
 		/// Gets current/active beatmap directory based on osu!'s open file hooks
 		/// </summary>
-		public static string GetOsuBeatmapDirectory(int? osuPid) {
+		public static string GetActiveBeatmapDirectory(int? osuPid) {
 			if (!osuPid.HasValue)
 				return null;
 			try {

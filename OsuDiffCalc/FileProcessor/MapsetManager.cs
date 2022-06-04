@@ -37,10 +37,10 @@
 
 				// find path to osu! Songs folder (where all the beatmaps live)
 				string songsDir;
-				if (string.IsNullOrEmpty(prevMapsetDirectory))
-					songsDir = Finder.GetOsuSongsDirectory(osuProcess);
-				else
+				if (!string.IsNullOrEmpty(prevMapsetDirectory))
 					songsDir = Path.GetDirectoryName(prevMapsetDirectory);
+				else
+					songsDir = Finder.GetOsuSongsDirectory(osuProcess);
 
 				// look for a directory in the Songs folder with the mapset title from the in-game window
 				string mapsetTitle = match.Groups[1].Value.Trim();
