@@ -28,6 +28,39 @@
 
 		#endregion
 
+		/// <inheritdoc cref="TrySetUseImmersiveDarkMode(IntPtr, bool)"/>
+		public static bool TrySetUseImmersiveDarkMode(Process process, bool enabled)
+			=> TrySetUseImmersiveDarkMode(process.MainWindowHandle, enabled);
+
+		/// <summary>
+		/// Try to set 'use immersive dark mode' on the window for recent versions of Windows.
+		/// </summary>
+		/// <param name="hWnd">handle to the window</param>
+		/// <param name="enabled">value to set</param>
+		/// <returns>true if it could be set, otherwise false</returns>
+		public static bool TrySetUseImmersiveDarkMode(IntPtr hWnd, bool enabled) {
+			if (IsWindows10(17763)) {
+				var attribute = DwmWindowAttribute.DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1;
+				if (IsWindows10(18985))
+					attribute = DwmWindowAttribute.DWMWA_USE_IMMERSIVE_DARK_MODE;
+
+				bool wasSet = DwmSetWindowAttribute(hWnd, attribute, enabled);
+				if (wasSet) {
+					// refresh the window title bar
+					const SetWindowPosFlags flags =
+						SetWindowPosFlags.SWP_DRAWFRAME
+						| SetWindowPosFlags.SWP_NOACTIVATE
+						| SetWindowPosFlags.SWP_NOMOVE
+						| SetWindowPosFlags.SWP_NOSIZE
+						| SetWindowPosFlags.SWP_NOZORDER;
+					return SetWindowPos(hWnd, IntPtr.Zero, 0, 0, 0, 0, flags);
+				}
+				else
+					return false;
+			}
+			return false;
+		}
+
 		public static bool TryMoveToScreen(int pid, int screenId)
 			=> TryMoveToScreen(Process.GetProcessById(pid), screenId);
 
@@ -283,5 +316,11 @@
 				ShowWindow(hWnd, ShowWindowCommand.SW_SHOW);
 			}*/
 		}
+
+		private static bool IsWindows10(int build = -1)
+			=> Environment.OSVersion.Version.Major >= 10 && Environment.OSVersion.Version.Build >= build;
+
+		private static bool IsWindows11(int build = -1)
+			=> Environment.OSVersion.Version.Major >= 11 && Environment.OSVersion.Version.Build >= build;
 	}
 }

@@ -65,6 +65,7 @@
 				Thread.CurrentThread.Name = "GUIThread";
 
 			InitializeComponent();
+			WindowHelper.TrySetUseImmersiveDarkMode(Handle, true);
 		}
 
 		private void GUI_Load(object sender, EventArgs eArgs) {
