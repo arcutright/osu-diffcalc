@@ -522,7 +522,6 @@
 			else
 				diff = MakeLabel(beatmap.GetDiffDisplayString(), LABEL_FONT_SIZE, beatmap.GetDiffDetailString());
 			difficultyDisplayPanel.Controls.Add(diff);
-			difficultyDisplayPanel.SetFlowBreak(diff, true);
 		}
 
 		private void RefreshMapset() {
@@ -573,6 +572,9 @@
 				Text = text,
 				Font = difficultyDisplayPanel.Font,
 				AutoSize = true,
+				Dock = DockStyle.Fill,
+				Margin = Padding.Empty,
+				Padding = Padding.Empty,
 			};
 			//label.Font = new Font(label.Font.FontFamily, fontSize);
 			if (!string.IsNullOrEmpty(toolTipStr)) {

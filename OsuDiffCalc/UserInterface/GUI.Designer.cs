@@ -32,7 +32,7 @@
 			System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
 			this.openFromFile = new System.Windows.Forms.Button();
 			this.scaleRatings = new System.Windows.Forms.CheckBox();
-			this.difficultyDisplayPanel = new System.Windows.Forms.FlowLayoutPanel();
+			this.difficultyDisplayPanel = new System.Windows.Forms.TableLayoutPanel();
 			this.timeDisplay2 = new System.Windows.Forms.Label();
 			this.timeDescriptionLabel = new System.Windows.Forms.Label();
 			this.clearButton = new System.Windows.Forms.Button();
@@ -54,10 +54,10 @@
 			this.Chart = new System.Windows.Forms.DataVisualization.Charting.Chart();
 			this.settingsTab = new System.Windows.Forms.TabPage();
 			this.label6 = new System.Windows.Forms.Label();
-			this.Settings_UpdateIntervalOsuNotFoundTextbox = new OsuDiffCalc.UserInterface.IntTextBox();
 			this.label3 = new System.Windows.Forms.Label();
 			this.label4 = new System.Windows.Forms.Label();
 			this.label5 = new System.Windows.Forms.Label();
+			this.Settings_UpdateIntervalOsuNotFoundTextbox = new OsuDiffCalc.UserInterface.IntTextBox();
 			this.Settings_StarTargetMinTextbox = new OsuDiffCalc.UserInterface.DoubleTextBox();
 			this.Settings_StarTargetMaxTextbox = new OsuDiffCalc.UserInterface.DoubleTextBox();
 			this.Settings_UpdateIntervalNormalTextbox = new OsuDiffCalc.UserInterface.IntTextBox();
@@ -97,6 +97,7 @@
 			// 
 			this.difficultyDisplayPanel.AutoScroll = true;
 			this.difficultyDisplayPanel.BackColor = System.Drawing.Color.Gainsboro;
+			this.difficultyDisplayPanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
 			this.difficultyDisplayPanel.Font = new System.Drawing.Font("Consolas", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.difficultyDisplayPanel.Location = new System.Drawing.Point(-4, 3);
 			this.difficultyDisplayPanel.Name = "difficultyDisplayPanel";
@@ -378,10 +379,10 @@
 			// 
 			this.settingsTab.BackColor = System.Drawing.Color.Silver;
 			this.settingsTab.Controls.Add(this.label6);
-			this.settingsTab.Controls.Add(this.Settings_UpdateIntervalOsuNotFoundTextbox);
 			this.settingsTab.Controls.Add(this.label3);
 			this.settingsTab.Controls.Add(this.label4);
 			this.settingsTab.Controls.Add(this.label5);
+			this.settingsTab.Controls.Add(this.Settings_UpdateIntervalOsuNotFoundTextbox);
 			this.settingsTab.Controls.Add(this.Settings_StarTargetMinTextbox);
 			this.settingsTab.Controls.Add(this.Settings_StarTargetMaxTextbox);
 			this.settingsTab.Controls.Add(this.Settings_UpdateIntervalNormalTextbox);
@@ -401,15 +402,6 @@
 			this.label6.Size = new System.Drawing.Size(175, 13);
 			this.label6.TabIndex = 7;
 			this.label6.Text = "Update interval, osu! not found (ms)";
-			// 
-			// Settings_UpdateIntervalOsuNotFoundTextbox
-			// 
-			this.Settings_UpdateIntervalOsuNotFoundTextbox.AllowNegative = true;
-			this.Settings_UpdateIntervalOsuNotFoundTextbox.Location = new System.Drawing.Point(217, 85);
-			this.Settings_UpdateIntervalOsuNotFoundTextbox.Name = "Settings_UpdateIntervalOsuNotFoundTextbox";
-			this.Settings_UpdateIntervalOsuNotFoundTextbox.Size = new System.Drawing.Size(44, 20);
-			this.Settings_UpdateIntervalOsuNotFoundTextbox.TabIndex = 6;
-			this.Settings_UpdateIntervalOsuNotFoundTextbox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
 			// 
 			// label3
 			// 
@@ -437,6 +429,15 @@
 			this.label5.Size = new System.Drawing.Size(194, 13);
 			this.label5.TabIndex = 5;
 			this.label5.Text = "Update interval, in game/minimized (ms)";
+			// 
+			// Settings_UpdateIntervalOsuNotFoundTextbox
+			// 
+			this.Settings_UpdateIntervalOsuNotFoundTextbox.AllowNegative = true;
+			this.Settings_UpdateIntervalOsuNotFoundTextbox.Location = new System.Drawing.Point(217, 85);
+			this.Settings_UpdateIntervalOsuNotFoundTextbox.Name = "Settings_UpdateIntervalOsuNotFoundTextbox";
+			this.Settings_UpdateIntervalOsuNotFoundTextbox.Size = new System.Drawing.Size(44, 20);
+			this.Settings_UpdateIntervalOsuNotFoundTextbox.TabIndex = 6;
+			this.Settings_UpdateIntervalOsuNotFoundTextbox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
 			// 
 			// Settings_StarTargetMinTextbox
 			// 
@@ -503,7 +504,7 @@
 		#endregion
 		private System.Windows.Forms.Button openFromFile;
 		private System.Windows.Forms.CheckBox scaleRatings;
-		private System.Windows.Forms.FlowLayoutPanel difficultyDisplayPanel;
+		private System.Windows.Forms.TableLayoutPanel difficultyDisplayPanel;
 		private System.Windows.Forms.Label timeDisplay2;
 		private System.Windows.Forms.Label timeDescriptionLabel;
 		private System.Windows.Forms.Button clearButton;
