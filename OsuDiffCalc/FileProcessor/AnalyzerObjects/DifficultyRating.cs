@@ -4,13 +4,13 @@
 	using System.Linq;
 	using System.Windows.Forms.DataVisualization.Charting;
 
-	class DifficultyRating {
+	class DifficultyRating : IDisposable {
 		private readonly Series
 			_jumpsSeries = BuildSeries("Jumps"),
 			_streamsSeries = BuildSeries("Streams"),
 			_burstsSeries = BuildSeries("Bursts"),
-			_doublesSeries = BuildSeries("Doubles"),
-			_slidersSeries = BuildSeries("Sliders");
+			_slidersSeries = BuildSeries("Sliders"),
+			_doublesSeries = BuildSeries("Doubles", false);
 
 		private SeriesPointCollection
 			_jumps = new(64),
@@ -20,9 +20,20 @@
 			_sliders = new(64);
 
 		private List<double> _allSeriesXValues = new(1024);
+		private bool _isDisposed;
 
-		public DifficultyRating() { }
-		public DifficultyRating(double jumpsDifficulty, double streamsDifficulty, double burstsDifficulty, double doublesDifficulty, double slidersDifficulty, double totalDifficulty) {
+		public DifficultyRating() { 
+			// Note: this controls which order the series will show up (when using Column display, inverted for StackedColumn)
+			AllSeries = new() {
+				(_jumpsSeries, _jumps),
+				(_streamsSeries, _streams),
+				(_burstsSeries, _bursts),
+				(_slidersSeries, _sliders),
+				(_doublesSeries, _doubles),
+			};
+		}
+
+		public DifficultyRating(double jumpsDifficulty, double streamsDifficulty, double burstsDifficulty, double doublesDifficulty, double slidersDifficulty, double totalDifficulty) : this() {
 			JumpsDifficulty = jumpsDifficulty;
 			StreamsDifficulty = streamsDifficulty;
 			BurstsDifficulty = burstsDifficulty;
@@ -51,6 +62,12 @@
 		/// <summary> Average BPM of streams/bursts for 1/4 notes </summary>
 		public double StreamsAverageBPM { get; set; }
 
+		/// <summary>
+		/// List of (series, raw list of individual points) <br/>
+		/// where each point is (X: start time in seconds, Y: difficulty)
+		/// </summary>
+		public List<(Series Series, SeriesPointCollection Points)> AllSeries { get; }
+
 		/// <summary> Raw list of individual jump difficulties (X: start time in seconds, Y: difficulty). May be different length than other raw lists. </summary>
 		public SeriesPointCollection Jumps => _jumps;
 		/// <summary> Raw list of individual stream difficulties (X: start time in seconds, Y: difficulty). May be different length than other raw lists. </summary>
@@ -78,6 +95,8 @@
 				NormalizeSeries();
 			return series;
 		}
+
+		public IEnumerable<string> GetSeriesNames() => AllSeries.Select(tup => tup.Series.Name);
 
 		public Series GetSeriesByName(string name) {
 			return name switch {
@@ -123,8 +142,8 @@
 			sortAndAccumulate(ref _doubles);
 			sortAndAccumulate(ref _sliders);
 
-			bool countsEqual = Enumerable.All(new[] { _jumps, _streams, _bursts, _doubles, _sliders }, col => col.Count == _jumps.Count);
-			int yyyzs = 1;
+			//int n = _jumps.Count;
+			//bool countsEqual = _streams.Count == n && _bursts.Count == n && _doubles.Count == n && _sliders.Count == n;
 
 			// Sort + accumulate points which have the same X value by doing pt.Y = pt1.Y + pt2.Y
 			static void sortAndAccumulate(ref SeriesPointCollection points) {
@@ -159,17 +178,12 @@
 			_allSeriesXValues = _allSeriesXValues.Distinct().ToList();
 			_allSeriesXValues.Sort();
 
-			var seriesCollection = new[] {
-				(_jumps, _jumpsSeries),
-				(_streams, _streamsSeries),
-				(_bursts, _burstsSeries),
-				(_doubles, _doublesSeries),
-				(_sliders, _slidersSeries) 
-			};
-
 			// populate the series & add dummy points as needed
-			foreach (var (points, series) in seriesCollection) {
+			foreach (var (series, points) in AllSeries) {
 				if (points.IsSeriesSynchronized) continue;
+				foreach (var pt in series.Points) {
+					pt?.Dispose();
+				}
 				series.Points.Clear();
 				int nPoints = points.Count;
 				int i = 0;
@@ -189,12 +203,12 @@
 			IsNormalized = true;
 		}
 
-		private static Series BuildSeries(string name) {
+		private static Series BuildSeries(string name, bool enabled = true) {
 			return new Series {
 				Name = name,
 				LegendText = name,
 				IsValueShownAsLabel = false,
-				Enabled = true,
+				Enabled = enabled,
 				ChartType = Properties.Settings.Default.SeriesChartType
 			};
 		}
@@ -236,6 +250,27 @@
 
 		internal readonly record struct SeriesPoint(double X, double Y) : IComparable<SeriesPoint> {
 			public int CompareTo(SeriesPoint other) => X.CompareTo(other.X);
+		}
+
+		protected virtual void Dispose(bool disposing) {
+			if (!_isDisposed) {
+				if (disposing) {
+					_jumpsSeries.Dispose();
+					_streamsSeries.Dispose();
+					_burstsSeries.Dispose();
+					_doublesSeries.Dispose();
+					_slidersSeries.Dispose();
+					AllSeries.Clear();
+				}
+
+				_isDisposed = true;
+			}
+		}
+
+		public void Dispose() {
+			// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+			Dispose(disposing: true);
+			GC.SuppressFinalize(this);
 		}
 	}
 }

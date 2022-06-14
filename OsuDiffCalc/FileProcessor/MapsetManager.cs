@@ -15,7 +15,13 @@
 		private static readonly Regex _titleRegex = new(@"(.*)\s*\[\s*(.*)\s*\]");
 
 		public static void Clear() {
+			foreach (var mapset in _allMapsets) {
+				mapset?.Dispose();
+			}
 			_allMapsets.Clear();
+			GC.Collect();
+			GC.WaitForPendingFinalizers();
+			GC.Collect();
 		}
 
 		/// <summary>
@@ -122,7 +128,9 @@
 			return true;
 		}
 
-		//this is meant to save maps that are manually chosen
+		/// <summary>
+		/// Save map into cache and xml. This is meant to save maps that are manually chosen
+		/// </summary>
 		public static void SaveMap(Beatmap map, bool saveToXml) {
 			if (string.IsNullOrEmpty(map?.Title)) return;
 				var set = new Mapset(map);
@@ -133,18 +141,17 @@
 			if (index != -1) {
 				//check if the map has been saved
 				var storedSet = _allMapsets[index];
-				bool found = false;
-				foreach (var storedMap in storedSet.Beatmaps) {
+				var storedMaps = storedSet.Beatmaps.ToList(); // avoid collection-was-modified
+				foreach (var storedMap in storedMaps) {
 					if (storedMap.Version == map.Version) {
-						found = true;
+						storedSet.Beatmaps.Remove(storedMap);
+						storedMap.Dispose();
 						break;
 					}
 				}
 				//save map 
-				if (!found) {
-					storedSet.Add(map);
-					if (saveToXml) storedSet.SaveToXML();
-				}
+				storedSet.Add(map);
+				if (saveToXml) storedSet.SaveToXML();
 			}
 			else {
 				_allMapsets.Add(set);

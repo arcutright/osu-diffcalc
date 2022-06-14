@@ -1,4 +1,4 @@
-namespace OsuDiffCalc.UserInterface {
+namespace OsuDiffCalc.UserInterface.Controls {
 	using System;
 	using System.Globalization;
 	using System.ComponentModel;

@@ -16,41 +16,32 @@
 			= null;
 #endif
 
-		public static string[] GetFilenamesFromDialog() {
+		/// <summary>
+		/// Launch an OpenFileDialog for the user to pick some osu! files.
+		/// </summary>
+		/// <returns> The list of selected file paths </returns>
+		/// <remarks> Warning: this needs to be run from an STAThread. </remarks>
+		public static string[] GetFilenamesFromDialog(string title = "Open osu! Beatmap File", string filter = "osu! files|*.osu") {
 			if (!Directory.Exists(_searchDirectory))
 				_searchDirectory = FileFinder.Finder.GetOsuSongsDirectory();
 
 			using var dialog = new OpenFileDialog {
-				Title = "Open osu! Beatmap File",
-				Filter = "osu! files|*.osu",
+				Title = title,
+				Filter = filter,
 				InitialDirectory = _searchDirectory,
 				Multiselect = true,
 				DereferenceLinks = true,
 			};
 			try {
 				if (dialog.ShowDialog() == DialogResult.OK) {
-					if (Directory.Exists(dialog.FileName)) {
-						_searchDirectory = dialog.FileName;
-						return Directory.GetFiles(dialog.FileName, "*.osu", SearchOption.TopDirectoryOnly);
-					}
-					else {
-						_searchDirectory = Path.GetDirectoryName(dialog.FileName);
-						return dialog.FileNames;
-					}
+					_searchDirectory = Path.GetDirectoryName(dialog.FileName);
+					return dialog.FileNames;
 				}
 			}
 			catch (Exception e) {
 				Console.WriteLine(e.GetBaseException());
 			}
 			return Array.Empty<string>();
-		}
-
-		public static string[] GetFilenamesFromDialog(GUI gui) {
-			string[] filenames = null;
-			gui.Invoke((MethodInvoker)delegate {
-				filenames = GetFilenamesFromDialog();
-			});
-			return filenames;
 		}
 	}
 }

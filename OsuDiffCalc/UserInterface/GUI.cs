@@ -13,7 +13,8 @@
 	using System.Windows.Forms.DataVisualization.Charting;
 	using FileFinder;
 	using FileProcessor;
-	using OsuDiffCalc.Utility;
+	using UserInterface.Controls;
+	using Utility;
 
 	public partial class GUI : Form {
 		private const int LABEL_FONT_SIZE = 12;
@@ -104,6 +105,7 @@
 			});
 			ChartStyleDropdown.SelectedItem = SeriesChartType;
 			ChartStyleDropdown.Update();
+			ChartedMapDropdown.SelectedValueChanged += ChartedMapDropdown_SelectedValueChanged;
 			RefreshChart();
 
 			_isLoaded = true;
@@ -115,6 +117,13 @@
 
 			_prevTab = MainTabControl.SelectedTab;
 			Refresh();
+		}
+
+		private void ChartedMapDropdown_SelectedValueChanged(object sender, EventArgs e) {
+			if (_chartedBeatmap is not null)
+				StatusStripLabel.Text = $"{_chartedBeatmap.Artist} - {_chartedBeatmap.Title} [{_chartedBeatmap.Version}]";
+			else
+				StatusStripLabel.Text = string.Empty;
 		}
 
 		private void MainTabControl_TabChanged(object sender, EventArgs e) {
@@ -283,10 +292,10 @@
 		protected override async void OnFormClosing(FormClosingEventArgs e) {
 			if (e?.CloseReason == CloseReason.UserClosing) {
 				try {
-						// detach heavy event handlers
-						Chart.MouseMove -= Chart_MouseMove;
-						// wait for work to end
-						await Task.WhenAll(StopAutoWindowUpdater(), StopAutoBeatmapAnalyzer());
+					// detach heavy event handlers
+					Chart.MouseMove -= Chart_MouseMove;
+					// wait for work to end
+					await Task.WhenAll(StopAutoWindowUpdater(), StopAutoBeatmapAnalyzer());
 				}
 				catch { }
 			}
@@ -302,6 +311,8 @@
 		private void ClearButton_Click(object sender, EventArgs e) {
 			MapsetManager.Clear();
 			SavefileXMLManager.ClearXML();
+			ClearBeatmapDisplay();
+			ClearChart();
 		}
 
 		private void ScaleRatings_CheckedChanged(object sender, EventArgs e) {
@@ -320,55 +331,17 @@
 			EnableXmlCache = EnableXmlCheckbox.Checked;
 		}
 
-		private bool _checkedChanging = false;
-
-		private void SeriesSelect_ColumnClick(object sender, ColumnClickEventArgs e) {
-			if (_checkedChanging) return;
-			Invoke((MethodInvoker)delegate {
-				var item = seriesSelect.Items[e.Column];
-				item.Checked = !item.Checked;
-			});
-		}
-
-		/// <summary>
-		/// Clears the chart and adds the appropriate series to it based on the checked options
-		/// </summary>
-		private void SeriesSelect_ItemChecked(object sender, ItemCheckedEventArgs e) {
-			if (_checkedChanging)
-				return;
-			if (_chartedBeatmap is null) {
-				ClearChart();
-				return;
-			}
-			//Console.WriteLine($"item checked! sender: '{sender}', e: '{e}'");
-			bool prevPauseAllTasks = _pauseAllTasks;
-			try {
-				_pauseAllTasks = true;
-				_checkedChanging = true;
-
-				Invoke((MethodInvoker)delegate {
-					Series series = _chartedBeatmap.DiffRating.GetSeriesByName(e.Item.Text);
-					if (series is null)
-						return;
-
-					series.Enabled = e.Item.Checked;
-					Chart.Visible = true;
-					Chart.Update();
-				});
-			}
-			finally {
-				_pauseAllTasks = prevPauseAllTasks;
-				_checkedChanging = false;
-			}
-		}
-
 		private void ChartedMapDropdown_SelectedIndexChanged(object sender, EventArgs e) {
 			if (_displayedMapset is null) return;
 			int index = ChartedMapDropdown.SelectedIndex;
 			var displayedMap = index >= 0 && index < _displayedMapset.Beatmaps.Count ? _displayedMapset.Beatmaps[index] : null;
-			if (displayedMap is not null)
-				_chartedBeatmap = displayedMap;
-			RefreshChart();
+			if (displayedMap is not null) {
+				if (_chartedBeatmap != displayedMap) {
+					Chart.Series.Clear();
+					_chartedBeatmap = displayedMap;
+				}
+				RefreshChart();
+			}
 		}
 
 		private void SettingsTextbox_TextChanged(object sender, System.EventArgs e) {
@@ -428,7 +401,8 @@
 				int guessIndex = -1; // used to cache the point index that we are "nearest". will only be calculated for the first series
 				foreach (var series in chart.Series) {
 					if (series is null || !series.Enabled) continue;
-					int n = series.Points.Count;
+					int n = series.Points?.Count ?? 0;
+					if (n == 0) continue;
 					if (guessIndex == -1) {
 						double bestDelta = double.MaxValue;
 						// TODO: could probably make a better starting guess than 0, but x-spacing of points is not guaranteed
@@ -475,7 +449,7 @@
 								double delta = Math.Abs(pointX - pt.XValue);
 								if (delta > marginX) {
 									// don't search outside our margin
-									break; 
+									break;
 								}
 								else if (pt.YValues[0] != 0) {
 									// found non-zero point i < guessIndex
@@ -537,6 +511,7 @@
 						ChartedMapDropdown.Items.Clear();
 						_displayedMapset = null;
 						_chartedBeatmap = null;
+						StatusStripLabel.Text = string.Empty;
 					});
 					return;
 				}
@@ -608,23 +583,14 @@
 			});
 		}
 
-		public void AddChartPoint(double x, double y) {
-			Invoke((MethodInvoker)delegate {
-				Series last = Chart.Series.Last();
-				if (last is null) {
-					last = new Series();
-					Chart.Series.Add(last);
-					last = Chart.Series.Last();
-				}
-				Chart.Series.Last().Points.AddXY(x, y);
-				//chart.ChartAreas[0].RecalculateAxesScale();
-				Chart.Visible = true;
-				Chart.Update();
-			});
-		}
-
 		private void ClearChart() {
 			Invoke((MethodInvoker)delegate {
+				_chartedBeatmap = null;
+				_displayedMapset = null;
+				SetText(StreamBpmLabel, string.Empty);
+				SetText(StatusStripLabel, string.Empty);
+				SetText(timeDisplay1, string.Empty);
+				SetText(timeDisplay2, string.Empty);
 				Chart.Series.Clear();
 				//if (Chart.ChartAreas.Count != 0) {
 				//	Chart.ChartAreas[0].AxisX.MajorGrid.Enabled = false;
@@ -634,13 +600,14 @@
 				//	Chart.ChartAreas[0].AxisY.MinorGrid.Enabled = false;
 				//	Chart.ChartAreas[0].AxisY.LabelStyle.Format = "#";
 				//}
+				ChartedMapDropdown.Items.Clear();
+				ChartedMapDropdown.Update();
 				Chart.Update();
+				RebuildCustomChartLegend();
 			});
 		}
 
 		private void RefreshChart() {
-			if (_checkedChanging)
-				return;
 			if (_chartedBeatmap is null) {
 				ClearChart();
 				return;
@@ -651,37 +618,219 @@
 				if (!_chartedBeatmap.DiffRating.IsNormalized)
 					_chartedBeatmap.DiffRating.NormalizeSeries();
 				Invoke((MethodInvoker)delegate {
-					SetText(StreamBpmLabel, $"{_chartedBeatmap.DiffRating.StreamsMaxBPM:f1}");
+					SetText(StreamBpmLabel, $"{_chartedBeatmap.DiffRating.StreamsMaxBPM:f0}");
+					SetText(StatusStripLabel, $"{_chartedBeatmap.Artist} - {_chartedBeatmap.Title}");
 					// remove any unexpected series
-					Series[] allSeries = new[] {
-						_chartedBeatmap.DiffRating.JumpsSeries,
-						_chartedBeatmap.DiffRating.StreamsSeries,
-						_chartedBeatmap.DiffRating.BurstsSeries,
-						_chartedBeatmap.DiffRating.DoublesSeries,
-						_chartedBeatmap.DiffRating.SlidersSeries,
-					};
-					var toRemove = Chart.Series.Where(series => Array.IndexOf(allSeries, series) == -1).ToArray();
+					Series[] allSeries = _chartedBeatmap.DiffRating.AllSeries.Select(tup => tup.Series).ToArray();
+					var toRemove = Chart.Series.Where(series => Array.IndexOf(allSeries, series) == -1).ToArray(); // .ToArray() to avoid collection-was-modified
 					foreach (var series in toRemove) {
 						Chart.Series.Remove(series);
 					}
 					// add series if needed, update visibility + chart type of each series
-					foreach (ListViewItem sel in seriesSelect.Items) {
-						Series series = _chartedBeatmap.DiffRating.GetSeriesByName(sel?.Text);
-						if (series is null)
-							continue;
+					foreach (var series in allSeries) {
 						if (!Chart.Series.Contains(series))
 							Chart.Series.Add(series);
-						series.Enabled = sel.Checked;
 						series.ChartType = SeriesChartType;
 					}
 					// refresh the chart
 					Chart.Visible = true;
 					Chart.Update();
+
+					RebuildCustomChartLegend();
 				});
 			}
 			finally {
 				_pauseAllTasks = prevPauseAllTasks;
-				_checkedChanging = false;
+			}
+		}
+
+		private int[] _seriesIndexToLegendIndex = null;
+		private int[] _legendIndexToSeriesIndex = null;
+		private (string seriesName, SeriesChartType seriesType, string legendName)[] _prevSeries = null;
+
+		/// <summary>
+		/// Update and rebuild the chart's custom legend if needed.
+		/// </summary>
+		/// <param name="force">
+		/// If <see langword="false"/>, will check if the (series name, series type, legend name)
+		/// for each series has changed since last time we built the legend. If they haven't, will
+		/// only update the strikethrough visibilities. <br/>
+		/// If <see langword="true"/>, will always rebuild.
+		/// </param>
+		private void RebuildCustomChartLegend(bool force = false) {
+			int n = Chart.Series.Count;
+			bool needsRebuild = force || _prevSeries is null || _prevSeries.Length != n;
+			if (!needsRebuild) {
+				for (int i = 0; i < n; i++) {
+					var series = Chart.Series[i];
+					if ((series.Name, series.ChartType, series.Legend) != _prevSeries[i]) {
+						needsRebuild = true;
+						break;
+					}
+				}
+				if (!needsRebuild) {
+					bool anyChanged = false;
+					for (int i = 0; i < n; i++) {
+						var series = Chart.Series[i];
+						var colorPanel = ChartLegendPanel.Controls[2 * i] as Panel;
+						var label = ChartLegendPanel.Controls[(2 * i) + 1] as Label;
+						var colorPanelStrikeThrough = colorPanel.Controls[0];
+						bool isEnabledInLegend = colorPanelStrikeThrough.Visible;
+						if (series.Enabled != isEnabledInLegend) {
+							label.Font = new Font(label.Font, series.Enabled ? FontStyle.Regular : FontStyle.Strikeout);
+							colorPanelStrikeThrough.Visible = !series.Enabled;
+							anyChanged = true;
+						}
+					}
+					if (anyChanged)
+						ChartLegendPanel.Update();
+
+					return;
+				}
+			}
+
+			// dispose any controls currently attached to legend before clearing the collection
+			foreach (var obj in ChartLegendPanel.Controls) {
+				dispose(obj);
+			}
+			ChartLegendPanel.Controls.Clear();
+			ChartLegendPanel.RowStyles.Clear();
+
+			// reset cached values
+			_seriesIndexToLegendIndex = new int[n];
+			_legendIndexToSeriesIndex = new int[n];
+			_prevSeries = new(string, SeriesChartType, string)[n];
+
+			if (n > 0) {
+				Chart.ApplyPaletteColors(); // ensures the Color property is calculated for each Series
+				var baseFont = Font;
+				const int rowHeight = 11;
+
+				// all series for a given legend and a 'reversed' type are in reversed order
+				// figure out the order of all the series by index
+				var seriesStacks = new Dictionary<string, Stack<int>>(); // stack to hold reversed-order series(s)
+				var stackPositions = new Dictionary<string, int>(); // starting index in the legend for each stack
+				for (int i = 0; i < n; i++) {
+					var series = Chart.Series[i];
+					bool isReversed = (series.ChartType is SeriesChartType.StackedArea or SeriesChartType.StackedArea100 or SeriesChartType.Pyramid or SeriesChartType.StackedColumn or SeriesChartType.StackedColumn100);
+					if (isReversed) {
+						if (!stackPositions.ContainsKey(series.Legend))
+							stackPositions[series.Legend] = i;
+						if (!seriesStacks.TryGetValue(series.Legend, out var stack)) {
+							stack = new Stack<int>();
+							seriesStacks.Add(series.Legend, stack);
+						}
+						stack.Push(i);
+					}
+					else
+						_seriesIndexToLegendIndex[i] = i;
+				}
+				foreach (var (legend, startingIndex) in stackPositions) {
+					var stack = seriesStacks[legend];
+					int m = startingIndex + stack.Count;
+					for (int i = startingIndex; i < m; i++) {
+						_seriesIndexToLegendIndex[i] = stack.Pop();
+					}
+				}
+
+				// build legend panel + update cache
+				for (int i = 0; i < n; i++) {
+					int legendRowIndex = _seriesIndexToLegendIndex[i];
+					var series = Chart.Series[i];
+
+					var colorPanel = new Panel() {
+						BackColor = series.Color,
+						Anchor = AnchorStyles.None,
+						Dock = DockStyle.Fill,
+						Padding = Padding.Empty,
+						Margin = new Padding(0, 2, 0, 2),
+						Height = rowHeight - 2,
+					};
+					var colorPanelStrikeThrough = new Panel() {
+						BackColor = Color.Black,
+						Anchor = AnchorStyles.Top | AnchorStyles.Left,
+						Dock = DockStyle.None,
+						Visible = !series.Enabled,
+						Left = 0,
+						Top = rowHeight / 2,
+						Height = 1,
+					};
+					colorPanel.Controls.Add(colorPanelStrikeThrough);
+					var label = new Label() {
+						Text = series.Name,
+						AutoSize = true,
+						TextAlign = ContentAlignment.MiddleLeft,
+						ImageAlign = ContentAlignment.MiddleLeft,
+						Anchor = AnchorStyles.Left,
+						Margin = Padding.Empty,
+						Padding = Padding.Empty,
+						Font = new Font(baseFont, series.Enabled ? FontStyle.Regular : FontStyle.Strikeout),
+					};
+					// add to legend panel
+					colorPanel.Click += ChartLegendRowCellClick;
+					label.Click += ChartLegendRowCellClick;
+					ChartLegendPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+					ChartLegendPanel.Controls.Add(colorPanel, 0, legendRowIndex);
+					ChartLegendPanel.Controls.Add(label, 1, legendRowIndex);
+
+					// update cache
+					_prevSeries[i] = (series.Name, series.ChartType, series.Legend);
+					_legendIndexToSeriesIndex[legendRowIndex] = i;
+				}
+				ChartLegendPanel.RowCount = n;
+			}
+			else {
+				ChartLegendPanel.RowCount = 0;
+			}
+			ChartLegendPanel.Update();
+
+
+			// local recursive dispose method to ensure our events are removed
+			void dispose(object obj) {
+				if (obj is null) return;
+				if (obj is Control parent) {
+					if (parent.Controls is not null) {
+						foreach (var child in parent.Controls) {
+							dispose(child);
+						}
+						parent.Controls.Clear();
+					}
+
+					parent.Click -= ChartLegendRowCellClick;
+					parent.Dispose();
+				}
+				else if (obj is IDisposable disposable)
+					disposable.Dispose();
+			}
+		}
+
+		private void ChartLegendRowCellClick(object sender, EventArgs e) {
+			if (sender is not Control control) return;
+			if (control.Parent is not TableLayoutPanel table) return;
+			int legendRowIndex = table.GetRow(control);
+			int nColumns = table.ColumnCount;
+			var seriesIndex = _legendIndexToSeriesIndex[legendRowIndex];
+			var series = Chart.Series[seriesIndex];
+
+			//var colorPanel = table.Controls[legendRowIndex * nColumns] as Panel;
+			//var label = table.Controls[legendRowIndex * nColumns + 1] as Label;
+			//var colorPanelStrikeThrough = colorPanel.Controls[0];
+			var colorPanel = table.Controls[seriesIndex * nColumns] as Panel;
+			var label = table.Controls[seriesIndex * nColumns + 1] as Label;
+			var colorPanelStrikeThrough = colorPanel.Controls[0];
+
+			bool wasEnabled = series.Enabled;
+			if (wasEnabled) {
+				// disable
+				label.Font = new Font(label.Font, FontStyle.Strikeout);
+				colorPanelStrikeThrough.Visible = true;
+				series.Enabled = false;
+			}
+			else {
+				// enable
+				label.Font = new Font(label.Font, FontStyle.Regular);
+				colorPanelStrikeThrough.Visible = false;
+				series.Enabled = true;
 			}
 		}
 
@@ -787,12 +936,18 @@
 			bool prevPauseAllTasks = _pauseAllTasks;
 			try {
 				_pauseAllTasks = true;
-				Mapset set = MapsetManager.BuildSet(UX.GetFilenamesFromDialog(this));
+				var selectedFileNames = (string[])Invoke(() => UX.GetFilenamesFromDialog());
+				Mapset set = MapsetManager.BuildSet(selectedFileNames);
 				SetText(timeDisplay1, $"0 ms");
 				Console.WriteLine("set built");
-				MapsetManager.Clear();
 				if (set.Beatmaps.Count == 0) {
-					Invoke((MethodInvoker)ClearBeatmapDisplay);
+					Invoke((MethodInvoker) delegate {
+						ClearBeatmapDisplay();
+						_displayedMapset = null;
+						ChartedMapDropdown.Items.Clear();
+						ClearChart();
+					});
+					set.Dispose();
 					return;
 				}
 

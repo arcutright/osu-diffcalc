@@ -5,7 +5,9 @@
 	using System.Linq;
 
 	// This is a mapset, a collection of different difficulties
-	class Mapset : IEnumerable<Beatmap> {
+	class Mapset : IEnumerable<Beatmap>, IDisposable {
+		private bool _isDisposed;
+
 		public Mapset(string title, string artist, string creator) {
 			Title = title;
 			Artist = artist;
@@ -68,11 +70,33 @@
 
 		public bool Contains(Beatmap item) => IndexOf(item) != -1;
 
+		/// <summary>
+		/// Warning: this does not dispose the beatmaps
+		/// </summary>
 		public void Clear() {
 			Beatmaps.Clear();
 			Title = null;
 			Artist = null;
 			Creator = null;
+		}
+
+		protected virtual void Dispose(bool disposing) {
+			if (!_isDisposed) {
+				if (disposing) {
+					foreach (var map in Beatmaps) {
+						map?.Dispose();
+					}
+				}
+				Beatmaps.Clear();
+
+				_isDisposed = true;
+			}
+		}
+
+		public void Dispose() {
+			// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+			Dispose(disposing: true);
+			GC.SuppressFinalize(this);
 		}
 	}
 }

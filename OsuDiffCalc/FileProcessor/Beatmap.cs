@@ -4,7 +4,9 @@
 	using AnalyzerObjects;
 	using BeatmapObjects;
 
-	class Beatmap {
+	class Beatmap : IDisposable {
+		private bool _isDisposed;
+
 		public const int MaxX = 512;
 		public const int MaxY = 384;
 
@@ -24,11 +26,11 @@
 		public bool IsOfficiallySupported;
 		public bool IsOsuStandard => Mode == 0;
 
-		public DifficultyRating DiffRating = new();
+		public DifficultyRating DiffRating { get; init; } = new();
 
-		public List<BeatmapObject> BeatmapObjects = new();
-		public List<TimingPoint> TimingPoints = new();
-		public List<BreakSection> BreakSections = new();
+		public List<BeatmapObject> BeatmapObjects { get; } = new();
+		public List<TimingPoint> TimingPoints { get; } = new();
+		public List<BreakSection> BreakSections { get; } = new();
 
 		public int NumHitObjects, NumBreakSections, NumTimingPoints;
 		public int NumCircles, NumSliders, NumSpinners;
@@ -129,6 +131,22 @@
 			Console.WriteLine($"difficulty rating: {DiffRating.TotalDifficulty:0.0}\n");
 
 			Console.WriteLine($"hitObjects: {NumHitObjects}  circles: {NumCircles}  sliders: {NumSliders}  spinners: {NumSpinners}");
+		}
+
+		protected virtual void Dispose(bool disposing) {
+			if (!_isDisposed) {
+				if (disposing) {
+					DiffRating.Dispose();
+				}
+
+				_isDisposed = true;
+			}
+		}
+
+		public void Dispose() {
+			// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+			Dispose(disposing: true);
+			GC.SuppressFinalize(this);
 		}
 	}
 }

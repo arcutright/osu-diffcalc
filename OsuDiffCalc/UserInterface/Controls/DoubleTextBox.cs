@@ -1,10 +1,10 @@
-﻿namespace OsuDiffCalc.UserInterface {
+﻿namespace OsuDiffCalc.UserInterface.Controls {
 	using System.Globalization;
 
 	/// <summary>
-	/// Validating TextBox which only accepts valid <see cref="int"/> input
+	/// Validating TextBox which only accepts valid <see cref="double"/> input
 	/// </summary>
-	public class IntTextBox : NumericTextBox<int> {
+	public class DoubleTextBox : NumericTextBox<double> {
 		private bool _textValidating = false;
 
 		protected override void OnTextValidating(TextValidatingEventArgs e) {
@@ -12,7 +12,7 @@
 			base.OnTextValidating(e);
 			try {
 				_textValidating = true;
-				e.IsValid = int.TryParse(e.NewText, _numberStyle, CultureInfo.CurrentUICulture, out var value);
+				e.IsValid = double.TryParse(e.NewText, _numberStyle, CultureInfo.CurrentUICulture, out var value);
 				if (e.IsValid)
 					Value = value;
 			}
