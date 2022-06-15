@@ -70,9 +70,7 @@ namespace OsuDiffCalc.FileFinder {
 				// Loop, probing for required memory. 
 				do {
 					var ptr = IntPtr.Zero;
-					RuntimeHelpers.PrepareConstrainedRegions();
 					try {
-						RuntimeHelpers.PrepareConstrainedRegions();
 						try { }
 						finally {
 							// CER guarantees that the address of the allocated  
@@ -207,10 +205,8 @@ namespace OsuDiffCalc.FileFinder {
 
 		private static bool GetFileNameFromHandle(IntPtr handle, out string fileName) {
 			IntPtr ptr = IntPtr.Zero;
-			RuntimeHelpers.PrepareConstrainedRegions();
 			try {
-				int length = 0x200;  // 512 bytes 
-				RuntimeHelpers.PrepareConstrainedRegions();
+				int length = 0x200;  // 512 bytes
 				try { }
 				finally {
 					// CER guarantees the assignment of the allocated  
@@ -220,7 +216,6 @@ namespace OsuDiffCalc.FileFinder {
 				}
 				NT_STATUS ret = NativeMethods.NtQueryObject(handle, OBJECT_INFORMATION_CLASS.ObjectNameInformation, ptr, length, out length);
 				if (ret == NT_STATUS.STATUS_BUFFER_OVERFLOW) {
-					RuntimeHelpers.PrepareConstrainedRegions();
 					try { }
 					finally {
 						// CER guarantees that the previous allocation is freed, 
@@ -291,10 +286,8 @@ namespace OsuDiffCalc.FileFinder {
 		private static string GetHandleTypeToken(IntPtr handle) {
 			NativeMethods.NtQueryObject(handle, OBJECT_INFORMATION_CLASS.ObjectTypeInformation, IntPtr.Zero, 0, out var length);
 			IntPtr ptr = IntPtr.Zero;
-			RuntimeHelpers.PrepareConstrainedRegions();
 			if (length > 0) {
 				try {
-					RuntimeHelpers.PrepareConstrainedRegions();
 					try { }
 					finally {
 						ptr = Marshal.AllocHGlobal(length);
