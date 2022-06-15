@@ -15,7 +15,7 @@
 			TotalLength = pixelLength * numSlides;
 
 			// slider type
-			sliderType = sliderType?.Trim().ToLower() ?? " ";
+			sliderType = sliderType?.Trim().ToUpper() ?? " ";
 			char sliderChar = sliderType.Length != 0 ? sliderType[0] : ' ';
 			CurveType = sliderChar switch {
 				'B' => PathType.Bezier,
