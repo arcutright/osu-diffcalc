@@ -952,12 +952,34 @@
 				}
 
 				var sw = Stopwatch.StartNew();
+				var toRemove = new List<Beatmap>();
 				foreach (var beatmap in set.Beatmaps) {
-					MapsetManager.AnalyzeMap(beatmap);
-					MapsetManager.SaveMap(beatmap, EnableXmlCache);
+					try {
+						MapsetManager.AnalyzeMap(beatmap);
+						MapsetManager.SaveMap(beatmap, EnableXmlCache);
+					}
+					catch (Exception ex) {
+						Console.WriteLine($"[ERROR] Failed to parse beatmap: \"{beatmap.Artist} - {beatmap.Title} [{beatmap.Version}]\"");
+						Console.WriteLine(ex.ToString());
+						toRemove.Add(beatmap);
+					}
+				}
+				foreach (var beatmap in toRemove) {
+					set.Beatmaps.Remove(beatmap);
+					beatmap.Dispose();
 				}
 				sw.Stop();
 				SetAnalyzeTime($"{sw.ElapsedMilliseconds} ms");
+
+				if (set.Beatmaps.Count == 0) {
+					Invoke((MethodInvoker)delegate {
+						ClearBeatmapDisplay();
+						_displayedMapset = null;
+						ChartedMapDropdown.Items.Clear();
+						ClearChart();
+					});
+					return;
+				}
 
 				Invoke((MethodInvoker)delegate {
 					ClearBeatmapDisplay();
