@@ -99,6 +99,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CSharp9Features.cs" />
+    <Compile Include="FileProcessor\BeatmapObjects\SliderPathHelpers\Interpolation.cs" />
+    <Compile Include="FileProcessor\BeatmapObjects\SliderPathHelpers\PathApproximator.cs" />
+    <Compile Include="FileProcessor\BeatmapObjects\SliderPathHelpers\PathControlPoint.cs" />
+    <Compile Include="FileProcessor\BeatmapObjects\SliderPathHelpers\PathType.cs" />
+    <Compile Include="FileProcessor\BeatmapObjects\SliderPathHelpers\Precision.cs" />
+    <Compile Include="FileProcessor\BeatmapObjects\SliderPathHelpers\SliderPath.cs" />
     <Compile Include="UserInterface\Controls\CustomChart.cs" />
     <Compile Include="Utility\AssociatedApplicationHelper.cs" />
     <Compile Include="FileFinder\Finder.cs" />
@@ -184,6 +190,9 @@
   <ItemGroup>
     <PackageReference Include="IndexRange">
       <Version>1.0.2</Version>
+    </PackageReference>
+    <PackageReference Include="System.Memory">
+      <Version>4.5.5</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>

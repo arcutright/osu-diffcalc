@@ -18,11 +18,11 @@
 				failureMessage = $"Incomplete HitObject at line {lineNumber}";
 				return false;
 			}
-			if (!double.TryParse(data[0], out double x)) {
+			if (!float.TryParse(data[0], out var x)) {
 				failureMessage = $"Cannot parse x for HitObject at line {lineNumber}";
 				return false;
 			}
-			if (!double.TryParse(data[1], out double y)) {
+			if (!float.TryParse(data[1], out var y)) {
 				failureMessage = $"Cannot parse y for HitObject at line {lineNumber}";
 				return false;
 			}
@@ -30,11 +30,10 @@
 				failureMessage = $"Cannot parse time for HitObject at line {lineNumber}";
 				return false;
 			}
-			if (!double.TryParse(data[3], out double typeD)) {
+			if (!int.TryParse(data[3], out var type)) {
 				failureMessage = $"Cannot parse type for HitObject at line {lineNumber}";
 				return false;
 			}
-			int type = (int)Math.Round(typeD);
 			/* Hit object types are stored in an 8-bit integer where each bit is a flag with special meaning. The base hit object type is given by bits 0, 1, 3, and 7 (from least to most significant):
 			 *  0: Hit circle
 			 *  1: Slider
@@ -60,13 +59,13 @@
 					return false;
 				}
 				string sliderType = pointsArr[0];
-				// points : pipe-separated list of strings in the format 'x:y'
-				var points = new List<Point>();
+				// points : pipe-separated list of strings in the format 'x:y' which are points not including the start (x,y)
+				var points = new List<PointF>(8) { new PointF(x, y) };
 				for (int i = 1; i < pointsArr.Length; ++i) {
 					string[] curvePoints = pointsArr[i].Split(':');
 					if (curvePoints.Length >= 2) {
-						if (double.TryParse(curvePoints[0], out double px) && double.TryParse(curvePoints[1], out double py))
-							points.Add(new Point(px, py));
+						if (float.TryParse(curvePoints[0], out var px) && float.TryParse(curvePoints[1], out var py))
+							points.Add(new PointF(px, py));
 					}
 				}
 				if (points.Count == 0) {
