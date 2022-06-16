@@ -12,14 +12,14 @@
 			_slidersSeries = BuildSeries("Sliders"),
 			_doublesSeries = BuildSeries("Doubles", false);
 
-		private SeriesPointCollection
+		private readonly SeriesPointCollection
 			_jumps = new(64),
 			_streams = new(64),
 			_bursts = new(64),
 			_doubles = new(64),
 			_sliders = new(64);
 
-		private List<double> _allSeriesXValues = new(1024);
+		private readonly HashSet<float> _allSeriesXValues = new(1024);
 		private bool _isDisposed;
 
 		public DifficultyRating() { 
@@ -136,17 +136,17 @@
 
 		private void SortAndAccumulatePointCollections() {
 			if (IsNormalized) return;
-			sortAndAccumulate(ref _jumps);
-			sortAndAccumulate(ref _streams);
-			sortAndAccumulate(ref _bursts);
-			sortAndAccumulate(ref _doubles);
-			sortAndAccumulate(ref _sliders);
+			sortAndAccumulate(_jumps);
+			sortAndAccumulate(_streams);
+			sortAndAccumulate(_bursts);
+			sortAndAccumulate(_doubles);
+			sortAndAccumulate(_sliders);
 
 			//int n = _jumps.Count;
 			//bool countsEqual = _streams.Count == n && _bursts.Count == n && _doubles.Count == n && _sliders.Count == n;
 
 			// Sort + accumulate points which have the same X value by doing pt.Y = pt1.Y + pt2.Y
-			static void sortAndAccumulate(ref SeriesPointCollection points) {
+			static void sortAndAccumulate(SeriesPointCollection points) {
 				if (points.IsSeriesSynchronized || points.Count <= 1) return;
 
 				points.Sort();
@@ -166,7 +166,8 @@
 				if (points2[^1] != prevPoint)
 					points2.Add(prevPoint);
 
-				points = points2;
+				points.Clear();
+				points.AddRange(points2);
 			}
 		}
 
@@ -175,8 +176,8 @@
 
 			// for each series, add a point (x, 0) for all times that appear in any of the series
 			// this is needed for certain chart styles (each series having a point at each x value)
-			_allSeriesXValues = _allSeriesXValues.Distinct().ToList();
-			_allSeriesXValues.Sort();
+			var allSeriesXValues = _allSeriesXValues.ToList();
+			allSeriesXValues.Sort();
 
 			// populate the series & add dummy points as needed
 			foreach (var (series, points) in AllSeries) {
@@ -187,7 +188,7 @@
 				series.Points.Clear();
 				int nPoints = points.Count;
 				int i = 0;
-				foreach (var x in _allSeriesXValues) {
+				foreach (var x in allSeriesXValues) {
 					if (i < nPoints && points[i].X == x) {
 						// this series already has a point at x
 						series.Points.AddXY(x, points[i].Y);
@@ -198,6 +199,8 @@
 						series.Points.AddXY(x, 0.0);
 					}
 				}
+				if (i < nPoints)
+					throw new Exception($"Point collections became desynchronized. This indicates a bug in our code for this map");
 				points.IsSeriesSynchronized = true;
 			}
 			IsNormalized = true;
@@ -246,6 +249,8 @@
 				}
 				return -1;
 			}
+
+			public override string ToString() => $"{GetType()} Count={Count}";
 		}
 
 		internal readonly record struct SeriesPoint(float X, float Y) : IComparable<SeriesPoint> {
