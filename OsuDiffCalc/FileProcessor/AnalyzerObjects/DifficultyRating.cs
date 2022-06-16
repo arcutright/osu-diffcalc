@@ -109,16 +109,16 @@
 			};
 		}
 
-		public void AddJump(double timeMs, double difficulty) => Add(timeMs, difficulty, _jumps);
-		public void AddStream(double timeMs, double difficulty) => Add(timeMs, difficulty, _streams);
-		public void AddBurst(double timeMs, double difficulty) => Add(timeMs, difficulty, _bursts);
-		public void AddDouble(double timeMs, double difficulty) => Add(timeMs, difficulty, _doubles);
-		public void AddSlider(double timeMs, double difficulty) => Add(timeMs, difficulty, _sliders);
+		public void AddJump(int timeMs, float difficulty) => Add(timeMs, difficulty, _jumps);
+		public void AddStream(int timeMs, float difficulty) => Add(timeMs, difficulty, _streams);
+		public void AddBurst(int timeMs, float difficulty) => Add(timeMs, difficulty, _bursts);
+		public void AddDouble(int timeMs, float difficulty) => Add(timeMs, difficulty, _doubles);
+		public void AddSlider(int timeMs, float difficulty) => Add(timeMs, difficulty, _sliders);
 
-		private void Add(double ms, double diff, SeriesPointCollection dest) {
-			double time = ms / 1000;
-			_allSeriesXValues.Add(time);
-			dest.Add(new SeriesPoint(time, diff));
+		private void Add(int timeMs, float diff, SeriesPointCollection dest) {
+			float xValue = (float)(timeMs / 1000.0);
+			_allSeriesXValues.Add(xValue);
+			dest.Add(new SeriesPoint(xValue, diff));
 			dest.IsSeriesSynchronized = false;
 			IsNormalized = false;
 		}
@@ -248,7 +248,7 @@
 			}
 		}
 
-		internal readonly record struct SeriesPoint(double X, double Y) : IComparable<SeriesPoint> {
+		internal readonly record struct SeriesPoint(float X, float Y) : IComparable<SeriesPoint> {
 			public int CompareTo(SeriesPoint other) => X.CompareTo(other.X);
 		}
 

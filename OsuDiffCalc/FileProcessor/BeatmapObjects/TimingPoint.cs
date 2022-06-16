@@ -1,43 +1,44 @@
 ﻿namespace OsuDiffCalc.FileProcessor.BeatmapObjects {
 	using System;
-	using OsuDiffCalc.FileProcessor.FileParserHelpers;
+	using System.Text;
+	using FileParserHelpers;
 
-	class TimingPoint : BeatmapElement, IComparable<TimingPoint> {
-		public TimingPoint(double offset, double beatLength, bool isInherited, TimingPoint prevTimingPoint, double beatmapSliderMultiplier) {
-			Offset = offset;
+	readonly record struct TimingPoint(float Offset = -1, float Bpm = -1, float EffectiveSliderBPM = -1, float MsPerBeat = -1)
+		                                : IComparable<TimingPoint>, IComparable<TimingPoint?> {
+		public static TimingPoint Create(float offset, float beatLength, bool isInherited, TimingPoint? prevTimingPoint, float beatmapSliderMultiplier) {
+			float msPerBeat, bpm, effectiveSliderBPM;
 
 			// new timing point
-			if (!isInherited || prevTimingPoint is null) {
-				MsPerBeat = beatLength;
-				Bpm = TimingParser.GetBPM(beatLength);
-				EffectiveSliderBPM = Bpm * beatmapSliderMultiplier;
+			if (!isInherited || prevTimingPoint is not TimingPoint prevPoint) {
+				msPerBeat = beatLength;
+				bpm = TimingParser.GetBPM(beatLength);
+				effectiveSliderBPM = bpm * beatmapSliderMultiplier;
 			}
 			// inherited timing point
 			else {
-				MsPerBeat = prevTimingPoint.MsPerBeat;
-				Bpm = prevTimingPoint.Bpm;
+				msPerBeat = prevPoint.MsPerBeat;
+				bpm = prevPoint.Bpm;
 				// from the updated osu!wiki on `beatLength`, for inherited timing points:
 				// "A negative inverse slider velocity multiplier, as a percentage. 
 				//  For example, -50 would make all sliders in this section twice as fast as SliderMultiplier"
-				double timingSliderMultiplier = -100.0 / beatLength;
-				EffectiveSliderBPM = TimingParser.GetEffectiveBPM(Bpm, MsPerBeat) * beatmapSliderMultiplier * timingSliderMultiplier;
+				float timingSliderMultiplier = -100.0f / beatLength;
+				effectiveSliderBPM = TimingParser.GetEffectiveBPM(bpm, msPerBeat) * beatmapSliderMultiplier * timingSliderMultiplier;
 			}
-		}
 
-		public double Offset { get; protected init; } = -1;
-		public double Bpm { get; protected init; } = -1;
-		public double EffectiveSliderBPM { get; protected init; } = -1;
-		public double MsPerBeat { get; protected init; } = -1;
-
-		public override void PrintDebug(string prepend = "", string append = "") {
-			Console.Write(prepend);
-			Console.Write($"{TimingParser.GetTimeStamp(Offset)}   msPerBeat:{MsPerBeat:0.00}   bpm:{Bpm:0.0}   effectiveSliderBPM:{EffectiveSliderBPM:0.0}");
-			Console.WriteLine(append);
+			return new TimingPoint(offset, bpm, effectiveSliderBPM, msPerBeat);
 		}
 
 		public int CompareTo(TimingPoint other) {
-			if (other is null) return 2;
 			return Offset.CompareTo(other.Offset);
+		}
+
+		public int CompareTo(TimingPoint? other) {
+			if (!other.HasValue) return 2;
+			return CompareTo(other.Value);
+		}
+
+		public override string ToString() {
+			return $"{TimingParser.GetTimeStamp(Offset)}   msPerBeat:{MsPerBeat:0.00}   bpm:{Bpm:0.0}   effectiveSliderBPM:{EffectiveSliderBPM:0.0}";
 		}
 	}
 }

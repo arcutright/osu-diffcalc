@@ -6,16 +6,16 @@
 
 	class Shape {
 		protected List<HitObject> HitObjects = new();
-		protected double Effective1_4bpm = -1; //bpm when mapped at 1/4 time-spacing for 4/4 timing
-		public double AvgTimeGapMs = 0;
-		public double TotalDistancePx = 0;
-		public double AvgDistancePx = 0;
-		public double MinDistancePx = -1, MaxDistancePx = -1;
+		protected float Effective1_4bpm = -1; //bpm when mapped at 1/4 time-spacing for 4/4 timing
+		public float AvgTimeGapMs = 0;
+		public float TotalDistancePx = 0;
+		public float AvgDistancePx = 0;
+		public float MinDistancePx = -1, MaxDistancePx = -1;
 		public ShapeType Type;
 
 		public int NumObjects => HitObjects.Count;
 
-		public double StartTime = -1, EndTime = -1;
+		public int StartTime = -1, EndTime = -1;
 		public Shape PrevShape = null;
 
 		public Shape() {
@@ -46,13 +46,13 @@
 			if (HitObjects.Count >= 2) {
 				// update avg time gap
 				// if the second to last uses endTime instead of startTime, stream detection will consider ends of sliders as continuing the stream
-				double lastTimeGapMs = HitObjects[NumObjects - 1].StartTime - HitObjects[NumObjects - 2].StartTime;
+				int lastTimeGapMs = HitObjects[NumObjects - 1].StartTime - HitObjects[NumObjects - 2].StartTime;
 				AvgTimeGapMs = (AvgTimeGapMs * (NumObjects - 2) + lastTimeGapMs) / (NumObjects - 1);
 
 				// update distances
-				double lastDistanceX = HitObjects[NumObjects - 1].X - HitObjects[NumObjects - 2].X;
-				double lastDistanceY = HitObjects[NumObjects - 1].Y - HitObjects[NumObjects - 2].Y;
-				double lastDistance = Math.Sqrt((lastDistanceX * lastDistanceX) + (lastDistanceY * lastDistanceY));
+				float lastDistanceX = HitObjects[NumObjects - 1].X - HitObjects[NumObjects - 2].X;
+				float lastDistanceY = HitObjects[NumObjects - 1].Y - HitObjects[NumObjects - 2].Y;
+				float lastDistance = (float)Math.Sqrt((lastDistanceX * lastDistanceX) + (lastDistanceY * lastDistanceY));
 				AvgDistancePx = (AvgDistancePx * (NumObjects - 2) + lastDistance) / (NumObjects - 1);
 				TotalDistancePx += lastDistance;
 
@@ -63,17 +63,17 @@
 			}
 		}
 
-		public double GetEffectiveBPM() {
+		public float GetEffectiveBPM() {
 			Effective1_4bpm = TimingParser.GetBPM(4 * AvgTimeGapMs);
 			return Effective1_4bpm;
 		}
 
 		//check if next object has constant timing with the current stream
-		public int CompareTiming(double nextObjectStartTime) {
+		public int CompareTiming(int nextObjectStartTime) {
 			if (HitObjects.Count == 0)
 				return -2;
-			double timeGap = nextObjectStartTime - HitObjects[^1].StartTime;
-			double difference = timeGap - AvgTimeGapMs;
+			var timeGapMs = nextObjectStartTime - HitObjects[^1].StartTime;
+			var difference = timeGapMs - AvgTimeGapMs;
 			if (Math.Abs(difference) <= 20) //20ms margin of error = spacing for 3000bpm stream at 1/4 mapping
 				return 0;
 			else if (difference < 0)
@@ -86,19 +86,17 @@
 			HitObjects.Clear();
 		}
 
-		public void PrintDebug(string prepend = "", string append = "", bool printType = false) {
+		public void PrintDebug(string prepend = "", string append = "") {
 			Console.Write(prepend);
-			if (printType) {
-				Console.Write("{0}({1}):  {2}  {3:0.0}ms  {4:0.0}bpm  {5:0.0}px  {6:0.0}px", Type, NumObjects,
-						TimingParser.GetTimeStamp(HitObjects[0].StartTime), AvgTimeGapMs,
-						GetEffectiveBPM(), TotalDistancePx, AvgDistancePx);
-			}
-			else {
-				Console.Write("({0}):  {1}  {2:0.0}ms  {3:0.0}bpm  {4:0.0}px  {5:0.0}px", NumObjects,
-						TimingParser.GetTimeStamp(HitObjects[0].StartTime), AvgTimeGapMs,
-						GetEffectiveBPM(), TotalDistancePx, AvgDistancePx);
-			}
+			Console.Write(ToString());
 			Console.WriteLine(append);
+		}
+
+		public override string ToString() {
+			return string.Format("{0}({1}):  {2}  {3:0.0}ms  {4:0.0}bpm  {5:0.0}px  {6:0.0}px",
+				Type, NumObjects,
+				TimingParser.GetTimeStamp(HitObjects[0].StartTime),
+				AvgTimeGapMs, GetEffectiveBPM(), TotalDistancePx, AvgDistancePx);
 		}
 
 		public enum ShapeType {

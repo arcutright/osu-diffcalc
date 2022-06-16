@@ -26,7 +26,7 @@
 				failureMessage = $"Cannot parse y for HitObject at line {lineNumber}";
 				return false;
 			}
-			if (!double.TryParse(data[2], out double time)) {
+			if (!int.TryParse(data[2], out var time)) {
 				failureMessage = $"Cannot parse time for HitObject at line {lineNumber}";
 				return false;
 			}
@@ -60,23 +60,23 @@
 				}
 				string sliderType = pointsArr[0];
 				// points : pipe-separated list of strings in the format 'x:y' which are points not including the start (x,y)
-				var points = new List<PointF>(8) { new PointF(x, y) };
+				var points = new List<Vector2>(8) { new Vector2(x, y) };
 				for (int i = 1; i < pointsArr.Length; ++i) {
 					string[] curvePoints = pointsArr[i].Split(':');
 					if (curvePoints.Length >= 2) {
 						if (float.TryParse(curvePoints[0], out var px) && float.TryParse(curvePoints[1], out var py))
-							points.Add(new PointF(px, py));
+							points.Add(new Vector2(px, py));
 					}
 				}
 				if (points.Count == 0) {
 					failureMessage = $"Empty slider at line {lineNumber}";
 					return false;
 				}
-				if (!double.TryParse(data[6], out double numSlides)) {
+				if (!int.TryParse(data[6], out var numSlides)) {
 					failureMessage = $"Could not parse num slides for slider at line {lineNumber}";
 					return false;
 				}
-				if (!double.TryParse(data[7], out double pixelLength)) {
+				if (!float.TryParse(data[7], out var pixelLength)) {
 					failureMessage = $"Could not parse length for slider at line {lineNumber}";
 					return false;
 				}
@@ -88,7 +88,7 @@
 					failureMessage = $"Incomplete spinner at line {lineNumber}";
 					return false;
 				}
-				if (!double.TryParse(data[5], out double endTime)) {
+				if (!int.TryParse(data[5], out var endTime)) {
 					failureMessage = $"Could not parse end time for spinner at line {lineNumber}";
 					return false;
 				}

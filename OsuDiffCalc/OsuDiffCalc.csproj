@@ -108,13 +108,13 @@
     <Compile Include="UserInterface\Controls\CustomChart.cs" />
     <Compile Include="Utility\AssociatedApplicationHelper.cs" />
     <Compile Include="FileFinder\Finder.cs" />
+    <Compile Include="Utility\Extensions.cs" />
     <Compile Include="Utility\ShortcutHelper.cs" />
     <Compile Include="FileFinder\OpenFilesDetector.cs" />
     <Compile Include="FileProcessor\Analyzer.cs" />
     <Compile Include="FileProcessor\AnalyzerObjects\DifficultyRating.cs" />
     <Compile Include="FileProcessor\AnalyzerObjects\Shape.cs" />
     <Compile Include="FileProcessor\Beatmap.cs" />
-    <Compile Include="FileProcessor\BeatmapObjects\BeatmapElement.cs" />
     <Compile Include="FileProcessor\BeatmapObjects\BeatmapObject.cs" />
     <Compile Include="FileProcessor\FileParserHelpers\FormatParser.cs" />
     <Compile Include="FileProcessor\FileParserHelpers\ParserBase.cs" />
@@ -166,6 +166,7 @@
     <Compile Include="UserInterface\Controls\NumericTextBox.cs" />
     <Compile Include="UserInterface\UX.cs" />
     <Compile Include="UserInterface\Controls\ValidatingTextBox.cs" />
+    <Compile Include="Vector2.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\App.config" />

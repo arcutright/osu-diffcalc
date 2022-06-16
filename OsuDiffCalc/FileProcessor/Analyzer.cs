@@ -9,8 +9,8 @@
 	class Analyzer {
 		const int MinBurstLength = 3;
 		const int MinStreamLength = 6;
-		const double BurstMultiplier = 0.75;
-		static readonly double MaxDistPx = Math.Sqrt((Beatmap.MaxX * Beatmap.MaxX) + (Beatmap.MaxY * Beatmap.MaxY));
+		const float BurstMultiplier = 0.75f;
+		static readonly float MaxDistPx = (float)Math.Sqrt((Beatmap.MaxX * Beatmap.MaxX) + (Beatmap.MaxY * Beatmap.MaxY));
 
 		public static void Analyze(Beatmap beatmap, bool clearLists = true) {
 			if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
@@ -29,15 +29,15 @@
 				// find current timing point
 				if (timingPointIndex < beatmap.NumTimingPoints) {
 					while (timingPointIndex < beatmap.NumTimingPoints - 1 && slider.StartTime > beatmap.TimingPoints[timingPointIndex].Offset) {
-						timingPointIndex++;
+						++timingPointIndex;
 					}
 					timingPoint = beatmap.TimingPoints[timingPointIndex];
 				}
-				slider.AnalyzeShape(timingPoint, beatmap.SliderMultiplier);
+				slider.AnalyzeShape(in timingPoint, beatmap.SliderMultiplier);
 			}
 
 			// analysis variables
-			double minStreamAvgMs = -1, minDoubleAvgMs = -1, minTripletAvgMs = -1, minBurstAvgMs = -1;
+			float minStreamAvgMs = -1, minDoubleAvgMs = -1, minTripletAvgMs = -1, minBurstAvgMs = -1;
 			var streams = new List<Shape>();
 			var doubles = new List<Shape>();
 			var triplets = new List<Shape>();
@@ -48,8 +48,8 @@
 			HitObject lastHitObject = null;
 			bool shapeAdded = false;
 
-			var jumpDifficultyList = new List<double>();
-			var sliderDifficultyList = new List<double>();
+			var jumpDifficultyList = new List<float>();
+			var sliderDifficultyList = new List<float>();
 
 			// macro to make life easier
 			void addShapeToAppropriateList() {
@@ -127,10 +127,10 @@
 			var (streamsDifficulty, streamsAvgBPM, streamsMaxBPM) = streamsDiff;
 			var (burstsDifficulty, burstsAvgBPM, burstsMaxBPM) = burstsDiff;
 			//Console.Write("jump ");
-			double jumpsDifficulty = GetWeightedSumOfList(jumpDifficultyList, 1.5);
+			var jumpsDifficulty = GetWeightedSumOfList(jumpDifficultyList, 1.5f);
 			//Console.Write("slider ");
-			double slidersDifficulty = GetWeightedSumOfList(sliderDifficultyList, 1.5);
-			double totalDifficulty = streamsDifficulty + burstsDifficulty + doublesDifficulty + jumpsDifficulty + slidersDifficulty;
+			var slidersDifficulty = GetWeightedSumOfList(sliderDifficultyList, 1.5f);
+			var totalDifficulty = streamsDifficulty + burstsDifficulty + doublesDifficulty + jumpsDifficulty + slidersDifficulty;
 
 			beatmap.DiffRating.JumpsDifficulty = jumpsDifficulty;
 			beatmap.DiffRating.StreamsDifficulty = streamsDifficulty;
@@ -162,26 +162,26 @@
 
 		#region Difficulty calculations
 
-		private readonly record struct StreamsResult(double Difficulty, double AverageBPM, double MaxBPM);
+		private readonly record struct StreamsResult(double Difficulty, float AverageBPM, float MaxBPM);
 
 		static StreamsResult GetStreamsDifficulty(List<Shape> streams, double minStreamMs, Beatmap map) {
 			if (map is null || streams is null || streams.Count == 0)
 				return default;
 
-			double avgObjects = 0;
-			double avgBPM = 0;
-			double maxBPM = 0;
-			double avgDistancePx = 0;
-			double numStreams = 0; // double for fewer type casts
-			var streamDiffs = new List<double>();
+			float avgObjects = 0;
+			float avgBPM = 0;
+			float maxBPM = 0;
+			float avgDistancePx = 0;
+			int numStreams = 0;
+			var streamDiffs = new List<float>();
 			foreach (var stream in streams) {
-				double streamDiff = 0;
+				float streamDiff = 0;
 				if (stream.NumObjects >= MinBurstLength && stream.AvgTimeGapMs > 0) {
-					double streamBPM = 15000 / stream.AvgTimeGapMs;
+					float streamBPM = 15000f / stream.AvgTimeGapMs;
 					//calculate the difficulty of the stream
-					streamDiff = Math.Pow(stream.NumObjects, 0.8) * Math.Pow(streamBPM, 3.4) / 1e9 * (stream.AvgDistancePx + 1);
+					streamDiff = (float)(Math.Pow(stream.NumObjects, 0.8) * Math.Pow(streamBPM, 3.4) / 1e9 * (stream.AvgDistancePx + 1));
 					//addition for OD. Maxes ~10%
-					streamDiff += streamDiff * 1000 / (stream.AvgTimeGapMs * map.MarginOfErrorMs300);
+					streamDiff += streamDiff * 1000f / (stream.AvgTimeGapMs * map.MarginOfErrorMs300);
 					//multiplier to represent that bursts are significantly easier
 					if (stream.NumObjects < MinStreamLength) {
 						streamDiff *= BurstMultiplier;
@@ -197,7 +197,7 @@
 					avgBPM = RollingAverage(avgBPM, streamBPM, numStreams);
 					avgDistancePx = RollingAverage(avgDistancePx, stream.AvgDistancePx, numStreams);
 					maxBPM = Math.Max(maxBPM, streamBPM);
-					numStreams++;
+					++numStreams;
 				}
 			}
 			//Console.WriteLine("\ntypical stream len:{0:0.0}  bpm:{1:0.0}  dist:{2:0.0}  diff:{3:0.0}", avgObjects, avgBPM, avgDistancePx,
@@ -205,12 +205,12 @@
 
 			//Console.Write("stream ");
 			if (streamDiffs.Count != 0)
-				return new StreamsResult(GetWeightedSumOfList(streamDiffs, 1.5), avgBPM, maxBPM);
+				return new StreamsResult(GetWeightedSumOfList(streamDiffs, 1.5f), avgBPM, maxBPM);
 			else
 				return default;
 		}
 
-		static double GetDoublesDifficulty(List<Shape> doubles, double minDoubleMs, Beatmap map) {
+		static float GetDoublesDifficulty(List<Shape> doubles, float minDoubleMs, Beatmap map) {
 			if (doubles.Count == 0)
 				return 0;
 
@@ -218,24 +218,24 @@
 
 			// difficulty is also dependent on the spacing between doubles... ie, closely timed objects are harder to hit than far-timed ones
 			// TODO: introduce extra scaling for tongue-twisters
-			double difficulty = 0;
-			double doubleBPM;
+			float difficulty = 0;
+			float doubleBPM;
 			for (int i = 0; i < doubles.Count; ++i) {
 				var theDouble = doubles[i];
-				double doubleDiff = 0;
-				double timeGapMs = theDouble.StartTime - theDouble.PrevShape.EndTime;
+				float doubleDiff = 0;
+				var timeGapMs = theDouble.StartTime - theDouble.PrevShape.EndTime;
 
 				// measure how abrubt changing between shapes is
-				double timeDifferenceForTransition = Math.Abs(theDouble.AvgTimeGapMs * 2 - timeGapMs);
+				var timeDifferenceForTransition = Math.Abs(theDouble.AvgTimeGapMs * 2 - timeGapMs);
 
 				// similar to difference in BPM between streams, but in ms/tick
-				double timeDifferenceForSpeeds = Math.Abs(theDouble.AvgTimeGapMs - theDouble.PrevShape.AvgTimeGapMs);
+				var timeDifferenceForSpeeds = Math.Abs(theDouble.AvgTimeGapMs - theDouble.PrevShape.AvgTimeGapMs);
 
 				// let's define these parameters to make a double difiicult
 				if (timeGapMs > 0) {
 					if (timeDifferenceForTransition <= 20 && timeDifferenceForSpeeds <= 1.5 * theDouble.AvgTimeGapMs + 20) {
 						doubleBPM = 15000 / theDouble.AvgTimeGapMs;
-						doubleDiff = Math.Pow(doubleBPM, 3.2) / 1e9 * Math.Pow(theDouble.AvgDistancePx + 1, 1.6);
+						doubleDiff = (float)(Math.Pow(doubleBPM, 3.2) / 1e9 * Math.Pow(theDouble.AvgDistancePx + 1, 1.6));
 					}
 					// difficulty += doubleDiff; // once balancing with other map features is determined
 					map.DiffRating.AddDouble(theDouble.StartTime, doubleDiff);
@@ -244,13 +244,13 @@
 			return difficulty;
 		}
 
-		static double GetJumpDifficulty(HitObject current, HitObject prev, Beatmap map) {
+		static float GetJumpDifficulty(HitObject current, HitObject prev, Beatmap map) {
 			if (prev is not (Hitcircle or Slider))
 				return 0;
 
-			double difficulty = 0;
-			double dx = current.X;
-			double dy = current.Y;
+			float difficulty = 0;
+			float dx = current.X;
+			float dy = current.Y;
 			if (prev is Slider prevSlider) {
 				dx -= prevSlider.X2;
 				dy -= prevSlider.Y2;
@@ -260,27 +260,27 @@
 				dy -= prev.Y;
 			}
 
-			double distance = Math.Sqrt((dx * dx) + (dy * dy));
-			double time = current.StartTime - prev.EndTime;
+			float distance = (float)Math.Sqrt((dx * dx) + (dy * dy));
+			float time = (float)(current.StartTime - prev.EndTime);
 			if (time > 0) {
 				// adjust distance based on CS
 				distance -= map.CircleSizePx / 2;
 				if (distance > 0) {
 					// increase time window based on OD (more time = slower jump)
-					double timeWindowFromOD(HitObject obj) => obj is Slider ? (map.MarginOfErrorMs50 / 2) : (map.MarginOfErrorMs300 / 2);
+					float timeWindowFromOD(HitObject obj) => obj is Slider ? (map.MarginOfErrorMs50 / 2) : (map.MarginOfErrorMs300 / 2);
 					time += timeWindowFromOD(current);
 					time += timeWindowFromOD(prev);
 
 					// difficulty due to the speed of the jump
-					double speedDiff = (10 * distance / time);
+					float speedDiff = (10 * distance / time);
 					speedDiff *= speedDiff; // square is faster than Math.Pow
 
 					// difficulty due to the distance
-					double distDiff = speedDiff * 0.4 * distance / (MaxDistPx - map.CircleSizePx / 2);
+					float distDiff = speedDiff * 0.4f * distance / (MaxDistPx - map.CircleSizePx / 2);
 					difficulty = speedDiff + distDiff;
 
 					//adjustment to make jumps vs streams more reasonable
-					difficulty *= 0.1;
+					difficulty *= 0.1f;
 
 					map.DiffRating.AddJump(prev.EndTime, difficulty);
 					//Console.WriteLine("jump {0}  {1}  spDiff:{2:0.0}  dstDiff:{3:0.0}  dist:{5:0.0}  bpm:{6:0.0}  ={4:0.00}",  FileParserHelpers.TimingParser.getTimeStamp(prevObject.endTime), FileParserHelpers.TimingParser.getTimeStamp(hitObject.startTime), speedDiff, distDiff, difficulty, distPx, 15000 / distMs);
@@ -289,16 +289,16 @@
 			return difficulty;
 		}
 
-		static double GetSliderDifficulty(Slider slider, Beatmap map) {
+		static float GetSliderDifficulty(Slider slider, Beatmap map) {
 			if (slider is null || map is null)
 				return 0;
-			double difficulty = 0;
+			float difficulty = 0;
 			double distance = slider.TotalLength;
 			//adjust slider length to consider the margin allowed by od
 			distance -= slider.NumSlides * (map.CircleSizePx + map.OverallDifficulty); // TODO: FIX ME (OD MARGIN)
 			if (distance > 0) {
-				double time = Math.Max(slider.EndTime - slider.StartTime, 1);
-				difficulty += Math.Pow(distance / time, 1.5) * Math.Pow(distance, 0.6) / 2;
+				var time = Math.Max(slider.EndTime - slider.StartTime, 1);
+				difficulty += (float)(Math.Pow(distance / time, 1.5) * Math.Pow(distance, 0.6) / 2);
 
 				//Console.WriteLine("slider {0} => {1}", FileParserHelpers.TimingParser.getTimeStamp(slider.startTime), difficulty);
 				/*
@@ -317,12 +317,12 @@
 
 		#region Helper functions
 
-		static void UpdateMin(ref double min, double toCompare) {
+		static void UpdateMin(ref float min, float toCompare) {
 			if (min < 0 || toCompare < min)
 				min = toCompare;
 		}
 
-		static double GetWeightedSumOfList(List<double> list, double stdevWeight = 1.5, double weightFactor = 0.9) {
+		static double GetWeightedSumOfList(List<float> list, float stdevWeight = 1.5f, float weightFactor = 0.9f) {
 			int n = list.Count;
 			if (n == 0)
 				return 0;
@@ -335,11 +335,11 @@
 
 			// weight the highest difficulties the most, decrease by weightFactor each time
 			// note that stdev is calculated using Welford's algorithm
-			double weight = 1;
-			double count = 0; // double for fewer type casts
-			double mean = 0;
-			double m2 = 0;
-			double delta, x;
+			float weight = 1;
+			float count = 0; // double for fewer type casts
+			float mean = 0;
+			float m2 = 0;
+			float delta, x;
 			for (int i = n - 1; i >= 0; --i) {
 				x = list[i] * weight;
 				weightedSum += x;
@@ -353,15 +353,15 @@
 			}
 
 			if (stdevWeight != 0) {
-				double stdev = Math.Sqrt(m2 / count);
-				double bonus = mean + (stdevWeight * stdev);
+				float stdev = (float)Math.Sqrt(m2 / count);
+				float bonus = mean + (stdevWeight * stdev);
 				weightedSum += bonus;
 				//Console.WriteLine("bonus: {0:0.0}", bonus);
 			}
 			return weightedSum;
 		}
 
-		static double RollingAverage(double currentAvg, double toAdd, double currentNumValues) {
+		static float RollingAverage(float currentAvg, float toAdd, int currentNumValues) {
 			return (currentAvg * currentNumValues + toAdd) / (currentNumValues + 1);
 		}
 

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using OsuDiffCalc.Utility;
 
 namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 	using static SliderPathExtensions;
@@ -29,9 +30,9 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		/// <summary>
 		/// The control points of the path.
 		/// </summary>
-		public IReadOnlyList<PathControlPoint> ControlPoints => _controlPoints;
+		public IReadOnlyList<PathControlPoint> ControlPoints => controlPoints;
 			
-		private readonly List<PathControlPoint> _controlPoints = new();
+		private readonly List<PathControlPoint> controlPoints = new();
 		private readonly List<Vector2> calculatedPath = new();
 		private readonly List<double> cumulativeLength = new();
 		private bool isValid = false;
@@ -52,7 +53,7 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		/// The path will be shortened/lengthened to match this length. If null, the path will use the true distance between all control points.</param>
 		public SliderPath(PathControlPoint[] controlPoints, double? expectedDistance = null)
 				: this() {
-			_controlPoints.AddRange(controlPoints);
+			this.controlPoints.AddRange(controlPoints);
 			ExpectedDistance = expectedDistance;
 		}
 
@@ -127,7 +128,7 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		/// <param name="controlPoint">One of the control points in the segment.</param>
 		public List<PathControlPoint> PointsInSegment(PathControlPoint controlPoint) {
 			bool found = false;
-			List<PathControlPoint> pointsInCurrentSegment = new List<PathControlPoint>();
+			var pointsInCurrentSegment = new List<PathControlPoint>();
 
 			foreach (PathControlPoint point in ControlPoints) {
 				if (point.Type != null) {
@@ -166,26 +167,30 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		private void calculatePath() {
 			calculatedPath.Clear();
 
-			if (ControlPoints.Count == 0)
+			int n = ControlPoints.Count;
+			if (n == 0)
 				return;
 
-			Vector2[] vertices = new Vector2[ControlPoints.Count];
-			for (int i = 0; i < ControlPoints.Count; i++)
+			// TODO: candidate for ArrayPool
+			var vertices = new Vector2[n];
+			for (int i = 0; i < n; i++) {
 				vertices[i] = ControlPoints[i].Position;
+			}
 
 			int start = 0;
 
-			for (int i = 0; i < ControlPoints.Count; i++) {
-				if (ControlPoints[i].Type == null && i < ControlPoints.Count - 1)
+			for (int i = 0; i < n; i++) {
+				if (ControlPoints[i].Type == null && i < n - 1)
 					continue;
 
 				// The current vertex ends the segment
 				var segmentVertices = vertices.AsSpan().Slice(start, i - start + 1);
 				var segmentType = ControlPoints[start].Type ?? PathType.Linear;
 
-				foreach (Vector2 t in calculateSubPath(segmentVertices, segmentType)) {
-					if (calculatedPath.Count == 0 || calculatedPath.Last() != t)
-						calculatedPath.Add(t);
+				var subPath = calculateSubPath(segmentVertices, segmentType);
+				for (int s = 0; s < subPath.Count; s++) {
+					if (calculatedPath.Count == 0 || calculatedPath[^1] != subPath[s])
+						calculatedPath.Add(subPath[s]);
 				}
 
 				// Start the new segment at the current vertex
@@ -193,7 +198,7 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 			}
 		}
 
-		private List<Vector2> calculateSubPath(ReadOnlySpan<Vector2> subControlPoints, PathType type) {
+		private IList<Vector2> calculateSubPath(ReadOnlySpan<Vector2> subControlPoints, PathType type) {
 			switch (type) {
 				case PathType.Linear:
 					return PathApproximator.ApproximateLinear(subControlPoints);
@@ -202,7 +207,7 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 					if (subControlPoints.Length != 3)
 						break;
 
-					List<Vector2> subPath = PathApproximator.ApproximateCircularArc(subControlPoints);
+					var subPath = PathApproximator.ApproximateCircularArc(subControlPoints);
 
 					// If for some reason a circular arc could not be fit to the 3 given points, fall back to a numerically stable bezier approximation.
 					if (subPath.Count == 0)
@@ -224,7 +229,7 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 
 			for (int i = 0; i < calculatedPath.Count - 1; i++) {
 				Vector2 diff = calculatedPath[i + 1] - calculatedPath[i];
-				calculatedLength += diff.Length();
+				calculatedLength += diff.Length;
 				cumulativeLength.Add(calculatedLength);
 			}
 
@@ -271,17 +276,18 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		}
 
 		private double progressToDistance(double progress) {
-			return Clamp(progress, 0, 1) * Distance;
+			return progress.Clamp(0, 1) * Distance;
 		}
 
 		private Vector2 interpolateVertices(int i, double d) {
-			if (calculatedPath.Count == 0)
+			int n = calculatedPath.Count;
+			if (n == 0)
 				return Vector2.Zero;
 
 			if (i <= 0)
-				return calculatedPath.First();
-			if (i >= calculatedPath.Count)
-				return calculatedPath.Last();
+				return calculatedPath[0];
+			if (i >= n)
+				return calculatedPath[n - 1];
 
 			Vector2 p0 = calculatedPath[i - 1];
 			Vector2 p1 = calculatedPath[i];
@@ -296,31 +302,6 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 			double w = (d - d0) / (d1 - d0);
 			return p0 + (p1 - p0) * (float)w;
 		}
-	}
-
-
-	// in case we come across an obscure method, they are around here
-	// https://github.com/ppy/osuTK/blob/master/src/osuTK/Math/Vector2.cs
-	// https://github.com/ppy/osuTK/blob/master/src/osuTK/Math/MathHelper.cs
-
-	internal static class SliderPathExtensions {
-		public static Vector2 Normalized(this Vector2 vec) {
-			float scale = 1.0f / vec.Length();
-			vec.X *= scale;
-			vec.Y *= scale;
-			return vec;
-		}
-
-		// too bad c# doesn't support inline type dispatch...
-
-		public static int Clamp(int value, int min, int max)
-			=> value < min ? min : (value > max ? max : value);
-
-		public static float Clamp(float value, float min, float max)
-			=> value < min ? min : (value > max ? max : value);
-
-		public static double Clamp(double value, double min, double max)
-			=> value < min ? min : (value > max ? max : value);
 	}
 }
 

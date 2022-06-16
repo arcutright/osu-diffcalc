@@ -21,17 +21,16 @@
 			// 2, "Break" => break : type,startTime,endTime
 			// 3 => background color transformations : type,?,?,?,?
 			string typeString = data[0].Trim();
-			double type = -1;
+			int type;
 			if (typeString.StartsWith("video", System.StringComparison.OrdinalIgnoreCase))
 				type = 1;
 			else if (typeString.StartsWith("break", System.StringComparison.OrdinalIgnoreCase))
 				type = 2;
-			else if (!double.TryParse(data[0], out type)) {
+			else if (!int.TryParse(data[0], out type)) {
 				// Video, Sprite, Animation, or contained data. Example (note the 1-space indent for multiline data):
 				failureMessage = "";
 				return true;
 			}
-			type = Math.Round(type);
 			if (type == 0 && string.IsNullOrEmpty(beatmap.BackgroundImage)) {
 				// background : 0,0,filename,xOffset,yOffest (offsets are optional, default to 0,0)
 				string background = data[2];
@@ -41,11 +40,11 @@
 				beatmap.BackgroundImage = background;
 			}
 			else if (type == 2) {
-				if (!double.TryParse(data[1], out double startTime)) {
+				if (!int.TryParse(data[1], out var startTime)) {
 					failureMessage = $"Cannot parse start time for break section at line {lineNumber}";
 					return false;
 				}
-				if (!double.TryParse(data[2], out double endTime)) {
+				if (!int.TryParse(data[2], out var endTime)) {
 					failureMessage = $"Cannot parse end time for break section at line {lineNumber}";
 					return false;
 				}

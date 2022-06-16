@@ -3,6 +3,7 @@
 	using System.IO;
 	using System.Linq;
 	using BeatmapObjects;
+	using OsuDiffCalc.Utility;
 
 	class TimingParser : ParserBase {
 		/// <summary>
@@ -28,44 +29,44 @@
 				failureMessage = $"Incomplete timing point at line {lineNumber}";
 				return false;
 			}
-			if (!double.TryParse(data[0], out double offset)) {
+			if (!float.TryParse(data[0], out var offset)) {
 				failureMessage = $"Could not parse offset for timing point at line {lineNumber}";
 				return false;
 			}
-			if (!double.TryParse(data[1], out double beatLength)) {
+			if (!float.TryParse(data[1], out var beatLength)) {
 				failureMessage = $"Could not parse beat length for timing point at line {lineNumber}";
 				return false;
 			}
 			// NOTE: the .osu file format requires timing points to be in chronological order
-			TimingPoint lastTimingPoint = beatmap.TimingPoints.Count != 0 ? beatmap.TimingPoints[^1] : null;
+			TimingPoint? lastTimingPoint = beatmap.TimingPoints.LastOrDefaultS();
 			bool isInherited;
-			if (data.Length > 6 && double.TryParse(data[6], out double uninherited))
-				isInherited = (int)Math.Round(uninherited) == 0 || (beatLength < 0 && lastTimingPoint is not null);
+			if (data.Length > 6 && int.TryParse(data[6], out var uninherited))
+				isInherited = uninherited == 0 || (beatLength < 0 && lastTimingPoint.HasValue);
 			else
 				isInherited = beatLength < 0;
-			var timingPoint = new TimingPoint(offset, beatLength, isInherited, lastTimingPoint, beatmap.SliderMultiplier);
+			var timingPoint = TimingPoint.Create(offset, beatLength, isInherited, lastTimingPoint, beatmap.SliderMultiplier);
 			beatmap.AddTiming(timingPoint);
 			return true;
 		}
 
-		public static double GetEffectiveBPM(double bpm, double msPerBeat) {
+		public static float GetEffectiveBPM(float bpm, float msPerBeat) {
 			// inherited timing point
 			if (msPerBeat < 0)
-				return bpm * (-100.0) / msPerBeat;
+				return bpm * (-100f) / msPerBeat;
 			// independent timing point
 			else
 				return bpm;
 		}
 
-		public static double GetBPM(double msPerBeat) {
-			return 60000.0 / msPerBeat;
+		public static float GetBPM(float msPerBeat) {
+			return 60000f / msPerBeat;
 		}
 
-		public static double GetMsPerBeat(double bpm) {
-			return 60000.0 / bpm;
+		public static float GetMsPerBeat(float bpm) {
+			return 60000f / bpm;
 		}
 
-		public static string GetTimeStamp(double ms, bool hours = false) {
+		public static string GetTimeStamp(float ms, bool hours = false) {
 			var ts = TimeSpan.FromMilliseconds(ms);
 			return ts.Hours != 0 
 				? $"{ts.Hours:00}:{ts.Minutes:00}:{ts.Seconds:00}.{ts.Milliseconds:000}"

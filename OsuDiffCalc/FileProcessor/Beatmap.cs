@@ -13,11 +13,11 @@
 		public string Title, Artist, Creator, Version;
 		public string Filepath, Mp3FileName;
 		public string BackgroundImage;
-		public double ApproachRate = -1, CircleSize = -1, HpDrain = -1, OverallDifficulty = -1;
-		public double SliderMultiplier = -1, SliderTickRate = -1;
-		public double MarginOfErrorMs300; // time window for a 300
-		public double MarginOfErrorMs50; // time window for a 50
-		public double CircleSizePx; // actual circle size
+		public float ApproachRate = -1, CircleSize = -1, HpDrain = -1, OverallDifficulty = -1;
+		public float SliderMultiplier = -1, SliderTickRate = -1;
+		public float MarginOfErrorMs300; // time window for a 300
+		public float MarginOfErrorMs50; // time window for a 50
+		public float CircleSizePx; // actual circle size
 		public int Format = -1; // osu file format version
 		public int Mode = -1; // osu!standard == 0, taiko == ?, ctb == ?, mania == ? etc.
 		public bool IsAnalyzed;
@@ -69,7 +69,7 @@
 			NumBreakSections++;
 		}
 
-		public TimingPoint GetTiming(HitObject obj, bool startTime = true) {
+		public TimingPoint? GetTiming(HitObject obj, bool startTime = true) {
 			double time = startTime ? obj.StartTime : obj.EndTime;
 			int maxIndex = -1;
 			int numTimingPoints = TimingPoints.Count;
