@@ -104,12 +104,12 @@
 			PxPerSecond = TotalLength * 1000.0 / time;
 			// get x2, y2
 			if (NumSlides % 2 == 0) {
-				X2 = Points[^1].X; // TODO: these are approximations
-				Y2 = Points[^1].Y;
+				var lastPoint = path?.CalculatedPath.LastOrDefaultS() ?? ControlPoints[^1];
+				(X2, Y2) = (lastPoint.X, lastPoint.Y);
 			}
 			else {
-				X2 = Points[0].X; // TODO: these are approximations
-				Y2 = Points[0].Y;
+				var firstPoint = path?.CalculatedPath.FirstOrDefaultS() ?? ControlPoints[0];
+				(X2, Y2) = (firstPoint.X, firstPoint.Y);
 			}
 		}
 	}

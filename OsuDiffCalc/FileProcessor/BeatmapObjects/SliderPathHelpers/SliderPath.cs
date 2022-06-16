@@ -11,8 +11,6 @@ using System.Threading.Tasks;
 using OsuDiffCalc.Utility;
 
 namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
-	using static SliderPathExtensions;
-
 	public class SliderPath {
 		/// <summary>
 		/// The current version of this <see cref="SliderPath"/>. Updated when any change to the path occurs.
@@ -23,7 +21,13 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		/// The user-set distance of the path. If non-null, <see cref="Distance"/> will match this value,
 		/// and the path will be shortened/lengthened to match this length.
 		/// </summary>
-		public double? ExpectedDistance { get; } = null;
+		public double? ExpectedDistance {
+			get => expectedDistance;
+			set {
+				invalidate();
+				expectedDistance = value;
+			}
+		}
 
 		public bool HasValidLength => Distance > 0;
 
@@ -31,11 +35,22 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		/// The control points of the path.
 		/// </summary>
 		public IReadOnlyList<PathControlPoint> ControlPoints => controlPoints;
-			
+
+		/// <summary>
+		/// The caclulated path
+		/// </summary>
+		public IReadOnlyList<Vector2> CalculatedPath {
+			get {
+				ensureValid();
+				return calculatedPath;
+			}
+		}
+		
 		private readonly List<PathControlPoint> controlPoints = new();
 		private readonly List<Vector2> calculatedPath = new();
 		private readonly List<double> cumulativeLength = new();
-		private bool isValid = false;
+		private double? expectedDistance = null;
+		private int cachedNumberOfControlPoints = -1;
 
 		private double calculatedLength;
 
@@ -150,18 +165,17 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		}
 
 		private void invalidate() {
-			isValid = false;
+			cachedNumberOfControlPoints = -1;
 			Version++;
 		}
 
 		private void ensureValid() {
-			if (isValid)
+			if (cachedNumberOfControlPoints == ControlPoints.Count)
 				return;
 
 			calculatePath();
 			calculateLength();
-
-			isValid = true;
+			cachedNumberOfControlPoints = ControlPoints.Count;
 		}
 
 		private void calculatePath() {
