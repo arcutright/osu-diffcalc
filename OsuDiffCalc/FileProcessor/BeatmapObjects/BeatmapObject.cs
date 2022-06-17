@@ -1,23 +1,18 @@
 ﻿namespace OsuDiffCalc.FileProcessor.BeatmapObjects {
 	using System;
+	using System.Collections.Generic;
 	using FileParserHelpers;
 
 	/// <summary>
 	/// An object in a beatmap which has a defined start and end time
 	/// </summary>
-	abstract class BeatmapObject : IComparable<BeatmapObject> {
-		public BeatmapObject(int startTime, int endTime) {
-			StartTime = startTime;
-			EndTime = endTime;
-		}
-
-		/// <summary> Start time for the object </summary>
-		public int StartTime { get; protected init; }
-		/// <summary> End time for the object </summary>
-		public int EndTime { get; protected set; }
+	/// <param name="StartTime"> Start time for the object in ms </param>
+	/// <param name="EndTime"> End time for the object in ms </param>
+	abstract record BeatmapObject(int StartTime, int EndTime) : IComparable<BeatmapObject> {
+		/// <summary> End time for the object in ms </summary>
+		public int EndTime { get; protected set; } = EndTime;
 
 		public int CompareTo(BeatmapObject other) {
-			if (other is null) return 2;
 			return StartTime != other.StartTime
 				? StartTime.CompareTo(other.StartTime)
 				: EndTime.CompareTo(other.EndTime);

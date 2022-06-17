@@ -5,11 +5,11 @@
 	using OsuDiffCalc.Utility;
 	using SliderPathHelpers;
 
-	class Slider : HitObject {
-		public Slider(float x, float y, int startTime, string sliderType, float pixelLength, int numSlides, 
-			            List<Vector2> points)
+	record Slider : HitObject {
+		public Slider(int x, int y, int startTime, string sliderType, float pixelLength, int numSlides, 
+			            List<Vector2> controlPoints)
 			     : base(x, y, startTime, startTime) {
-			ControlPoints = points;
+			ControlPoints = new(controlPoints);
 			NumSlides = numSlides;
 			PixelLength = pixelLength;
 			TotalLength = pixelLength * numSlides;
@@ -24,9 +24,9 @@
 				'P' => PathType.PerfectCircle,
 				_ => PathType.Bezier, // TODO: is this the default for old osu maps?
 			};
-			if (points.Count == 2) // 2 points can only define a line
+			if (controlPoints.Count == 2) // 2 points can only define a line
 				PathType = PathType.Linear;
-			else if (PathType == PathType.PerfectCircle && points.Count != 3) // perfect circle must be 3 points
+			else if (PathType == PathType.PerfectCircle && controlPoints.Count != 3) // perfect circle must be 3 points
 				PathType = PathType.Bezier;
 		}
 
@@ -40,7 +40,7 @@
 		/// <summary> Total length of the slider in osupixels, accounting for repeats </summary>
 		public double TotalLength { get; }
 		/// <summary> Control points of the slider measured in osupixels. Note that [0] is the start position (X, Y) </summary>
-		public IReadOnlyList<Vector2> ControlPoints { get; }
+		public EquatableReadOnlyList<Vector2> ControlPoints { get; }
 		/// <summary> Type of path used to construct this slider. </summary>
 		public PathType PathType { get; }
 		/// <summary> Speed of the slider in in osupixels/second </summary>
@@ -55,7 +55,7 @@
 		/// </summary>
 		/// <param name="timingPoint"> Timing point for this slider </param>
 		/// <param name="sliderMultiplier"> Beatmap slider base multiplier (constant) </param>
-		internal void AnalyzeShape(in TimingPoint timingPoint, float sliderMultiplier) {
+		internal void AnalyzeShape(TimingPoint timingPoint, float sliderMultiplier) {
 			/* From the updated osu!wiki, 2021-01-25:
 			 * If the slider's length is longer than the defined curve, the slider will extend until it reaches the target length:
 			 *   For bézier, catmull, and linear curves, it continues in a straight line from the end of the curve.
@@ -75,7 +75,7 @@
 			 * same spline(*):        '204,144,6525,2,0,B|261:58|261:58|226:214|226:214|319:80|319:80|320:248|320:248|383:84|383:84|386:272|386:272|448:159,1,1087.50000432133'
 			 * (*) moved the requested end point but barely affected the position of the end circle (which was 'rounded up' past the requested end point)
 			 */
-
+			
 			int n = ControlPoints.Count;
 			SliderPath path = null;
 			var pathPoints = new PathControlPoint[n];

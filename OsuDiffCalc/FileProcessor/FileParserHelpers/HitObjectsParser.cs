@@ -18,11 +18,11 @@
 				failureMessage = $"Incomplete HitObject at line {lineNumber}";
 				return false;
 			}
-			if (!float.TryParse(data[0], out var x)) {
+			if (!int.TryParse(data[0], out var x)) {
 				failureMessage = $"Cannot parse x for HitObject at line {lineNumber}";
 				return false;
 			}
-			if (!float.TryParse(data[1], out var y)) {
+			if (!int.TryParse(data[1], out var y)) {
 				failureMessage = $"Cannot parse y for HitObject at line {lineNumber}";
 				return false;
 			}
@@ -92,7 +92,7 @@
 					failureMessage = $"Could not parse end time for spinner at line {lineNumber}";
 					return false;
 				}
-				beatmap.Add(new Spinner(x, y, time, endTime));
+				beatmap.Add(new Spinner(time, endTime));
 			}
 			else {
 				failureMessage = $"Unsupported HitObject at line {lineNumber} :: {TimingParser.GetTimeStamp(time)}:  xy({x} {y})  type:{type}";

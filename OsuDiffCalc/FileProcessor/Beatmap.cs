@@ -6,7 +6,8 @@
 
 	class Beatmap : IDisposable {
 		private bool _isDisposed;
-
+		// https://osu.ppy.sh/wiki/en/Client/Beatmap_editor/osu%21_pixel
+		// TODO: should this be 640x480?
 		public const int MaxX = 512;
 		public const int MaxY = 384;
 
@@ -46,7 +47,9 @@
 			Version = version;
 		}
 
-		public void Add(BeatmapObject obj) {
+		public bool Add(BeatmapObject obj) {
+			if (BeatmapObjects.Count != 0 && BeatmapObjects[^1] == obj)
+				return false;
 			BeatmapObjects.Add(obj);
 			if (obj is not BreakSection) {
 				if (obj is Hitcircle)
@@ -57,19 +60,26 @@
 					NumSpinners++;
 				NumHitObjects++;
 			}
+			return true;
 		}
 
-		public void AddTiming(TimingPoint timingPoint) {
+		public bool AddTiming(TimingPoint timingPoint) {
+			if (TimingPoints.Count != 0 && TimingPoints[^1] == timingPoint)
+				return false;
 			TimingPoints.Add(timingPoint);
 			NumTimingPoints++;
+			return true;
 		}
 
-		public void AddBreak(BreakSection breakSection) {
+		public bool AddBreak(BreakSection breakSection) {
+			if (BreakSections.Count != 0 && BreakSections[^1] == breakSection)
+				return false;
 			BreakSections.Add(breakSection);
 			NumBreakSections++;
+			return true;
 		}
 
-		public TimingPoint? GetTiming(HitObject obj, bool startTime = true) {
+		public TimingPoint GetTiming(HitObject obj, bool startTime = true) {
 			double time = startTime ? obj.StartTime : obj.EndTime;
 			int maxIndex = -1;
 			int numTimingPoints = TimingPoints.Count;

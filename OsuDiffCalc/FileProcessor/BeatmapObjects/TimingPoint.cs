@@ -3,9 +3,19 @@
 	using System.Text;
 	using FileParserHelpers;
 
-	readonly record struct TimingPoint(float Offset = -1, float Bpm = -1, float EffectiveSliderBPM = -1, float MsPerBeat = -1)
-		                                : IComparable<TimingPoint>, IComparable<TimingPoint?> {
-		public static TimingPoint Create(float offset, float beatLength, bool isInherited, TimingPoint? prevTimingPoint, float beatmapSliderMultiplier) {
+	/// <summary>
+	/// A new timing point for the map
+	/// </summary>
+	/// <param name="Offset">
+	/// Start time of the timing section, in milliseconds from the beginning of the beatmap's audio.
+	/// The end of the timing section is the next timing point's time (or never, if this is the last timing point).
+	/// </param>
+	/// <param name="Bpm"> Beats per minute </param>
+	/// <param name="EffectiveSliderBPM"> Effective bpm for sliders including velocity multipliers </param>
+	/// <param name="MsPerBeat"></param>
+	record TimingPoint(int Offset = -1, float Bpm = -1, float EffectiveSliderBPM = -1, float MsPerBeat = -1)
+		                 : IComparable<TimingPoint> {
+		public static TimingPoint Create(int offset, float beatLength, bool isInherited, TimingPoint prevTimingPoint, float beatmapSliderMultiplier) {
 			float msPerBeat, bpm, effectiveSliderBPM;
 
 			// new timing point
@@ -29,16 +39,11 @@
 		}
 
 		public int CompareTo(TimingPoint other) {
+			if (other is null) return 2;
 			return Offset.CompareTo(other.Offset);
 		}
 
-		public int CompareTo(TimingPoint? other) {
-			if (!other.HasValue) return 2;
-			return CompareTo(other.Value);
-		}
-
-		public override string ToString() {
-			return $"{TimingParser.GetTimeStamp(Offset)}   msPerBeat:{MsPerBeat:0.00}   bpm:{Bpm:0.0}   effectiveSliderBPM:{EffectiveSliderBPM:0.0}";
-		}
+		public override string ToString()
+			=> $"{TimingParser.GetTimeStamp(Offset)}   msPerBeat:{MsPerBeat:f2}   bpm:{Bpm:f1}   effectiveSliderBPM:{EffectiveSliderBPM:f1}";
 	}
 }

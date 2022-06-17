@@ -24,7 +24,7 @@
 			// analyze slider shape and speed (requires timing points)
 			int timingPointIndex = 0;
 			TimingPoint timingPoint = beatmap.TimingPoints[0];
-			foreach (BeatmapObject obj in beatmap.BeatmapObjects) {
+			foreach (var obj in beatmap.BeatmapObjects) {
 				if (obj is not Slider slider) continue;
 				// find current timing point
 				if (timingPointIndex < beatmap.NumTimingPoints) {
@@ -33,7 +33,7 @@
 					}
 					timingPoint = beatmap.TimingPoints[timingPointIndex];
 				}
-				slider.AnalyzeShape(in timingPoint, beatmap.SliderMultiplier);
+				slider.AnalyzeShape(timingPoint, beatmap.SliderMultiplier);
 			}
 
 			// analysis variables
@@ -46,13 +46,12 @@
 			var shape = new Shape();
 			var lastShape = new Shape();
 			HitObject lastHitObject = null;
-			bool shapeAdded = false;
 
 			var jumpDifficultyList = new List<float>();
 			var sliderDifficultyList = new List<float>();
 
 			// macro to make life easier
-			void addShapeToAppropriateList() {
+			void addShapeToAppropriateList(Shape shape) {
 				shape.Analyze();
 				shape.PrevShape = lastShape;
 				if (shape.NumObjects == 2) {
@@ -60,11 +59,12 @@
 					doubles.Add(shape);
 					UpdateMin(ref minDoubleAvgMs, shape.AvgTimeGapMs);
 				}
-				else if (shape.NumObjects < MinBurstLength) {
-					shape.Type = Shape.ShapeType.Triplet;
-					triplets.Add(shape);
-					UpdateMin(ref minTripletAvgMs, shape.AvgTimeGapMs);
-				}
+				// currently considering a triplet as a burst
+				//else if (shape.NumObjects < MinBurstLength) { 
+				//	shape.Type = Shape.ShapeType.Triplet;
+				//	triplets.Add(shape);
+				//	UpdateMin(ref minTripletAvgMs, shape.AvgTimeGapMs);
+				//}
 				else if (shape.NumObjects < MinStreamLength) {
 					shape.Type = Shape.ShapeType.Burst;
 					bursts.Add(shape);
@@ -76,17 +76,17 @@
 					UpdateMin(ref minStreamAvgMs, shape.AvgTimeGapMs);
 				}
 				lastShape = shape;
-				shapeAdded = true;
 			}
 
 			foreach (var obj in beatmap.BeatmapObjects) {
-				shapeAdded = false;
 				// TODO: fast spinners can act like jumps
 				// TODO: calculate spinner properties (min speed for 300, 100, etc -- include some 'get to spinner' margin)
-				if (obj is Slider or Hitcircle) {
-					var hitObj = obj as HitObject;
+				if (obj is HitObject hitObj) {
+					// first hit object
+					if (lastHitObject is null)
+						shape.Add(hitObj);
 					// shape analysis for triplet, streams, etc
-					if (lastHitObject is not null) {
+					else {
 						//second object
 						if (shape.NumObjects == 1)
 							shape.Add(hitObj);
@@ -97,14 +97,11 @@
 								shape.Add(hitObj);
 							//end of stream, start of new stream
 							else {
-								addShapeToAppropriateList();
+								addShapeToAppropriateList(shape);
 								shape = new Shape(lastHitObject, hitObj);
 							}
 						}
 					}
-					//first hit object
-					else
-						shape.Add(hitObj);
 					// slider difficulty
 					if (hitObj is Slider slider)
 						sliderDifficultyList.Add(GetSliderDifficulty(slider, beatmap));
@@ -114,12 +111,15 @@
 
 					lastHitObject = hitObj;
 				}
-				//obj is not a hit object
-				else
-					addShapeToAppropriateList();
+				// obj is a Spinner, BreakSection, etc.
+				else if (shape.NumObjects != 0) {
+					addShapeToAppropriateList(shape);
+					shape = new();
+					lastHitObject = null;
+				}
 			}
-			if (!shapeAdded)
-				addShapeToAppropriateList();
+			if (shape.NumObjects != 0)
+				addShapeToAppropriateList(shape);
 
 			var streamsDiff = GetStreamsDifficulty(streams, minStreamAvgMs, beatmap);
 			var doublesDifficulty = GetDoublesDifficulty(doubles, minDoubleAvgMs, beatmap);
@@ -164,7 +164,7 @@
 
 		private readonly record struct StreamsResult(double Difficulty, float AverageBPM, float MaxBPM);
 
-		static StreamsResult GetStreamsDifficulty(List<Shape> streams, double minStreamMs, Beatmap map) {
+		static StreamsResult GetStreamsDifficulty(IReadOnlyList<Shape> streams, double minStreamMs, Beatmap map) {
 			if (map is null || streams is null || streams.Count == 0)
 				return default;
 
@@ -210,7 +210,7 @@
 				return default;
 		}
 
-		static float GetDoublesDifficulty(List<Shape> doubles, float minDoubleMs, Beatmap map) {
+		static float GetDoublesDifficulty(IReadOnlyList<Shape> doubles, float minDoubleMs, Beatmap map) {
 			if (doubles.Count == 0)
 				return 0;
 
