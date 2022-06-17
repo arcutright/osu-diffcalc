@@ -1,6 +1,7 @@
 ﻿namespace OsuDiffCalc.FileProcessor.AnalyzerObjects {
 	using System;
 	using System.Collections.Generic;
+	using System.Linq;
 	using BeatmapObjects;
 	using FileParserHelpers;
 
@@ -8,7 +9,7 @@
 		protected List<HitObject> HitObjects = new();
 		protected float Effective1_4bpm = -1; //bpm when mapped at 1/4 time-spacing for 4/4 timing
 		public float AvgTimeGapMs = 0;
-		public float TotalDistancePx = 0;
+		public double TotalDistancePx = 0;
 		public float AvgDistancePx = 0;
 		public float MinDistancePx = -1, MaxDistancePx = -1;
 		public ShapeType Type;
@@ -21,39 +22,33 @@
 		public Shape() {
 		}
 
-		public Shape(params HitObject[] objs) : this() {
-			foreach (HitObject obj in objs) {
-				Add(obj);
-			}
-			Analyze();
+		public Shape(HitObject start, HitObject next) : this() {
+			Add(start);
+			Add(next);
 		}
 
 		public void Add(HitObject obj) {
 			HitObjects.Add(obj);
-		}
 
-		/// <summary>
-		/// Analyze timing and distance between shape objects 
-		/// </summary>
-		public void Analyze() {
-			// TODO: actual shape-analysis logic (will also want to be able to analyze non-constant-timing shapes)
-			if (HitObjects.Count == 0)
-				return;
+			int n = HitObjects.Count;
 
-			StartTime = HitObjects[0].StartTime;
-			EndTime = HitObjects[^1].EndTime;
+			// update start and end time
+			if (n == 1 || StartTime < 0)
+				StartTime = HitObjects.First().StartTime;
+			EndTime = obj.EndTime;
 
-			if (HitObjects.Count >= 2) {
-				// update avg time gap
-				// if the second to last uses endTime instead of startTime, stream detection will consider ends of sliders as continuing the stream
-				int lastTimeGapMs = HitObjects[NumObjects - 1].StartTime - HitObjects[NumObjects - 2].StartTime;
-				AvgTimeGapMs = (AvgTimeGapMs * (NumObjects - 2) + lastTimeGapMs) / (NumObjects - 1);
+			if (n >= 2) {
+				var prevObj = HitObjects[n - 2];
+
+				// update average time spacing 
+				int lastTimeGapMs = obj.StartTime - prevObj.StartTime;
+				AvgTimeGapMs = (AvgTimeGapMs * (n - 2) + lastTimeGapMs) / (n - 1);
 
 				// update distances
-				float lastDistanceX = HitObjects[NumObjects - 1].X - HitObjects[NumObjects - 2].X;
-				float lastDistanceY = HitObjects[NumObjects - 1].Y - HitObjects[NumObjects - 2].Y;
+				float lastDistanceX = obj.X - prevObj.X;
+				float lastDistanceY = obj.Y - prevObj.Y;
 				float lastDistance = (float)Math.Sqrt((lastDistanceX * lastDistanceX) + (lastDistanceY * lastDistanceY));
-				AvgDistancePx = (AvgDistancePx * (NumObjects - 2) + lastDistance) / (NumObjects - 1);
+				AvgDistancePx = (AvgDistancePx * (n - 2) + lastDistance) / (n - 1);
 				TotalDistancePx += lastDistance;
 
 				if (MinDistancePx < 0 || lastDistance < MinDistancePx)
@@ -61,6 +56,13 @@
 				if (MaxDistancePx < 0 || lastDistance > MaxDistancePx)
 					MaxDistancePx = lastDistance;
 			}
+		}
+
+		/// <summary>
+		/// Analyze timing and distance between shape objects 
+		/// </summary>
+		public void Analyze() {
+			// TODO: actual shape-analysis logic (may also want to be able to analyze non-constant-timing shapes)
 		}
 
 		public float GetEffectiveBPM() {
