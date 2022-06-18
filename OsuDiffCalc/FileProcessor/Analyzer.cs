@@ -27,11 +27,11 @@
 			foreach (var obj in beatmap.BeatmapObjects) {
 				if (obj is not Slider slider) continue;
 				// find current timing point
-				if (timingPointIndex < beatmap.NumTimingPoints) {
-					while (timingPointIndex < beatmap.NumTimingPoints - 1 && slider.StartTime > beatmap.TimingPoints[timingPointIndex].Offset) {
+				while (timingPointIndex < beatmap.TimingPoints.Count && slider.StartTime >= beatmap.TimingPoints[timingPointIndex].Offset) {
+					timingPoint = beatmap.TimingPoints[timingPointIndex];
 						++timingPointIndex;
 					}
-					timingPoint = beatmap.TimingPoints[timingPointIndex];
+				slider.AnalyzeShape(timingPoint);
 				}
 				slider.AnalyzeShape(timingPoint, beatmap.SliderMultiplier);
 			}

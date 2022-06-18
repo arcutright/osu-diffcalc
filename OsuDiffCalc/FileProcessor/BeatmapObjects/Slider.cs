@@ -45,6 +45,8 @@
 		public PathType PathType { get; }
 		/// <summary> Speed of the slider in in osupixels/second </summary>
 		public double PxPerSecond { get; private set; }
+		/// <inheritdoc cref="TimingPoint.MsPerBeat"/>
+		public double MsPerBeat { get; private set; }
 		/// <summary> X end position in osupixels </summary>
 		public float X2 { get; private set; }
 		/// <summary> Y end position in osupixels </summary>
@@ -54,8 +56,7 @@
 		/// Find the end point and end time for the slider (requires timing information)
 		/// </summary>
 		/// <param name="timingPoint"> Timing point for this slider </param>
-		/// <param name="sliderMultiplier"> Beatmap slider base multiplier (constant) </param>
-		internal void AnalyzeShape(TimingPoint timingPoint, float sliderMultiplier) {
+		internal void AnalyzeShape(TimingPoint timingPoint) {
 			/* From the updated osu!wiki, 2021-01-25:
 			 * If the slider's length is longer than the defined curve, the slider will extend until it reaches the target length:
 			 *   For bézier, catmull, and linear curves, it continues in a straight line from the end of the curve.
@@ -87,7 +88,7 @@
 				}
 			}
 			try {
-				path = new SliderPath(pathPoints, TotalLength);
+				path = new SliderPath(pathPoints, TotalLength / NumSlides);
 			}
 			catch (Exception ex) {
 				Console.WriteLine("Exception in SliderPath calculation:");
@@ -95,9 +96,9 @@
 			}
 
 			// calculate end time of slider
-			double sliderVelocityMultiplier = timingPoint.EffectiveSliderBPM / timingPoint.Bpm;
-			double calculatedEndTime = StartTime + (TotalLength / (100.0f * sliderMultiplier * sliderVelocityMultiplier) * timingPoint.MsPerBeat);
-			EndTime = (int)Math.Round(calculatedEndTime, MidpointRounding.AwayFromZero);
+			MsPerBeat = timingPoint.MsPerBeat;
+			double slideTime = TotalLength / (100.0 * timingPoint.SliderVelocityMultiplier) * timingPoint.MsPerBeat;
+			EndTime = (int)Math.Round(StartTime + slideTime, MidpointRounding.AwayFromZero);
 
 			// calculate the speed in px/s
 			var time = Math.Max(EndTime - StartTime, 1);
