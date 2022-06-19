@@ -100,6 +100,8 @@
   <ItemGroup>
     <Compile Include="CSharp9Features.cs" />
     <Compile Include="EquatableReadOnlyList.cs" />
+    <Compile Include="FileProcessor\AnalyzerObjects\SeriesPoint.cs" />
+    <Compile Include="FileProcessor\AnalyzerObjects\SeriesPointCollection.cs" />
     <Compile Include="FileProcessor\BeatmapObjects\SliderPathHelpers\Interpolation.cs" />
     <Compile Include="FileProcessor\BeatmapObjects\SliderPathHelpers\PathApproximator.cs" />
     <Compile Include="FileProcessor\BeatmapObjects\SliderPathHelpers\PathControlPoint.cs" />

@@ -615,13 +615,11 @@
 			bool prevPauseAllTasks = _pauseAllTasks;
 			try {
 				_pauseAllTasks = true;
-				if (!_chartedBeatmap.DiffRating.IsNormalized)
-					_chartedBeatmap.DiffRating.NormalizeSeries();
 				Invoke((MethodInvoker)delegate {
 					SetText(StreamBpmLabel, $"{_chartedBeatmap.DiffRating.StreamsMaxBPM:f0}");
 					SetText(StatusStripLabel, $"{_chartedBeatmap.Artist} - {_chartedBeatmap.Title}");
 					// remove any unexpected series
-					Series[] allSeries = _chartedBeatmap.DiffRating.AllSeries.Select(tup => tup.Series).ToArray();
+					Series[] allSeries = _chartedBeatmap.DiffRating.GetAllSeries();
 					var toRemove = Chart.Series.Where(series => Array.IndexOf(allSeries, series) == -1).ToArray(); // .ToArray() to avoid collection-was-modified
 					foreach (var series in toRemove) {
 						Chart.Series.Remove(series);
@@ -1290,9 +1288,17 @@
 				if (_currentMapsetDirectory != _prevMapsetDirectory && Directory.Exists(_currentMapsetDirectory)) {
 					//analyze the mapset
 					Mapset set = MapsetManager.AnalyzeMapset(_currentMapsetDirectory, this, true, EnableXmlCache);
-					//show info on GUI
+					// show on GUI
+					var prevSet = _displayedMapset;
 					DisplayMapset(set);
 					_prevMapsetDirectory = _currentMapsetDirectory;
+
+					// clear previously cached Series
+					if (set != prevSet && prevSet is not null) {
+						foreach (var map in prevSet.Beatmaps) {
+							map.DiffRating.ClearCachedSeries();
+						}
+					}
 				}
 			}
 		}

@@ -5,31 +5,33 @@
 	using System.Windows.Forms.DataVisualization.Charting;
 
 	class DifficultyRating : IDisposable {
-		private readonly Series
-			_jumpsSeries = BuildSeries("Jumps"),
-			_streamsSeries = BuildSeries("Streams"),
-			_burstsSeries = BuildSeries("Bursts"),
-			_slidersSeries = BuildSeries("Sliders"),
-			_doublesSeries = BuildSeries("Doubles", false);
-
-		private readonly SeriesPointCollection
-			_jumps = new(64),
-			_streams = new(64),
-			_bursts = new(64),
-			_doubles = new(64),
-			_sliders = new(64);
-
-		private readonly HashSet<float> _allSeriesXValues = new(1024);
 		private bool _isDisposed;
 
+		private readonly SeriesPointCollection
+			_jumps   = new("Jumps",   64),
+			_streams = new("Streams", 64),
+			_bursts  = new("Bursts",  64),
+			_doubles = new("Sliders", 64),
+			_sliders = new("Doubles", 64) { IsEnabled = false };
+
+		/// <summary>
+		/// List of (raw list of individual points) <br/>
+		/// where each point is (X: start time in seconds, Y: difficulty)
+		/// </summary>
+		private readonly SeriesPointCollection[] _allSeriesPoints;
+		private readonly object _pointsLock = new();
+
+		private readonly HashSet<float> _allSeriesXValues = new(1024);
+		private bool _areSeriesPrepared;
+		private bool _arePointsPrepared;
+
 		public DifficultyRating() { 
-			// Note: this controls which order the series will show up (when using Column display, inverted for StackedColumn)
-			AllSeries = new() {
-				(_jumpsSeries, _jumps),
-				(_streamsSeries, _streams),
-				(_burstsSeries, _bursts),
-				(_slidersSeries, _sliders),
-				(_doublesSeries, _doubles),
+			_allSeriesPoints = new[] {
+				_jumps,
+				_streams,
+				_bursts,
+				_sliders,
+				_doubles,
 			};
 		}
 
@@ -47,8 +49,6 @@
 			return 0.5 * Math.Pow(rating, 0.4);
 		}
 
-		public bool IsNormalized { get; private set; }
-
 		public double JumpsDifficulty { get; set; }
 		public double StreamsDifficulty { get; set; }
 		public double BurstsDifficulty { get; set; }
@@ -62,12 +62,6 @@
 		/// <summary> Average BPM of streams/bursts for 1/4 notes </summary>
 		public double StreamsAverageBPM { get; set; }
 
-		/// <summary>
-		/// List of (series, raw list of individual points) <br/>
-		/// where each point is (X: start time in seconds, Y: difficulty)
-		/// </summary>
-		public List<(Series Series, SeriesPointCollection Points)> AllSeries { get; }
-
 		/// <summary> Raw list of individual jump difficulties (X: start time in seconds, Y: difficulty). May be different length than other raw lists. </summary>
 		public SeriesPointCollection Jumps => _jumps;
 		/// <summary> Raw list of individual stream difficulties (X: start time in seconds, Y: difficulty). May be different length than other raw lists. </summary>
@@ -79,34 +73,51 @@
 		/// <summary> Raw list of individual slider difficulties (X: start time in seconds, Y: difficulty). May be different length than other raw lists. </summary>
 		public SeriesPointCollection Sliders => _sliders;
 
-		/// <summary> Noramlized series of jump difficulties (X: start time in seconds, Y: difficulty). Will be the same length as other *Series (an (x, 0) point is added where there was none). </summary>
-		public Series JumpsSeries => GetNormalizedSeries(_jumpsSeries);
-		/// <summary> Noramlized series of stream difficulties (X: start time in seconds, Y: difficulty). Will be the same length as other *Series (an (x, 0) point is added where there was none). </summary>
-		public Series StreamsSeries => GetNormalizedSeries(_streamsSeries);
-		/// <summary> Noramlized series of burst difficulties (X: start time in seconds, Y: difficulty). Will be the same length as other *Series (an (x, 0) point is added where there was none). </summary>
-		public Series BurstsSeries => GetNormalizedSeries(_burstsSeries);
-		/// <summary> Noramlized series of doubles difficulties (X: start time in seconds, Y: difficulty). Will be the same length as other *Series (an (x, 0) point is added where there was none). </summary>
-		public Series DoublesSeries => GetNormalizedSeries(_doublesSeries);
-		/// <summary> Noramlized series of slider difficulties (X: start time in seconds, Y: difficulty). Will be the same length as other *Series (an (x, 0) point is added where there was none). </summary>
-		public Series SlidersSeries => GetNormalizedSeries(_slidersSeries);
-
-		private Series GetNormalizedSeries(Series series) {
-			if (!IsNormalized)
-				NormalizeSeries();
-			return series;
+		public Series[] GetAllSeries() {
+			// Note: this controls which order the series will show up (when using Column display, inverted for StackedColumn)
+			lock (_pointsLock) {
+				return new[] {
+					GetNormalizedSeries(_jumps),
+					GetNormalizedSeries(_streams),
+					GetNormalizedSeries(_bursts),
+					GetNormalizedSeries(_sliders),
+					GetNormalizedSeries(_doubles),
+				};
+			}
 		}
 
-		public IEnumerable<string> GetSeriesNames() => AllSeries.Select(tup => tup.Series.Name);
+		/// <summary>
+		/// Removes the havier 'Series' objects but keeps the underlying points.
+		/// Will rebuild the Series the next time they are requested. <br/>
+		/// This is intended to be used to reduce memory size for caches when switching active maps.
+		/// </summary>
+		public void ClearCachedSeries() {
+			lock (_pointsLock) {
+				foreach (var points in _allSeriesPoints) {
+					if (points.Series is not null) {
+						points.Series.Points.Dispose();
+						points.Series.Points.Clear();
+						points.Series.Dispose();
+						points.Series = null;
+					}
+				}
+				_areSeriesPrepared = false;
+			}
+		}
+
+		private Series GetNormalizedSeries(SeriesPointCollection points) {
+			if (points is null)
+				return null;
+			if (!_areSeriesPrepared || points.Series is null)
+				PrepareAllSeries();
+			return points.Series;
+		}
 
 		public Series GetSeriesByName(string name) {
-			return name switch {
-				"Jumps" => JumpsSeries,
-				"Streams" => StreamsSeries,
-				"Bursts" => BurstsSeries,
-				"Doubles" => DoublesSeries,
-				"Sliders" => SlidersSeries,
-				_ => null
-			};
+			var points = _allSeriesPoints.Where(points =>
+				string.Compare(points.Name, name, StringComparison.OrdinalIgnoreCase) == 0
+			).FirstOrDefault();
+			return GetNormalizedSeries(points);
 		}
 
 		public void AddJump(int timeMs, float difficulty) => Add(timeMs, difficulty, _jumps);
@@ -116,41 +127,50 @@
 		public void AddSlider(int timeMs, float difficulty) => Add(timeMs, difficulty, _sliders);
 
 		private void Add(int timeMs, float diff, SeriesPointCollection dest) {
-			float xValue = (float)(timeMs / 1000.0);
-			_allSeriesXValues.Add(xValue);
-			dest.Add(new SeriesPoint(xValue, diff));
-			dest.IsSeriesSynchronized = false;
-			IsNormalized = false;
+			lock (_pointsLock) {
+				float xValue = (float)(timeMs / 1000.0);
+				_allSeriesXValues.Add(xValue);
+				dest.Add(new SeriesPoint(xValue, diff));
+
+				if (_areSeriesPrepared)
+					ClearCachedSeries();
+				_areSeriesPrepared = false;
+				_arePointsPrepared = false;
+			}
 		}
 
 		/// <summary>
 		/// Sorts by x and adds a point (x, 0) to any series which is missing a point for all x in all other series. <br/>
 		/// In this way, all series will have the same number of points. This is needed for some charts to be valid.
 		/// </summary>
-		public void NormalizeSeries() {
-			if (IsNormalized) return;
-			SortAndAccumulatePointCollections();
-			BuildSeriesFromPointCollections();
-			IsNormalized = true;
+		private void PrepareAllSeries() {
+			lock (_pointsLock) {
+				if (_arePointsPrepared && _areSeriesPrepared) return;
+				SortAndAccumulatePointCollections();
+				BuildSeriesFromPointCollections();
+				_areSeriesPrepared = true;
+			}
 		}
 
 		private void SortAndAccumulatePointCollections() {
-			if (IsNormalized) return;
-			sortAndAccumulate(_jumps);
-			sortAndAccumulate(_streams);
-			sortAndAccumulate(_bursts);
-			sortAndAccumulate(_doubles);
-			sortAndAccumulate(_sliders);
+			lock (_pointsLock) {
+				if (_arePointsPrepared) return;
+				foreach (var points in _allSeriesPoints) {
+					sortAndAccumulate(points);
+				}
+				_arePointsPrepared = true;
+				_areSeriesPrepared = false;
+			}
 
 			//int n = _jumps.Count;
 			//bool countsEqual = _streams.Count == n && _bursts.Count == n && _doubles.Count == n && _sliders.Count == n;
 
 			// Sort + accumulate points which have the same X value by doing pt.Y = pt1.Y + pt2.Y
 			static void sortAndAccumulate(SeriesPointCollection points) {
-				if (points.IsSeriesSynchronized || points.Count <= 1) return;
+				if (points.Count <= 1) return;
 
 				points.Sort();
-				var points2 = new SeriesPointCollection(points.Count);
+				var points2 = new List<SeriesPoint>(points.Count);
 				var prevPoint = points[0];
 				for (int i = 1; i < points.Count; i++) {
 					if (points[i].X != prevPoint.X) {
@@ -172,7 +192,7 @@
 		}
 
 		private void BuildSeriesFromPointCollections() {
-			if (IsNormalized) return;
+			if (_areSeriesPrepared) return;
 
 			// for each series, add a point (x, 0) for all times that appear in any of the series
 			// this is needed for certain chart styles (each series having a point at each x value)
@@ -180,13 +200,10 @@
 			allSeriesXValues.Sort();
 
 			// populate the series & add dummy points as needed
-			foreach (var (series, points) in AllSeries) {
-				if (points.IsSeriesSynchronized) continue;
-				foreach (var pt in series.Points) {
-					pt?.Dispose();
-				}
-				series.Points.Clear();
+			foreach (var points in _allSeriesPoints) {
+				if (points.Series is not null) continue;
 				int nPoints = points.Count;
+				var series = new Series(points.Name);
 				int i = 0;
 				foreach (var x in allSeriesXValues) {
 					if (i < nPoints && points[i].X == x) {
@@ -201,9 +218,9 @@
 				}
 				if (i < nPoints)
 					throw new Exception($"Point collections became desynchronized. This indicates a bug in our code for this map");
-				points.IsSeriesSynchronized = true;
+				points.Series = series;
 			}
-			IsNormalized = true;
+			_areSeriesPrepared = true;
 		}
 
 		private static Series BuildSeries(string name, bool enabled = true) {
@@ -216,57 +233,15 @@
 			};
 		}
 
-		internal class SeriesPointCollection : List<SeriesPoint> {
-			public SeriesPointCollection() : base() { }
-			public SeriesPointCollection(int capacity) : base(capacity) { }
-			public SeriesPointCollection(IEnumerable<SeriesPoint> points) : base(points) { }
-
-			/// <summary>
-			/// <see langword="true"/> if the corresponding <see cref="Series"/> is synchronized from this point collection; otherwise, <see langword="false"/>
-			/// </summary>
-			public bool IsSeriesSynchronized { get; set; } = false;
-
-			/// <summary>
-			/// Returns the first index where <c>point.X == <paramref name="x"/></c>. <br/>
-			/// If <paramref name="ascending"/>, assumes this list is sorted and will break out once <c>point.X > <paramref name="x"/></c>
-			/// </summary>
-			/// <returns>index if point was found, otherwise -1</returns>
-			public int FindIndexOfX(double x, bool ascending = false) {
-				int n = Count;
-				if (ascending) {
-					for (int i = 0; i < n; ++i) {
-						if (this[i].X == x)
-							return i;
-						else if (this[i].X > x)
-							return -1;
-					}
-				}
-				else {
-					for (int i = 0; i < n; ++i) {
-						if (this[i].X == x)
-							return i;
-					}
-				}
-				return -1;
-			}
-
-			public override string ToString() => $"{GetType()} Count={Count}";
-		}
-
-		internal readonly record struct SeriesPoint(float X, float Y) : IComparable<SeriesPoint> {
-			public int CompareTo(SeriesPoint other) => X.CompareTo(other.X);
-		}
-
 		protected virtual void Dispose(bool disposing) {
 			if (!_isDisposed) {
 				if (disposing) {
-					_jumpsSeries.Dispose();
-					_streamsSeries.Dispose();
-					_burstsSeries.Dispose();
-					_doublesSeries.Dispose();
-					_slidersSeries.Dispose();
-					AllSeries.Clear();
 				}
+				ClearCachedSeries();
+				foreach (var points in _allSeriesPoints) {
+					points.Clear();
+				}
+				_allSeriesXValues.Clear();
 
 				_isDisposed = true;
 			}
@@ -274,7 +249,7 @@
 
 		public void Dispose() {
 			// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-			Dispose(disposing: true);
+			Dispose(true);
 			GC.SuppressFinalize(this);
 		}
 	}
