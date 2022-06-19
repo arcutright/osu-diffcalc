@@ -84,7 +84,7 @@
 					Mapset set = BuildSet(mapPaths);
 					Console.WriteLine("set built");
 
-					if (set.Beatmaps.Any()) {
+					if (set.Any()) {
 						set = AnalyzeMapset(set, clearLists, enableXml);
 						Console.WriteLine("mapset analyzed");
 					}

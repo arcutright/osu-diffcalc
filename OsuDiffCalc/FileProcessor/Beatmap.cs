@@ -14,10 +14,13 @@
 		public string Title, Artist, Creator, Version;
 		public string Filepath, Mp3FileName;
 		public string BackgroundImage;
-		public float ApproachRate = -1, CircleSize = -1, HpDrain = -1, OverallDifficulty = -1;
-		public float SliderMultiplier = -1, SliderTickRate = -1;
-		public float MarginOfErrorMs300; // time window for a 300
-		public float MarginOfErrorMs50; // time window for a 50
+		public double ApproachRate = -1, CircleSize = -1, HpDrain = -1, OverallDifficulty = -1;
+		/// <summary> Base slider velocity in hundreds of osupixels per beat </summary>
+		public double SliderMultiplier = -1;
+		/// <summary> Slider ticks per beat </summary>
+		public double SliderTickRate = -1;
+		public double MarginOfErrorMs300; // time window for a 300
+		public double MarginOfErrorMs50; // time window for a 50
 		public float CircleSizePx; // actual circle size
 		public int Format = -1; // osu file format version
 		public int Mode = -1; // osu!standard == 0, taiko == ?, ctb == ?, mania == ? etc.

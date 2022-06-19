@@ -6,18 +6,21 @@
 	using FileParserHelpers;
 
 	class Shape {
-		protected List<HitObject> HitObjects = new();
-		protected float Effective1_4bpm = -1; //bpm when mapped at 1/4 time-spacing for 4/4 timing
-		public float AvgTimeGapMs = 0;
+		protected readonly List<HitObject> _hitObjects = new();
+		protected double Effective1_4bpm = 0; //bpm when mapped at 1/4 time-spacing for 4/4 timing
+		public double AvgTimeGapMs = 0;
 		public double TotalDistancePx = 0;
 		public float AvgDistancePx = 0;
-		public float MinDistancePx = -1, MaxDistancePx = -1;
+		public float MinDistancePx = -1;
+		public float MaxDistancePx = -1;
+		public int StartTime = -1;
+		public int EndTime = -1;
 		public ShapeType Type;
-
-		public int NumObjects => HitObjects.Count;
-
-		public int StartTime = -1, EndTime = -1;
 		public Shape PrevShape = null;
+
+		public IReadOnlyList<HitObject> HitObjects => _hitObjects;
+		public int NumObjects => _hitObjects.Count;
+
 
 		public Shape() {
 		}
@@ -28,17 +31,17 @@
 		}
 
 		public void Add(HitObject obj) {
-			HitObjects.Add(obj);
+			_hitObjects.Add(obj);
 
-			int n = HitObjects.Count;
+			int n = _hitObjects.Count;
 
 			// update start and end time
 			if (n == 1 || StartTime < 0)
-				StartTime = HitObjects.First().StartTime;
+				StartTime = _hitObjects.First().StartTime;
 			EndTime = obj.EndTime;
 
 			if (n >= 2) {
-				var prevObj = HitObjects[n - 2];
+				var prevObj = _hitObjects[n - 2];
 
 				// update average time spacing 
 				int lastTimeGapMs = obj.StartTime - prevObj.StartTime;
@@ -65,16 +68,16 @@
 			// TODO: actual shape-analysis logic (may also want to be able to analyze non-constant-timing shapes)
 		}
 
-		public float GetEffectiveBPM() {
+		public double GetEffectiveBPM() {
 			Effective1_4bpm = TimingParser.GetBPM(4 * AvgTimeGapMs);
 			return Effective1_4bpm;
 		}
 
 		//check if next object has constant timing with the current stream
 		public int CompareTiming(int nextObjectStartTime) {
-			if (HitObjects.Count == 0)
+			if (_hitObjects.Count == 0)
 				return -2;
-			var timeGapMs = nextObjectStartTime - HitObjects[^1].StartTime;
+			var timeGapMs = nextObjectStartTime - _hitObjects[^1].StartTime;
 			var difference = timeGapMs - AvgTimeGapMs;
 			if (Math.Abs(difference) <= 20) //20ms margin of error = spacing for 3000bpm stream at 1/4 mapping
 				return 0;
@@ -85,7 +88,12 @@
 		}
 
 		public void Clear() {
-			HitObjects.Clear();
+			_hitObjects.Clear();
+			StartTime = EndTime = -1;
+			MinDistancePx = MaxDistancePx = -1;
+			Effective1_4bpm = 0;
+			AvgTimeGapMs = AvgDistancePx = 0;
+			TotalDistancePx = 0;
 		}
 
 		public void PrintDebug(string prepend = "", string append = "") {

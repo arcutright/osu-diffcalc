@@ -33,7 +33,7 @@
 				failureMessage = $"Could not parse offset for timing point at line {lineNumber}";
 				return false;
 			}
-			if (!float.TryParse(data[1], out var beatLength)) {
+			if (!double.TryParse(data[1], out var beatLength)) {
 				failureMessage = $"Could not parse beat length for timing point at line {lineNumber}";
 				return false;
 			}
@@ -49,21 +49,21 @@
 			return true;
 		}
 
-		public static float GetEffectiveBPM(float bpm, float msPerBeat) {
+		public static double GetEffectiveBPM(double bpm, double msPerBeat) {
 			// inherited timing point
 			if (msPerBeat < 0)
-				return bpm * (-100f) / msPerBeat;
+				return bpm * (-100 / msPerBeat);
 			// independent timing point
 			else
 				return bpm;
 		}
 
-		public static float GetBPM(float msPerBeat) {
-			return 60000f / msPerBeat;
+		public static double GetBPM(double msPerBeat) {
+			return (60000.0 / msPerBeat);
 		}
 
-		public static float GetMsPerBeat(float bpm) {
-			return 60000f / bpm;
+		public static double GetMsPerBeat(float bpm) {
+			return 60000.0 / bpm;
 		}
 
 		public static string GetTimeStamp(float ms, bool hours = false) {

@@ -334,7 +334,7 @@
 		private void ChartedMapDropdown_SelectedIndexChanged(object sender, EventArgs e) {
 			if (_displayedMapset is null) return;
 			int index = ChartedMapDropdown.SelectedIndex;
-			var displayedMap = index >= 0 && index < _displayedMapset.Beatmaps.Count ? _displayedMapset.Beatmaps[index] : null;
+			var displayedMap = index >= 0 && index < _displayedMapset.Count ? _displayedMapset[index] : null;
 			if (displayedMap is not null) {
 				if (_chartedBeatmap != displayedMap) {
 					Chart.Series.Clear();
@@ -522,17 +522,17 @@
 				Invoke((MethodInvoker)delegate {
 					// display all maps
 					ClearBeatmapDisplay();
-					foreach (Beatmap map in set.Beatmaps) {
+					foreach (Beatmap map in set) {
 						AddBeatmapToDisplay(map);
 					}
 					_displayedMapset = set;
 
-					var inGameBeatmap = !string.IsNullOrEmpty(_inGameWindowTitle) ? set?.Beatmaps.FirstOrDefault(map => _inGameWindowTitle.EndsWith(map.Version + "]", StringComparison.Ordinal)) : null;
+					var inGameBeatmap = !string.IsNullOrEmpty(_inGameWindowTitle) ? set.FirstOrDefault(map => _inGameWindowTitle.EndsWith(map.Version + "]", StringComparison.Ordinal)) : null;
 					if (inGameBeatmap != _inGameBeatmap)
 						Console.WriteLine($"in game beatmap: '{_inGameBeatmap?.Version}'");
 					_inGameBeatmap = inGameBeatmap;
 
-					_chartedBeatmap = _inGameBeatmap ?? set.Beatmaps.FirstOrDefault();
+					_chartedBeatmap = _inGameBeatmap ?? set.FirstOrDefault();
 					UpdateChartOptions();
 					RefreshChart();
 				});
@@ -846,7 +846,7 @@
 			//if fullSet = false, the only option should be manually chosen map(s)
 			if (fullSet && _displayedMapset is not null) {
 				bool showFamiliarRating = ShowFamiliarRating;
-				var newMapOptions = _displayedMapset.Beatmaps.Select(
+				var newMapOptions = _displayedMapset.Select(
 					map => showFamiliarRating ? map.GetFamiliarizedDisplayString() : map.GetDiffDisplayString()
 				).ToArray();
 				if (newMapOptions.Length == ChartedMapDropdown.Items.Count) {
@@ -867,18 +867,18 @@
 
 				Invoke((MethodInvoker)delegate {
 					ChartedMapDropdown.Items.Clear();
-					foreach (Beatmap map in _displayedMapset.Beatmaps) {
+					foreach (Beatmap map in _displayedMapset) {
 						string displayString = showFamiliarRating ? map.GetFamiliarizedDisplayString() : map.GetDiffDisplayString();
 						ChartedMapDropdown.Items.Add(displayString);
 					}
 
 					// pick the most appropriate initial map according to the settings
 					int selectedIndex = -1;
-					int numMaps = _displayedMapset.Beatmaps.Count;
+					int numMaps = _displayedMapset.Count;
 					if (numMaps > 1) {
 						var diffs = new double[numMaps];
 						for (int i = 0; i < numMaps; ++i) {
-							diffs[i] = FileProcessor.AnalyzerObjects.DifficultyRating.FamiliarizeRating(_displayedMapset.Beatmaps[i].DiffRating.TotalDifficulty);
+							diffs[i] = FileProcessor.AnalyzerObjects.DifficultyRating.FamiliarizeRating(_displayedMapset[i].DiffRating.TotalDifficulty);
 						}
 
 						var (minStars, maxStars) = (FamiliarStarTargetMininum, FamiliarStarTargetMaximum);
@@ -946,40 +946,36 @@
 				_pauseAllTasks = true;
 				var selectedFileNames = (string[])Invoke(() => UX.GetFilenamesFromDialog());
 				Mapset set = MapsetManager.BuildSet(selectedFileNames);
-				SetText(timeDisplay1, $"0 ms");
-				Console.WriteLine("set built");
-				if (set.Beatmaps.Count == 0) {
-					Invoke((MethodInvoker) delegate {
-						ClearBeatmapDisplay();
-						_displayedMapset = null;
-						ChartedMapDropdown.Items.Clear();
-						ClearChart();
-					});
-					set.Dispose();
+				if (set is null || set.Count == 0) {
+					set?.Dispose();
 					return;
 				}
+				SetText(timeDisplay1, $"0 ms");
+				Console.WriteLine("set built");
 
 				var sw = Stopwatch.StartNew();
-				var toRemove = new List<Beatmap>();
-				foreach (var beatmap in set.Beatmaps) {
+				var errorsLock = new object();
+				Parallel.ForEach(set, beatmap => {
 					try {
 						MapsetManager.AnalyzeMap(beatmap);
-						MapsetManager.SaveMap(beatmap, EnableXmlCache);
 					}
 					catch (Exception ex) {
-						Console.WriteLine($"[ERROR] Failed to parse beatmap: \"{beatmap.Artist} - {beatmap.Title} [{beatmap.Version}]\"");
-						Console.WriteLine(ex.ToString());
-						toRemove.Add(beatmap);
+						lock (errorsLock) {
+							Console.WriteLine($"[ERROR] Failed to parse beatmap: \"{beatmap.Artist} - {beatmap.Title} [{beatmap.Version}]\"");
+							Console.WriteLine(ex.ToString());
+						}
 					}
-				}
+				});
+				var toRemove = set.Where(map => !map.IsAnalyzed).ToArray();
 				foreach (var beatmap in toRemove) {
-					set.Beatmaps.Remove(beatmap);
+					set.Remove(beatmap);
 					beatmap.Dispose();
 				}
 				sw.Stop();
 				SetAnalyzeTime($"{sw.ElapsedMilliseconds} ms");
 
-				if (set.Beatmaps.Count == 0) {
+				if (set.Count == 0) {
+					// if we got here, that means all the selected maps were invalid, so clearing the display seems reasonable
 					Invoke((MethodInvoker)delegate {
 						ClearBeatmapDisplay();
 						_displayedMapset = null;
@@ -992,18 +988,18 @@
 				Invoke((MethodInvoker)delegate {
 					ClearBeatmapDisplay();
 					// add to text results
-					foreach (var beatmap in set.Beatmaps) {
+					foreach (var beatmap in set) {
 						AddBeatmapToDisplay(beatmap);
 					}
 					_displayedMapset = set;
 
-					var inGameBeatmap = !string.IsNullOrEmpty(_inGameWindowTitle) ? set?.Beatmaps.FirstOrDefault(map => _inGameWindowTitle.EndsWith(map.Version + "]", StringComparison.Ordinal)) : null;
+					var inGameBeatmap = !string.IsNullOrEmpty(_inGameWindowTitle) ? set.FirstOrDefault(map => _inGameWindowTitle.EndsWith(map.Version + "]", StringComparison.Ordinal)) : null;
 					if (inGameBeatmap != _inGameBeatmap)
 						Console.WriteLine($"in game beatmap: '{_inGameBeatmap?.Version}'");
 					_inGameBeatmap = inGameBeatmap;
 
 					// display graph results
-					_chartedBeatmap = _inGameBeatmap ?? set.Beatmaps.First();
+					_chartedBeatmap = _inGameBeatmap ?? set.First();
 					UpdateChartOptions();
 					RefreshChart();
 				});
@@ -1087,7 +1083,7 @@
 				// ensure we have the correct process for osu (in case player restarted osu, etc)
 				_osuProcess = Finder.GetOsuProcess(_guiPid, _osuProcess);
 				cancelToken.ThrowIfCancellationRequested();
-				string windowTitle =  _osuProcess?.MainWindowTitle;
+				string windowTitle =  _osuProcess?.MainWindowTitle?.Trim();
 
 				// update visibility
 				if (_osuProcess is null || _osuProcess.HasExited || string.IsNullOrEmpty(windowTitle)) {
@@ -1194,7 +1190,7 @@
 							}
 
 							// try to figure out what map is being played. This work will only happen once.
-							_inGameBeatmap = _displayedMapset?.Beatmaps.FirstOrDefault(map => windowTitle.EndsWith(map.Version + "]", StringComparison.Ordinal));
+							_inGameBeatmap = _displayedMapset?.FirstOrDefault(map => windowTitle.EndsWith(map.Version + "]", StringComparison.Ordinal));
 
 							// switch charted beatmap to in-game map
 							if (_chartedBeatmap != _inGameBeatmap || _prevTab != chartsTab) {
@@ -1305,7 +1301,7 @@
 
 					// clear previously cached Series
 					if (set != prevSet && prevSet is not null) {
-						foreach (var map in prevSet.Beatmaps) {
+						foreach (var map in prevSet) {
 							map.DiffRating.ClearCachedSeries();
 						}
 					}

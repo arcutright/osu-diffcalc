@@ -6,6 +6,7 @@
 	using System.Linq;
 	using System.Xml;
 	using System.Xml.Linq;
+	using Utility;
 
 	class SavefileXMLManager {
 		private static readonly string _xmlSaveFilePath = Path.Combine(Directory.GetCurrentDirectory(), "analyzedmaps.xml");
@@ -18,7 +19,8 @@
 			_document.Save(_xmlSaveFilePath);
 		}
 
-		public static bool Parse(List<Mapset> allMapsets) {
+		public static List<Mapset> ParseXML() {
+			var parsedMaps = new List<Mapset>();
 			try {
 				//find and load xml
 				LoadXML();
@@ -32,10 +34,13 @@
 				foreach (var (title, artist, creator, maps) in mapsets) {
 					var set = new Mapset(title, artist, creator);
 					foreach (var map in maps) {
-						string version = map.Attribute("version")?.Value.Trim() ?? string.Empty;
+						string version = map.Attribute("version")?.Value.Trim();
 						if (string.IsNullOrEmpty(version)) continue;
 
 						var beatmap = new Beatmap(set, version) {
+							Title = title,
+							Artist = artist,
+							Creator = creator,
 							DiffRating = new(
 								jumpsDifficulty: TryParseDouble(map.Attribute("jumpDiff")?.Value),
 								streamsDifficulty: TryParseDouble(map.Attribute("streamDiff")?.Value),
@@ -46,16 +51,14 @@
 							)
 						};
 						set.Add(beatmap);
-
 					}
-					allMapsets.Add(set);
+					parsedMaps.Add(set);
 				}
 				IsInitialized = true;
-				return true;
 			}
 			catch {
-				return false;
 			}
+			return parsedMaps;
 		}
 
 		private static double TryParseDouble(string valueString) {
@@ -75,9 +78,9 @@
 				if (validMapsets.Any()) {
 					//if so, check if all difficulties are present, add if needed
 					var validDiffs = validMapsets.Elements("map").ToList();
-					if (validDiffs.Count != set.Beatmaps.Count) {
+					if (validDiffs.Count != set.Count) {
 						//check which difficulty is missing
-						foreach (Beatmap map in set.Beatmaps) {
+						foreach (Beatmap map in set) {
 							bool found = false;
 							foreach (XElement toFind in validDiffs) {
 								if ((string)toFind.Attribute("version") == map.Version) {
@@ -112,7 +115,7 @@
 						new XAttribute("artist", set.Artist),
 						new XAttribute("creator", set.Creator)
 					);
-					foreach (Beatmap map in set.Beatmaps) {
+					foreach (Beatmap map in set) {
 						mapsetNode.Add(new XElement("map",
 							new XAttribute("version", map.Version),
 							new XAttribute("totalDiff", dstr(map.DiffRating.TotalDifficulty)),
@@ -149,7 +152,7 @@
 					writer.WriteAttributeString("artist", set.Artist);
 					writer.WriteAttributeString("creator", set.Creator);
 
-					foreach (Beatmap map in set.Beatmaps) {
+					foreach (Beatmap map in set) {
 						writer.WriteWhitespace("\n\t\t");
 						//create version branch
 						writer.WriteStartElement("map");
