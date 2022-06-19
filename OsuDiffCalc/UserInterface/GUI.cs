@@ -309,10 +309,10 @@
 		}
 
 		private void ClearButton_Click(object sender, EventArgs e) {
+			// var displayedMapset = _displayedMapset;
 			MapsetManager.Clear();
 			SavefileXMLManager.ClearXML();
-			ClearBeatmapDisplay();
-			ClearChart();
+			// MapsetManager.SaveMapset(displayedMapset, true, EnableXmlCache);
 		}
 
 		private void ScaleRatings_CheckedChanged(object sender, EventArgs e) {
@@ -626,6 +626,10 @@
 					}
 					// add series if needed, update visibility + chart type of each series
 					foreach (var series in allSeries) {
+						if (_seriesEnabled.TryGetValue(series.Name, out var isEnabled))
+							series.Enabled = isEnabled;
+						else
+							_seriesEnabled[series.Name] = series.Enabled;
 						if (!Chart.Series.Contains(series))
 							Chart.Series.Add(series);
 						series.ChartType = SeriesChartType;
@@ -645,6 +649,7 @@
 		private int[] _seriesIndexToLegendIndex = null;
 		private int[] _legendIndexToSeriesIndex = null;
 		private (string seriesName, SeriesChartType seriesType, string legendName)[] _prevSeries = null;
+		private readonly Dictionary<string, bool> _seriesEnabled = new();
 
 		/// <summary>
 		/// Update and rebuild the chart's custom legend if needed.
@@ -659,6 +664,7 @@
 			int n = Chart.Series.Count;
 			bool needsRebuild = force || _prevSeries is null || _prevSeries.Length != n;
 			if (!needsRebuild) {
+				Chart.ApplyPaletteColors();
 				for (int i = 0; i < n; i++) {
 					var series = Chart.Series[i];
 					if ((series.Name, series.ChartType, series.Legend) != _prevSeries[i]) {
@@ -674,6 +680,10 @@
 						var label = ChartLegendPanel.Controls[(2 * i) + 1] as Label;
 						var colorPanelStrikeThrough = colorPanel.Controls[0];
 						bool isEnabledInLegend = colorPanelStrikeThrough.Visible;
+						if (colorPanel.BackColor != series.Color) {
+							colorPanel.BackColor = series.Color;
+							anyChanged = true;
+						}
 						if (series.Enabled != isEnabledInLegend) {
 							label.Font = new Font(label.Font, series.Enabled ? FontStyle.Regular : FontStyle.Strikeout);
 							colorPanelStrikeThrough.Visible = !series.Enabled;
@@ -817,19 +827,19 @@
 			var label = table.Controls[seriesIndex * nColumns + 1] as Label;
 			var colorPanelStrikeThrough = colorPanel.Controls[0];
 
-			bool wasEnabled = series.Enabled;
-			if (wasEnabled) {
-				// disable
-				label.Font = new Font(label.Font, FontStyle.Strikeout);
-				colorPanelStrikeThrough.Visible = true;
-				series.Enabled = false;
-			}
-			else {
-				// enable
-				label.Font = new Font(label.Font, FontStyle.Regular);
-				colorPanelStrikeThrough.Visible = false;
-				series.Enabled = true;
-			}
+			bool shouldEnable = !series.Enabled;
+
+			// make the series appear enabled / disabled
+			label.Font = new Font(label.Font, shouldEnable ? FontStyle.Regular : FontStyle.Strikeout);
+			colorPanelStrikeThrough.Visible = !shouldEnable;
+			series.Enabled = shouldEnable;
+
+			// save enabled state so it's preserved between maps
+			_seriesEnabled[series.Name] = shouldEnable;
+
+			// TODO: get chart Y axis to rescale itself when changing what is visible. This doesn't work...
+			//Chart.Invalidate();
+			//Chart.ChartAreas.Invalidate();
 		}
 
 		private void UpdateChartOptions(bool fullSet = true) {

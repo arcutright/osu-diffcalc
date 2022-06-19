@@ -11,8 +11,8 @@
 			_jumps   = new("Jumps",   64),
 			_streams = new("Streams", 64),
 			_bursts  = new("Bursts",  64),
-			_doubles = new("Sliders", 64),
-			_sliders = new("Doubles", 64) { IsEnabled = false };
+			_sliders = new("Sliders", 64),
+			_doubles = new("Doubles", 64) { IsEnabled = false };
 
 		/// <summary>
 		/// List of (raw list of individual points) <br/>
@@ -203,7 +203,7 @@
 			foreach (var points in _allSeriesPoints) {
 				if (points.Series is not null) continue;
 				int nPoints = points.Count;
-				var series = new Series(points.Name);
+				var series = new Series(points.Name) { Enabled = points.IsEnabled };
 				int i = 0;
 				foreach (var x in allSeriesXValues) {
 					if (i < nPoints && points[i].X == x) {
