@@ -105,7 +105,6 @@
 			});
 			ChartStyleDropdown.SelectedItem = SeriesChartType;
 			ChartStyleDropdown.Update();
-			ChartedMapDropdown.SelectedValueChanged += ChartedMapDropdown_SelectedValueChanged;
 			RefreshChart();
 
 			_isLoaded = true;
@@ -117,13 +116,6 @@
 
 			_prevTab = MainTabControl.SelectedTab;
 			Refresh();
-		}
-
-		private void ChartedMapDropdown_SelectedValueChanged(object sender, EventArgs e) {
-			if (_chartedBeatmap is not null)
-				StatusStripLabel.Text = $"{_chartedBeatmap.Artist} - {_chartedBeatmap.Title} [{_chartedBeatmap.Version}]";
-			else
-				StatusStripLabel.Text = string.Empty;
 		}
 
 		private void MainTabControl_TabChanged(object sender, EventArgs e) {
@@ -331,10 +323,11 @@
 			EnableXmlCache = EnableXmlCheckbox.Checked;
 		}
 
-		private void ChartedMapDropdown_SelectedIndexChanged(object sender, EventArgs e) {
-			if (_displayedMapset is null) return;
+		private void ChartedMapDropdown_SelectedValueChanged(object sender, EventArgs e) {
 			int index = ChartedMapDropdown.SelectedIndex;
-			var displayedMap = index >= 0 && index < _displayedMapset.Count ? _displayedMapset[index] : null;
+			var displayedMap = _displayedMapset is not null && index >= 0 && index < _displayedMapset.Count
+				? _displayedMapset[index]
+				: null;
 			if (displayedMap is not null) {
 				if (_chartedBeatmap != displayedMap) {
 					Chart.Series.Clear();
@@ -342,6 +335,10 @@
 				}
 				RefreshChart();
 			}
+			if (_chartedBeatmap is not null)
+				StatusStripLabel.Text = $"{_chartedBeatmap.Artist} - {_chartedBeatmap.Title} [{_chartedBeatmap.Version}]";
+			else
+				StatusStripLabel.Text = string.Empty;
 		}
 
 		private void SettingsTextbox_TextChanged(object sender, System.EventArgs e) {
@@ -905,11 +902,10 @@
 							else
 								selectedIndex = maxDiffSeenIndex;
 						}
+						ChartedMapDropdown.SelectedIndex = selectedIndex;
 					}
-					else {
-						selectedIndex = 0;
-					}
-					ChartedMapDropdown.SelectedIndex = selectedIndex;
+					else if (numMaps == 1)
+						ChartedMapDropdown.SelectedIndex = 0;
 				});
 			}
 			else {
@@ -987,6 +983,7 @@
 
 				Invoke((MethodInvoker)delegate {
 					ClearBeatmapDisplay();
+					ClearChart();
 					// add to text results
 					foreach (var beatmap in set) {
 						AddBeatmapToDisplay(beatmap);

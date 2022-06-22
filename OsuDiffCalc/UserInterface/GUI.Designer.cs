@@ -373,7 +373,7 @@
 			this.ChartedMapDropdown.Name = "ChartedMapDropdown";
 			this.ChartedMapDropdown.Size = new System.Drawing.Size(196, 21);
 			this.ChartedMapDropdown.TabIndex = 2;
-			this.ChartedMapDropdown.SelectedIndexChanged += new System.EventHandler(this.ChartedMapDropdown_SelectedIndexChanged);
+			this.ChartedMapDropdown.SelectedValueChanged += new System.EventHandler(this.ChartedMapDropdown_SelectedValueChanged);
 			// 
 			// label1
 			// 
@@ -426,7 +426,7 @@
 			series1.Name = "Series1";
 			series1.YValuesPerPoint = 6;
 			this.Chart.Series.Add(series1);
-			this.Chart.Size = new System.Drawing.Size(322, 217);
+			this.Chart.Size = new System.Drawing.Size(323, 217);
 			this.Chart.TabIndex = 0;
 			this.Chart.Text = "Chart";
 			// 
