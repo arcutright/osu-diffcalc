@@ -1298,9 +1298,11 @@
 
 					// clear previously cached Series
 					if (set != prevSet && prevSet is not null) {
-						foreach (var map in prevSet) {
-							map.DiffRating.ClearCachedSeries();
-						}
+						Invoke(() => {
+							foreach (var map in prevSet) {
+								map.DiffRating.ClearCachedSeries();
+							}
+						});
 					}
 				}
 			}
