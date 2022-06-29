@@ -307,7 +307,7 @@
 			return difficulty;
 		}
 
-		static float GetJumpDifficulty(float distance, float time, Beatmap map) {
+		static float GetJumpDifficulty(double distance, double time, Beatmap map) {
 			if (time <= 0)
 				return 0;
 

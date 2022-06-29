@@ -6,7 +6,7 @@
 	using SliderPathHelpers;
 
 	record Slider : HitObject {
-		public Slider(int x, int y, int startTime, string sliderType, float pixelLength, int numSlides, 
+		public Slider(float x, float y, double startTime, string sliderType, double pixelLength, int numSlides, 
 			            List<Vector2> controlPoints)
 			     : base(x, y, startTime, startTime) {
 			ControlPoints = new(controlPoints);
@@ -36,7 +36,7 @@
 		/// </summary>
 		public int NumSlides { get; }
 		/// <summary> Visual length of the slider in osupixels </summary>
-		public float PixelLength { get; }
+		public double PixelLength { get; }
 		/// <summary> Total length of the slider in osupixels, accounting for repeats </summary>
 		public double TotalLength { get; }
 		/// <summary> Control points of the slider measured in osupixels. Note that [0] is the start position (X, Y) </summary>

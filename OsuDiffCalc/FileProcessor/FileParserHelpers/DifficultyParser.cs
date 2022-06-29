@@ -12,7 +12,7 @@
 				beatmap.HpDrain = hp;
 			else if (beatmap.CircleSize < 0 && TryAssignFloatFromLine(line, "CircleSize", out var cs)) {
 				beatmap.CircleSize = cs;
-				beatmap.CircleSizePx = -8.28127f * cs + 100.597f; // TODO: empirically determined, try to validate
+				beatmap.CircleSizePx = (float)(100.597 - 8.28127 * cs); // TODO: empirically determined, try to validate
 			}
 			else if (beatmap.OverallDifficulty < 0 && TryAssignFloatFromLine(line, "OverallDiff", out var od)) {
 				beatmap.OverallDifficulty = od;

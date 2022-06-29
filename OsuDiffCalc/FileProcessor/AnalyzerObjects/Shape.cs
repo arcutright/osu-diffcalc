@@ -13,8 +13,8 @@
 		public float AvgDistancePx = 0;
 		public float MinDistancePx = -1;
 		public float MaxDistancePx = -1;
-		public int StartTime = -1;
-		public int EndTime = -1;
+		public double StartTime = -1;
+		public double EndTime = -1;
 		public ShapeType Type;
 		public Shape PrevShape = null;
 
@@ -44,7 +44,7 @@
 				var prevObj = _hitObjects[n - 2];
 
 				// update average time spacing 
-				int lastTimeGapMs = obj.StartTime - prevObj.StartTime;
+				double lastTimeGapMs = obj.StartTime - prevObj.StartTime;
 				AvgTimeGapMs = (AvgTimeGapMs * (n - 2) + lastTimeGapMs) / (n - 1);
 
 				// update distances
@@ -74,7 +74,7 @@
 		}
 
 		//check if next object has constant timing with the current stream
-		public int CompareTiming(int nextObjectStartTime) {
+		public int CompareTiming(double nextObjectStartTime) {
 			if (_hitObjects.Count == 0)
 				return -2;
 			var timeGapMs = nextObjectStartTime - _hitObjects[^1].StartTime;

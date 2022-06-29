@@ -14,9 +14,9 @@
 	/// <param name="MsPerBeat"> Duration of a beat in ms </param>
 	/// <param name="SliderVelocityMultiplier"> Effective slider velocity multiplier for this timing point </param>
 	/// <param name="EffectiveSliderBPM"> Effective bpm for sliders including velocity multipliers </param>
-	record TimingPoint(int Offset, double Bpm, double MsPerBeat, double SliderVelocityMultiplier, double EffectiveSliderBPM)
+	record TimingPoint(double Offset, double Bpm, double MsPerBeat, double SliderVelocityMultiplier, double EffectiveSliderBPM)
 		                 : IComparable<TimingPoint> {
-		public static TimingPoint Create(int offset, double beatLength, bool isInherited, TimingPoint prevTimingPoint, double beatmapSliderMultiplier) {
+		public static TimingPoint Create(double offset, double beatLength, bool isInherited, TimingPoint prevTimingPoint, double beatmapSliderMultiplier) {
 			double msPerBeat, sliderMultiplier;
 			double bpm, effectiveSliderBPM;
 

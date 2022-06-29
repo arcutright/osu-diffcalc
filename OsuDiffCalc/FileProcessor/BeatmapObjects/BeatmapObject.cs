@@ -8,9 +8,9 @@
 	/// </summary>
 	/// <param name="StartTime"> Start time for the object in ms </param>
 	/// <param name="EndTime"> End time for the object in ms </param>
-	abstract record BeatmapObject(int StartTime, int EndTime) : IComparable<BeatmapObject> {
+	abstract record BeatmapObject(double StartTime, double EndTime) : IComparable<BeatmapObject> {
 		/// <summary> End time for the object in ms </summary>
-		public int EndTime { get; protected set; } = EndTime;
+		public double EndTime { get; protected set; } = EndTime;
 
 		public int CompareTo(BeatmapObject other) {
 			return StartTime != other.StartTime

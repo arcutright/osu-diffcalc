@@ -19,8 +19,10 @@
 		public double SliderMultiplier = -1;
 		/// <summary> Slider ticks per beat </summary>
 		public double SliderTickRate = -1;
-		public double MarginOfErrorMs300; // time window for a 300
-		public double MarginOfErrorMs50; // time window for a 50
+		/// <summary> Window in ms to get 300 on a hit circle </summary>
+		public double MarginOfErrorMs300;
+		/// <summary> Window in ms to get 50 on a hit circle </summary>
+		public double MarginOfErrorMs50;
 		public float CircleSizePx; // actual circle size
 		public int Format = -1; // osu file format version
 		public int Mode = -1; // osu!standard == 0, taiko == ?, ctb == ?, mania == ? etc.

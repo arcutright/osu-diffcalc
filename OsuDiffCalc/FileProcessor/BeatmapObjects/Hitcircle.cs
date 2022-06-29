@@ -1,6 +1,6 @@
 ﻿namespace OsuDiffCalc.FileProcessor.BeatmapObjects {
 	/// <summary> A hit circle object </summary>
 	/// <inheritdoc cref="HitObject"/>
-	record Hitcircle(int X, int Y, int StartTime) : HitObject(X, Y, StartTime, StartTime) {
+	record Hitcircle(float X, float Y, double StartTime) : HitObject(X, Y, StartTime, StartTime) {
 	}
 }

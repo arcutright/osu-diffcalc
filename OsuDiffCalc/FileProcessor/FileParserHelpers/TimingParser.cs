@@ -29,7 +29,7 @@
 				failureMessage = $"Incomplete timing point at line {lineNumber}";
 				return false;
 			}
-			if (!int.TryParse(data[0], out var offset)) {
+			if (!double.TryParse(data[0], out var offset)) {
 				failureMessage = $"Could not parse offset for timing point at line {lineNumber}";
 				return false;
 			}
@@ -62,11 +62,11 @@
 			return (60000.0 / msPerBeat);
 		}
 
-		public static double GetMsPerBeat(float bpm) {
+		public static double GetMsPerBeat(double bpm) {
 			return 60000.0 / bpm;
 		}
 
-		public static string GetTimeStamp(float ms, bool hours = false) {
+		public static string GetTimeStamp(double ms, bool hours = false) {
 			var ts = TimeSpan.FromMilliseconds(ms);
 			return ts.Hours != 0 
 				? $"{ts.Hours:00}:{ts.Minutes:00}:{ts.Seconds:00}.{ts.Milliseconds:000}"

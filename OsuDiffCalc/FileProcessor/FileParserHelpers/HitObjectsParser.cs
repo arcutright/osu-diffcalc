@@ -18,15 +18,15 @@
 				failureMessage = $"Incomplete HitObject at line {lineNumber}";
 				return false;
 			}
-			if (!int.TryParse(data[0], out var x)) {
+			if (!float.TryParse(data[0], out var x)) {
 				failureMessage = $"Cannot parse x for HitObject at line {lineNumber}";
 				return false;
 			}
-			if (!int.TryParse(data[1], out var y)) {
+			if (!float.TryParse(data[1], out var y)) {
 				failureMessage = $"Cannot parse y for HitObject at line {lineNumber}";
 				return false;
 			}
-			if (!int.TryParse(data[2], out var time)) {
+			if (!double.TryParse(data[2], out var time)) {
 				failureMessage = $"Cannot parse time for HitObject at line {lineNumber}";
 				return false;
 			}
@@ -76,7 +76,7 @@
 					failureMessage = $"Could not parse num slides for slider at line {lineNumber}";
 					return false;
 				}
-				if (!float.TryParse(data[7], out var pixelLength)) {
+				if (!double.TryParse(data[7], out var pixelLength)) {
 					failureMessage = $"Could not parse length for slider at line {lineNumber}";
 					return false;
 				}
@@ -88,7 +88,7 @@
 					failureMessage = $"Incomplete spinner at line {lineNumber}";
 					return false;
 				}
-				if (!int.TryParse(data[5], out var endTime)) {
+				if (!double.TryParse(data[5], out var endTime)) {
 					failureMessage = $"Could not parse end time for spinner at line {lineNumber}";
 					return false;
 				}

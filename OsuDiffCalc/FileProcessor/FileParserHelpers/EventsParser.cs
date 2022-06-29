@@ -40,11 +40,11 @@
 				beatmap.BackgroundImage = background;
 			}
 			else if (type == 2) {
-				if (!int.TryParse(data[1], out var startTime)) {
+				if (!double.TryParse(data[1], out var startTime)) {
 					failureMessage = $"Cannot parse start time for break section at line {lineNumber}";
 					return false;
 				}
-				if (!int.TryParse(data[2], out var endTime)) {
+				if (!double.TryParse(data[2], out var endTime)) {
 					failureMessage = $"Cannot parse end time for break section at line {lineNumber}";
 					return false;
 				}
