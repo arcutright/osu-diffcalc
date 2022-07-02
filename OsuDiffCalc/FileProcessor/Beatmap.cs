@@ -7,11 +7,12 @@
 	class Beatmap : IDisposable {
 		private bool _isDisposed;
 		// https://osu.ppy.sh/wiki/en/Client/Beatmap_editor/osu%21_pixel
-		// TODO: should this be 640x480?
 		public const int MaxX = 512;
 		public const int MaxY = 384;
 
+		public DateTime LastModifiedTime = DateTime.MinValue;
 		public string Title, Artist, Creator, Version;
+		public string BeatmapID, BeatmapSetID;
 		public string Filepath, Mp3FileName;
 		public string BackgroundImage;
 		public double ApproachRate = -1, CircleSize = -1, HpDrain = -1, OverallDifficulty = -1;

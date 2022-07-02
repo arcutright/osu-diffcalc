@@ -586,8 +586,6 @@
 				_displayedMapset = null;
 				SetText(StreamBpmLabel, string.Empty);
 				SetText(StatusStripLabel, string.Empty);
-				SetText(timeDisplay1, string.Empty);
-				SetText(timeDisplay2, string.Empty);
 				Chart.Series.Clear();
 				//if (Chart.ChartAreas.Count != 0) {
 				//	Chart.ChartAreas[0].AxisX.MajorGrid.Enabled = false;
@@ -977,6 +975,8 @@
 						_displayedMapset = null;
 						ChartedMapDropdown.Items.Clear();
 						ClearChart();
+						SetText(timeDisplay1, string.Empty);
+						SetText(timeDisplay2, string.Empty);
 					});
 					return;
 				}

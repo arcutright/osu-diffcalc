@@ -12,6 +12,11 @@
 		const float BurstMultiplier = 0.75f;
 		static readonly float MaxDistPx = (float)Math.Sqrt((Beatmap.MaxX * Beatmap.MaxX) + (Beatmap.MaxY * Beatmap.MaxY));
 
+		/// <summary>
+		/// Analyze the difficulty of a beatmap
+		/// </summary>
+		/// <param name="beatmap">the beatmap to analyze</param>
+		/// <param name="clearLists">if <see langword="true"/>, will clear the beatmap objects after analysis</param>
 		public static void Analyze(Beatmap beatmap, bool clearLists = true) {
 			if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 				Thread.CurrentThread.Name = $"analyze[{beatmap.Version}]";

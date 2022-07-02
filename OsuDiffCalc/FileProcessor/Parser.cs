@@ -18,7 +18,7 @@
 
 		/// <inheritdoc cref="TryParse(string, out Beatmap, out string)"/>
 		public static bool TryParse(ref Beatmap beatmap, out string failureMessage) {
-			using var reader = File.OpenText(beatmap.Filepath);
+			using var reader = new StreamReader(new FileStream(beatmap.Filepath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 16 * 1024), System.Text.Encoding.UTF8);
 			return TryParse(reader, ref beatmap, out failureMessage);
 		}
 
@@ -36,11 +36,17 @@
 		/// Parse just the basic map metadata for an osu!standard map (format, file name/paths, mode, artist, title, creator, version)
 		/// </summary>
 		/// <returns> <see cref="Beatmap"/> if parse was successful, otherwise <see langword="null"/> </returns>
-		public static Beatmap ParseBasicMetadata(string mapPath) { 
+		public static Beatmap ParseBasicMetadata(string mapPath) {
+			if (string.IsNullOrEmpty(mapPath))
+				return null;
+
 			string failureMessage = null;
 			try {
 				var beatmap = new Beatmap(Path.GetFullPath(mapPath));
-				using var reader = File.OpenText(beatmap.Filepath);
+				// TODO: use this to check if we need to re-parse a map
+				beatmap.LastModifiedTime = File.GetLastWriteTimeUtc(beatmap.Filepath);
+
+				using var reader = new StreamReader(new FileStream(beatmap.Filepath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 2 * 1024), System.Text.Encoding.UTF8);
 
 				var sectionParsers = new Dictionary<string, TryProcessLineCallback> {
 					{ "[General]", GeneralParser.TryProcessLine },
