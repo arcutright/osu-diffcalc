@@ -149,6 +149,8 @@
 			Console.WriteLine($"hitObjects: {NumHitObjects}  circles: {NumCircles}  sliders: {NumSliders}  spinners: {NumSpinners}");
 		}
 
+		public override string ToString() => $"{Artist} - {Title} [{Version}] ({Creator})";
+
 		protected virtual void Dispose(bool disposing) {
 			if (!_isDisposed) {
 				if (disposing) {

@@ -118,6 +118,26 @@
 			Refresh();
 		}
 
+#pragma warning disable IDE1006 // Naming Styles
+
+		// hack to prevent stealing focus when activating this window
+
+		protected override CreateParams CreateParams {
+			get {
+				var createParams = base.CreateParams;
+
+				const int WS_EX_NOACTIVATE = 0x08000000;
+				//const int WS_EX_TOOLWINDOW = 0x00000080;
+				createParams.ExStyle |= WS_EX_NOACTIVATE;
+
+				return createParams;
+			}
+		}
+
+		protected override bool ShowWithoutActivation => true;
+
+#pragma warning restore IDE1006 // Naming Styles
+
 		private void MainTabControl_TabChanged(object sender, EventArgs e) {
 			if (_isChangingTab)
 				_isChangingTab = false;
@@ -524,13 +544,13 @@
 					}
 					_displayedMapset = set;
 
-					var inGameBeatmap = !string.IsNullOrEmpty(_inGameWindowTitle) ? set.FirstOrDefault(map => _inGameWindowTitle.EndsWith(map.Version + "]", StringComparison.Ordinal)) : null;
+					var inGameBeatmap = GetInGameBeatmap(set, _inGameWindowTitle);
 					if (inGameBeatmap != _inGameBeatmap)
-						Console.WriteLine($"in game beatmap: '{_inGameBeatmap?.Version}'");
+						Console.WriteLine($"  => beatmap: {inGameBeatmap}");
 					_inGameBeatmap = inGameBeatmap;
 
-					_chartedBeatmap = _inGameBeatmap ?? set.FirstOrDefault();
-					UpdateChartOptions();
+					_chartedBeatmap = inGameBeatmap ?? set.FirstOrDefault();
+					UpdateChartOptions(inGameBeatmap);
 					RefreshChart();
 				});
 			}
@@ -837,7 +857,7 @@
 			//Chart.ChartAreas.Invalidate();
 		}
 
-		private void UpdateChartOptions(bool fullSet = true) {
+		private void UpdateChartOptions(Beatmap selectedBeatmap, bool fullSet = true) {
 			//if fullSet = false, the only option should be manually chosen map(s)
 			if (fullSet && _displayedMapset is not null) {
 				bool showFamiliarRating = ShowFamiliarRating;
@@ -867,43 +887,52 @@
 						ChartedMapDropdown.Items.Add(displayString);
 					}
 
-					// pick the most appropriate initial map according to the settings
 					int selectedIndex = -1;
-					int numMaps = _displayedMapset.Count;
-					if (numMaps > 1) {
-						var diffs = new double[numMaps];
-						for (int i = 0; i < numMaps; ++i) {
-							diffs[i] = FileProcessor.AnalyzerObjects.DifficultyRating.FamiliarizeRating(_displayedMapset[i].DiffRating.TotalDifficulty);
-						}
 
-						var (minStars, maxStars) = (FamiliarStarTargetMininum, FamiliarStarTargetMaximum);
-						double minDiffSeen = double.MinValue;
-						double maxDiffSeen = double.MaxValue;
-						int minDiffSeenIndex = 0;
-						int maxDiffSeenIndex = 0;
-						for (int i = 0; i < numMaps; ++i) {
-							double diff = diffs[i];
-							minDiffSeen = Math.Min(minDiffSeen, diff);
-							maxDiffSeen = Math.Max(maxDiffSeen, diff);
-							if (diff == minDiffSeen)
-								minDiffSeenIndex = i;
-							if (diff == maxDiffSeen)
-								maxDiffSeenIndex = i;
-							if (diff >= minStars && diff <= maxStars) {
-								selectedIndex = i;
-								break;
-							}
-						}
-						if (selectedIndex == -1) {
-							if (minDiffSeen > maxStars)
-								selectedIndex = minDiffSeenIndex;
-							else
-								selectedIndex = maxDiffSeenIndex;
-						}
+					if (selectedBeatmap is not null)
+						selectedIndex = _displayedMapset.IndexOf(selectedBeatmap);
+
+					if (selectedIndex >= 0)
 						ChartedMapDropdown.SelectedIndex = selectedIndex;
+					else {
+
+						// pick the most appropriate initial map according to the settings
+						int numMaps = _displayedMapset.Count;
+						if (numMaps > 1) {
+							var diffs = new double[numMaps];
+							for (int i = 0; i < numMaps; ++i) {
+								diffs[i] = FileProcessor.AnalyzerObjects.DifficultyRating.FamiliarizeRating(_displayedMapset[i].DiffRating.TotalDifficulty);
+							}
+
+							var (minStars, maxStars) = (FamiliarStarTargetMininum, FamiliarStarTargetMaximum);
+							double minDiffSeen = double.MinValue;
+							double maxDiffSeen = double.MaxValue;
+							int minDiffSeenIndex = 0;
+							int maxDiffSeenIndex = 0;
+							for (int i = 0; i < numMaps; ++i) {
+								double diff = diffs[i];
+								minDiffSeen = Math.Min(minDiffSeen, diff);
+								maxDiffSeen = Math.Max(maxDiffSeen, diff);
+								if (diff == minDiffSeen)
+									minDiffSeenIndex = i;
+								if (diff == maxDiffSeen)
+									maxDiffSeenIndex = i;
+								if (diff >= minStars && diff <= maxStars) {
+									selectedIndex = i;
+									break;
+								}
+							}
+							if (selectedIndex == -1) {
+								if (minDiffSeen > maxStars)
+									selectedIndex = minDiffSeenIndex;
+								else
+									selectedIndex = maxDiffSeenIndex;
+							}
+							ChartedMapDropdown.SelectedIndex = selectedIndex;
+						}
+						else if (numMaps == 1)
+							ChartedMapDropdown.SelectedIndex = 0;
 					}
-					else if (numMaps == 1)
-						ChartedMapDropdown.SelectedIndex = 0;
 				});
 			}
 			else {
@@ -965,6 +994,11 @@
 					set.Remove(beatmap);
 					beatmap.Dispose();
 				}
+				if (EnableXmlCache) {
+					foreach (var beatmap in set) {
+						MapsetManager.SaveMapToXML(beatmap);
+					}
+				}
 				sw.Stop();
 				SetAnalyzeTime($"{sw.ElapsedMilliseconds} ms");
 
@@ -990,14 +1024,15 @@
 					}
 					_displayedMapset = set;
 
-					var inGameBeatmap = !string.IsNullOrEmpty(_inGameWindowTitle) ? set.FirstOrDefault(map => _inGameWindowTitle.EndsWith(map.Version + "]", StringComparison.Ordinal)) : null;
+
+					var inGameBeatmap = GetInGameBeatmap(set, _inGameWindowTitle); 
 					if (inGameBeatmap != _inGameBeatmap)
-						Console.WriteLine($"in game beatmap: '{_inGameBeatmap?.Version}'");
+						Console.WriteLine($"  => beatmap: {inGameBeatmap}");
 					_inGameBeatmap = inGameBeatmap;
 
 					// display graph results
-					_chartedBeatmap = _inGameBeatmap ?? set.First();
-					UpdateChartOptions();
+					_chartedBeatmap = inGameBeatmap ?? set.First();
+					UpdateChartOptions(inGameBeatmap);
 					RefreshChart();
 				});
 			}
@@ -1083,7 +1118,7 @@
 				string windowTitle =  _osuProcess?.MainWindowTitle?.Trim();
 
 				// update visibility
-				if (_osuProcess is null || _osuProcess.HasExited || string.IsNullOrEmpty(windowTitle)) {
+				if (_osuProcess is null || _osuProcess.HasExited) {
 					// osu not found
 					if (TopMost) {
 						Invoke((MethodInvoker)delegate {
@@ -1125,11 +1160,10 @@
 							_isOnSameScreen = thisScreenBounds == osuScreenBounds;
 						}
 						catch { }
-
+						
 						if (!_isInGame) {
 							// not in game
 							// unminimize if it was auto-minimized, change back to prev user tab if we auto-changed to the charts tab
-							if (!TopMost) TopMost = IsAlwaysOnTop;
 							if (_didMinimize && !Visible) Visible = true;
 							if (MainTabControl.SelectedTab != _prevTab) {
 								var prevFgWindow = WindowHelper.GetForegroundWindow();
@@ -1138,6 +1172,8 @@
 							}
 							_didMinimize = false;
 						}
+
+						if (!TopMost) TopMost = IsAlwaysOnTop;
 
 						// try to move to a secondary screen
 						try {
@@ -1186,23 +1222,31 @@
 								WindowHelper.MakeForegroundWindow(prevFgWindow);
 							}
 
-							// try to figure out what map is being played. This work will only happen once.
-							_inGameBeatmap = _displayedMapset?.FirstOrDefault(map => windowTitle.EndsWith(map.Version + "]", StringComparison.Ordinal));
+							// try to figure out what map is being played. This work will only happen once
+							_inGameBeatmap = GetInGameBeatmap(_displayedMapset, windowTitle);
 
 							// switch charted beatmap to in-game map
 							if (_chartedBeatmap != _inGameBeatmap || _prevTab != chartsTab) {
-								UpdateChartOptions();
-								if (_displayedMapset is not null)
-									ChartedMapDropdown.SelectedIndex = _displayedMapset.IndexOf(_inGameBeatmap);
+								UpdateChartOptions(_inGameBeatmap);
 								RefreshChart();
 							}
 
 							Console.WriteLine($"In game, window title: '{windowTitle}'");
-							Console.WriteLine($"  => beatmap: '{_inGameBeatmap?.Version}'");
+							Console.WriteLine($"  => beatmap: {_inGameBeatmap}");
 						}
 					});
 				}
 			}
+		}
+
+		Beatmap GetInGameBeatmap(Mapset set, string windowTitle) {
+			if (set is not null && !string.IsNullOrEmpty(windowTitle)) {
+				var inGameBeatmap = set.FirstOrDefault(map => windowTitle.EndsWith($"[{map.Version}]", StringComparison.Ordinal));
+				inGameBeatmap ??= set.FirstOrDefault(map => windowTitle.Contains($"[{map.Version}]") && windowTitle.Contains($"{map.Title}"));
+				return inGameBeatmap;
+			}
+			else
+				return null;
 		}
 
 		#endregion
