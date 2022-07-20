@@ -147,8 +147,10 @@
 			beatmap.DiffRating.DoublesDifficulty = doublesDifficulty;
 			beatmap.DiffRating.SlidersDifficulty = slidersDifficulty;
 			beatmap.DiffRating.TotalDifficulty = totalDifficulty;
-			beatmap.DiffRating.StreamsAverageBPM = streamsAvgBPM > 0 ? streamsAvgBPM : burstsAvgBPM;
-			beatmap.DiffRating.StreamsMaxBPM = streamsMaxBPM > 0 ? streamsMaxBPM : burstsMaxBPM;
+			beatmap.DiffRating.StreamsMaxBPM = streamsMaxBPM;
+			beatmap.DiffRating.StreamsAverageBPM = streamsAvgBPM;
+			beatmap.DiffRating.BurstsMaxBPM = burstsMaxBPM;
+			beatmap.DiffRating.BurstsAverageBPM = burstsAvgBPM;
 			beatmap.IsAnalyzed = true;
 			/*
 			Console.WriteLine("\n{1:000} jumps diff    = {0:0.0}", jumpsDifficulty, jumpDifficultyList.Count);

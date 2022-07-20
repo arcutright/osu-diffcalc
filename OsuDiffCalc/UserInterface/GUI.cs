@@ -356,7 +356,7 @@
 				RefreshChart();
 			}
 			if (_chartedBeatmap is not null)
-				StatusStripLabel.Text = $"{_chartedBeatmap.Artist} - {_chartedBeatmap.Title} [{_chartedBeatmap.Version}]";
+				StatusStripLabel.Text = $"{_chartedBeatmap.Artist} - {_chartedBeatmap.Title} [{_chartedBeatmap.Version}] ({_chartedBeatmap.Creator})";
 			else
 				StatusStripLabel.Text = string.Empty;
 		}
@@ -605,6 +605,7 @@
 				_chartedBeatmap = null;
 				_displayedMapset = null;
 				SetText(StreamBpmLabel, string.Empty);
+				SetText(BurstBpmLabel, string.Empty);
 				SetText(StatusStripLabel, string.Empty);
 				Chart.Series.Clear();
 				//if (Chart.ChartAreas.Count != 0) {
@@ -632,7 +633,8 @@
 				_pauseAllTasks = true;
 				Invoke((MethodInvoker)delegate {
 					SetText(StreamBpmLabel, $"{_chartedBeatmap.DiffRating.StreamsMaxBPM:f0}");
-					SetText(StatusStripLabel, $"{_chartedBeatmap.Artist} - {_chartedBeatmap.Title}");
+					SetText(BurstBpmLabel, $"{_chartedBeatmap.DiffRating.BurstsMaxBPM:f0}");
+					SetText(StatusStripLabel, $"{_chartedBeatmap.Artist} - {_chartedBeatmap.Title} ({_chartedBeatmap.Creator})");
 					// remove any unexpected series
 					Series[] allSeries = _chartedBeatmap.DiffRating.GetAllSeries();
 					var toRemove = Chart.Series.Where(series => Array.IndexOf(allSeries, series) == -1).ToArray(); // .ToArray() to avoid collection-was-modified

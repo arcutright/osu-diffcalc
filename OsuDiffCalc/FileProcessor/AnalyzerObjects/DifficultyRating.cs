@@ -59,8 +59,14 @@
 		/// <summary> Max BPM of streams for 1/4 notes </summary>
 		public double StreamsMaxBPM { get; set; }
 
-		/// <summary> Average BPM of streams/bursts for 1/4 notes </summary>
+		/// <summary> Average BPM of streams for 1/4 notes </summary>
 		public double StreamsAverageBPM { get; set; }
+
+		/// <summary> Max BPM of triplets/bursts for 1/4 notes </summary>
+		public double BurstsMaxBPM { get; set; }
+
+		/// <summary> Average BPM of triplets/bursts for 1/4 notes </summary>
+		public double BurstsAverageBPM { get; set; }
 
 		/// <summary> Raw list of individual jump difficulties (X: start time in seconds, Y: difficulty). May be different length than other raw lists. </summary>
 		public SeriesPointCollection Jumps => _jumps;

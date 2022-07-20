@@ -53,6 +53,8 @@
 			this.panel6 = new System.Windows.Forms.Panel();
 			this.Chart = new OsuDiffCalc.UserInterface.Controls.CustomChart();
 			this.panel5 = new System.Windows.Forms.Panel();
+			this.BurstBpmLabel = new System.Windows.Forms.Label();
+			this.label14 = new System.Windows.Forms.Label();
 			this.StreamBpmLabel = new System.Windows.Forms.Label();
 			this.ChartLegendPanel = new System.Windows.Forms.TableLayoutPanel();
 			this.label8 = new System.Windows.Forms.Label();
@@ -432,6 +434,8 @@
 			// 
 			// panel5
 			// 
+			this.panel5.Controls.Add(this.BurstBpmLabel);
+			this.panel5.Controls.Add(this.label14);
 			this.panel5.Controls.Add(this.StreamBpmLabel);
 			this.panel5.Controls.Add(this.ChartLegendPanel);
 			this.panel5.Controls.Add(this.label7);
@@ -440,6 +444,26 @@
 			this.panel5.Name = "panel5";
 			this.panel5.Size = new System.Drawing.Size(94, 211);
 			this.panel5.TabIndex = 18;
+			// 
+			// BurstBpmLabel
+			// 
+			this.BurstBpmLabel.BackColor = System.Drawing.Color.WhiteSmoke;
+			this.BurstBpmLabel.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.BurstBpmLabel.Location = new System.Drawing.Point(67, 22);
+			this.BurstBpmLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+			this.BurstBpmLabel.Name = "BurstBpmLabel";
+			this.BurstBpmLabel.Size = new System.Drawing.Size(25, 18);
+			this.BurstBpmLabel.TabIndex = 18;
+			this.BurstBpmLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+			// 
+			// label14
+			// 
+			this.label14.AutoSize = true;
+			this.label14.Location = new System.Drawing.Point(10, 24);
+			this.label14.Name = "label14";
+			this.label14.Size = new System.Drawing.Size(60, 13);
+			this.label14.TabIndex = 19;
+			this.label14.Text = "Burst BPM:";
 			// 
 			// StreamBpmLabel
 			// 
@@ -466,7 +490,7 @@
 			this.ChartLegendPanel.Controls.Add(this.label10, 1, 3);
 			this.ChartLegendPanel.Controls.Add(this.label11, 1, 4);
 			this.ChartLegendPanel.Controls.Add(this.label12, 1, 5);
-			this.ChartLegendPanel.Location = new System.Drawing.Point(0, 23);
+			this.ChartLegendPanel.Location = new System.Drawing.Point(0, 42);
 			this.ChartLegendPanel.Name = "ChartLegendPanel";
 			this.ChartLegendPanel.Padding = new System.Windows.Forms.Padding(5, 3, 8, 3);
 			this.ChartLegendPanel.RowCount = 6;
@@ -668,9 +692,9 @@
 			this.StatusStripLabel.Location = new System.Drawing.Point(5, 1);
 			this.StatusStripLabel.Name = "StatusStripLabel";
 			this.StatusStripLabel.Padding = new System.Windows.Forms.Padding(5, 0, 0, 1);
-			this.StatusStripLabel.Size = new System.Drawing.Size(120, 17);
+			this.StatusStripLabel.Size = new System.Drawing.Size(175, 17);
 			this.StatusStripLabel.TabIndex = 0;
-			this.StatusStripLabel.Text = "Artist - Song name";
+			this.StatusStripLabel.Text = "Artist - Song name (Creator)";
 			// 
 			// panel4
 			// 
@@ -780,5 +804,7 @@
 		private System.Windows.Forms.Label label11;
 		private System.Windows.Forms.Label label12;
 		private System.Windows.Forms.Panel panel6;
+		private System.Windows.Forms.Label BurstBpmLabel;
+		private System.Windows.Forms.Label label14;
 	}
 }
