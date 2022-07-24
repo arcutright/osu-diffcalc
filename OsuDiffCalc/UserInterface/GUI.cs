@@ -1154,7 +1154,7 @@
 							_inGameWindowTitle = null;
 
 						// find the screen bounds of each process
-						Rectangle? osuScreenBounds = null, thisScreenBounds;
+						Rectangle? osuScreenBounds = null, thisScreenBounds = null;
 						try {
 							thisScreenBounds = Screen.FromHandle(_guiProcess.MainWindowHandle)?.Bounds;
 							if (_osuProcess is not null)

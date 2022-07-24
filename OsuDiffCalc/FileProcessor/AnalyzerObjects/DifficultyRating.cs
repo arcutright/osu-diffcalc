@@ -101,9 +101,18 @@
 			lock (_pointsLock) {
 				foreach (var points in _allSeriesPoints) {
 					if (points.Series is not null) {
-						points.Series.Points.Dispose();
-						points.Series.Points.Clear();
-						points.Series.Dispose();
+						try {
+							points.Series.Points.Dispose();
+							points.Series.Points.Clear();
+							points.Series.Dispose();
+						}
+						catch (Exception ex) {
+							Console.WriteLine("failed to clear cached series");
+							Console.WriteLine(ex);
+#if DEBUG
+							System.Diagnostics.Debugger.Break();
+#endif
+						}
 						points.Series = null;
 					}
 				}
@@ -189,7 +198,7 @@
 						prevPoint = prevPoint with { Y = prevPoint.Y + points[i].Y };
 					}
 				}
-				if (points2[^1] != prevPoint)
+				if (points2.Count == 0 || points2[^1] != prevPoint)
 					points2.Add(prevPoint);
 
 				points.Clear();

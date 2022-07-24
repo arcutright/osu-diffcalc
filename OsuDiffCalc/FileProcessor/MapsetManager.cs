@@ -59,7 +59,12 @@
 						return directory;
 				}
 			}
-			catch {
+			catch (Exception ex) {
+				Console.WriteLine("!!-- Error: could not find current mapset directory");
+				Console.WriteLine(ex);
+#if DEBUG
+				System.Diagnostics.Debugger.Break();
+#endif
 			}
 			return null;
 		}
@@ -101,6 +106,9 @@
 				sw.Stop();
 				Console.WriteLine("!!-- Error: could not analyze set");
 				Console.WriteLine(e.GetBaseException());
+#if DEBUG
+				System.Diagnostics.Debugger.Break();
+#endif
 			}
 			return null;
 		}
