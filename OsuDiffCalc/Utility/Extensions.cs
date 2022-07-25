@@ -1,6 +1,7 @@
 ﻿namespace OsuDiffCalc.Utility {
 	using System;
 	using System.Collections.Generic;
+	using System.Diagnostics;
 	using System.Linq;
 	using System.Text;
 	using System.Threading.Tasks;
@@ -51,6 +52,30 @@
 				return defaultValue;
 			else
 				return values.Last();
+		}
+
+		/// <summary>
+		/// HasExited with a try-catch. On exceptions, returns <see langword="true"/>.
+		/// </summary>
+		public static bool HasExitedSafe(this Process process) {
+			try {
+				return process.HasExited;
+			}
+			catch {
+				return true;
+			}
+		}
+
+		/// <summary>
+		/// Id with a try-catch. On exceptions, returns <see langword="null"/>.
+		/// </summary>
+		public static int? IdSafe(this Process process) {
+			try {
+				return process?.Id;
+			}
+			catch {
+				return null;
+			}
 		}
 	}
 }

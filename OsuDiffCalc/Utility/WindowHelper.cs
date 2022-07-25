@@ -188,7 +188,7 @@
 		public static void MakeForegroundWindow(Process process) {
 			if (process is not null) {
 				process.Refresh();
-				if (!process.HasExited)
+				if (!process.HasExitedSafe())
 					MakeForegroundWindow(process.MainWindowHandle);
 			}
 		}

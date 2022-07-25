@@ -60,7 +60,7 @@
 
 		public GUI() {
 			_guiProcess = Process.GetCurrentProcess();
-			_guiPid = _guiProcess?.Id ?? (int)NativeMethods.GetCurrentThreadId();
+			_guiPid = _guiProcess?.IdSafe() ?? (int)NativeMethods.GetCurrentThreadId();
 
 			if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 				Thread.CurrentThread.Name = "GUIThread";
@@ -550,7 +550,7 @@
 					_inGameBeatmap = inGameBeatmap;
 
 					_chartedBeatmap = inGameBeatmap ?? set.FirstOrDefault();
-					UpdateChartOptions(inGameBeatmap);
+					UpdateChartOptions(_chartedBeatmap);
 					RefreshChart();
 				});
 			}
@@ -860,6 +860,10 @@
 		}
 
 		private void UpdateChartOptions(Beatmap selectedBeatmap, bool fullSet = true) {
+			int selectedIndex = -1;
+			if (selectedBeatmap is not null)
+				selectedIndex = _displayedMapset.IndexOf(selectedBeatmap);
+
 			//if fullSet = false, the only option should be manually chosen map(s)
 			if (fullSet && _displayedMapset is not null) {
 				bool showFamiliarRating = ShowFamiliarRating;
@@ -878,8 +882,15 @@
 						}
 						++i;
 					}
-					if (equal)
+					if (equal) {
+						int currentIndex = ChartedMapDropdown.SelectedIndex;
+						if (selectedIndex != -1 && currentIndex != selectedIndex) {
+							Invoke(() => {
+								ChartedMapDropdown.SelectedIndex = selectedIndex;
+							});
+						}
 						return;
+					}
 				}
 
 				Invoke((MethodInvoker)delegate {
@@ -888,11 +899,6 @@
 						string displayString = showFamiliarRating ? map.GetFamiliarizedDisplayString() : map.GetDiffDisplayString();
 						ChartedMapDropdown.Items.Add(displayString);
 					}
-
-					int selectedIndex = -1;
-
-					if (selectedBeatmap is not null)
-						selectedIndex = _displayedMapset.IndexOf(selectedBeatmap);
 
 					if (selectedIndex >= 0)
 						ChartedMapDropdown.SelectedIndex = selectedIndex;
@@ -1120,7 +1126,7 @@
 				string windowTitle =  _osuProcess?.MainWindowTitle?.Trim();
 
 				// update visibility
-				if (_osuProcess is null || _osuProcess.HasExited) {
+				if (_osuProcess is null || _osuProcess.HasExitedSafe()) {
 					// osu not found
 					if (TopMost) {
 						Invoke((MethodInvoker)delegate {
@@ -1156,7 +1162,7 @@
 						// find the screen bounds of each process
 						Rectangle? osuScreenBounds = null, thisScreenBounds = null;
 						try {
-							thisScreenBounds = Screen.FromHandle(_guiProcess.MainWindowHandle)?.Bounds;
+							thisScreenBounds = Screen.FromHandle(Handle)?.Bounds;
 							if (_osuProcess is not null)
 								osuScreenBounds = Screen.FromHandle(_osuProcess.MainWindowHandle)?.Bounds;
 							_isOnSameScreen = thisScreenBounds == osuScreenBounds;
@@ -1190,8 +1196,9 @@
 									// move to a different screen if osu is full screen
 									// (we can't act as an overlay with WinForms UI, would require a rewrite in DirectX or something)
 									var otherScreen = Screen.AllScreens.First(s => s.Bounds != osuScreenBounds);
+									Console.WriteLine($"Try move window from ({thisScreenBounds?.X}, {thisScreenBounds?.Y}) to ({otherScreen?.Bounds.X}, {otherScreen?.Bounds.Y})");
 									WindowHelper.TryMoveToScreen(Program.ConsoleWindowHandle, otherScreen);
-									WindowHelper.TryMoveToScreen(_guiProcess, otherScreen);
+									WindowHelper.TryMoveToScreen(Handle, otherScreen);
 									//TopMost = false;
 								}
 								else if (_isInGame) {

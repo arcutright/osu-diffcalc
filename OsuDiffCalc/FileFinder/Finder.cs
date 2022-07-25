@@ -137,13 +137,14 @@
 		/// </summary>
 		/// <param name="lastOsuProcess"> last process reference of osu!, if available </param>
 		public static Process GetOsuProcess(int guiPid, Process lastOsuProcess) {
-			lastOsuProcess?.Refresh();
-			if (lastOsuProcess?.HasExited == false)
-				return lastOsuProcess;
-			else {
-				lastOsuProcess?.Dispose();
-				return GetOsuProcess(guiPid);
+			if (lastOsuProcess is not null) {
+				lastOsuProcess.Refresh();
+				if (!lastOsuProcess.HasExitedSafe())
+					return lastOsuProcess;
+
+				lastOsuProcess.Dispose();
 			}
+			return GetOsuProcess(guiPid);
 		}
 
 		/// <inheritdoc cref="GetOsuProcess(int, Process)"/>
@@ -152,7 +153,7 @@
 			if (lastOsuPid.HasValue) {
 				try {
 					var process = Process.GetProcessById(lastOsuPid.Value);
-					if (process is not null && !process.HasExited)
+					if (process is not null && !process.HasExitedSafe())
 						return process;
 				}
 				catch (ArgumentException) {
@@ -214,6 +215,7 @@
 		static bool MayBeOsuProcess(Process p, int consolePid, int guiPid) {
 			// pre-filter against known pid(s), or wrongly-named processes
 			return p is not null
+				&& !p.HasExitedSafe()
 				&& p.Id != consolePid
 				&& p.Id != guiPid
 				&& string.Equals("osu!", p.ProcessName, StringComparison.OrdinalIgnoreCase)
@@ -223,7 +225,7 @@
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		static bool HasOpenOsuFiles(Process p) {
 			// filter to processes who have open files which osu might use
-			if (p is not null) {
+			if (p is not null && !p.HasExitedSafe()) {
 				foreach (var file in OpenFilesDetector.GetOpenFilesEnumerator(p.Id, _osuOpenFileTypes)) {
 					// whose directory contains .osu files
 					var dirPath = Path.GetDirectoryName(file);
