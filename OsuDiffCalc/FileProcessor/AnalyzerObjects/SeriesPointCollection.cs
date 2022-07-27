@@ -26,10 +26,16 @@
 		protected virtual void Dispose(bool disposing) {
 			if (!_isDisposed) {
 				if (disposing) {
-					Series?.Dispose();
+					// dispose managed state (managed objects)
+					try { 
+						Series?.Dispose(); 
+						Clear();
+					} catch { }
 				}
+				// free unmanaged resources (unmanaged objects) and override finalizer
+				// set large fields to null
 				Series = null;
-				Clear();
+
 				_isDisposed = true;
 			}
 		}

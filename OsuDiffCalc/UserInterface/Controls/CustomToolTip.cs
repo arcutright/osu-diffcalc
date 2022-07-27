@@ -90,13 +90,16 @@
 
 		private bool _isDisposed = false;
 		protected override void Dispose(bool disposing) {
-			if (!_isDisposed && disposing) {
-				Font?.Dispose();
-				if (Font != _originalFont)
-					_originalFont.Dispose();
+			if (!_isDisposed) {
+				if (disposing) {
+					// dispose managed state (managed objects)
+					Font?.Dispose();
+					if (Font != _originalFont)
+						_originalFont.Dispose();
 
-				Draw -= CustomToolTip_Draw;
-				Popup -= CustomToolTip_Popup;
+					Draw -= CustomToolTip_Draw;
+					Popup -= CustomToolTip_Popup;
+				}
 
 				_isDisposed = true;
 			}

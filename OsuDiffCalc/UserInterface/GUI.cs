@@ -523,7 +523,7 @@
 			var prevFgWindow = WindowHelper.GetForegroundWindow();
 			try {
 				if (set is null) {
-					Invoke((MethodInvoker)delegate {
+					Invoke(() => {
 						ClearBeatmapDisplay();
 						ChartedMapDropdown.Items.Clear();
 						_displayedMapset = null;
@@ -534,15 +534,18 @@
 				}
 
 				// sort by difficulty
-				set.Sort(false);
+				if (set != _displayedMapset)
+					set.Sort(false);
 
-				Invoke((MethodInvoker)delegate {
+				Invoke(() => {
 					// display all maps
-					ClearBeatmapDisplay();
+					if (set != _displayedMapset) {
+						ClearBeatmapDisplay();
 					foreach (Beatmap map in set) {
-						AddBeatmapToDisplay(map);
+							AddBeatmapToDisplay(map);
+						}
+						_displayedMapset = set;
 					}
-					_displayedMapset = set;
 
 					var inGameBeatmap = GetInGameBeatmap(set, _inGameWindowTitle);
 					if (inGameBeatmap != _inGameBeatmap)
@@ -583,7 +586,7 @@
 			string currentText = control?.Text;
 			if (currentText == text)
 				return;
-			Invoke((MethodInvoker)delegate {
+			Invoke(() => {
 				bool prevIsTextChanging = _isTextChanging;
 				try {
 					_isTextChanging = true;
@@ -601,7 +604,7 @@
 		}
 
 		private void ClearChart() {
-			Invoke((MethodInvoker)delegate {
+			Invoke(() => {
 				_chartedBeatmap = null;
 				_displayedMapset = null;
 				SetText(StreamBpmLabel, string.Empty);
@@ -631,7 +634,7 @@
 			bool prevPauseAllTasks = _pauseAllTasks;
 			try {
 				_pauseAllTasks = true;
-				Invoke((MethodInvoker)delegate {
+				Invoke(() => {
 					SetText(StreamBpmLabel, $"{_chartedBeatmap.DiffRating.StreamsMaxBPM:f0}");
 					SetText(BurstBpmLabel, $"{_chartedBeatmap.DiffRating.BurstsMaxBPM:f0}");
 					SetText(StatusStripLabel, $"{_chartedBeatmap.Artist} - {_chartedBeatmap.Title} ({_chartedBeatmap.Creator})");
@@ -893,7 +896,7 @@
 					}
 				}
 
-				Invoke((MethodInvoker)delegate {
+				Invoke(() => {
 					ChartedMapDropdown.Items.Clear();
 					foreach (Beatmap map in _displayedMapset) {
 						string displayString = showFamiliarRating ? map.GetFamiliarizedDisplayString() : map.GetDiffDisplayString();
@@ -944,7 +947,7 @@
 				});
 			}
 			else {
-				Invoke((MethodInvoker)delegate {
+				Invoke(() => {
 					ChartedMapDropdown.Items.Clear();
 					if (_chartedBeatmap is not null) {
 						var map = _chartedBeatmap;
@@ -1012,7 +1015,7 @@
 
 				if (set.Count == 0) {
 					// if we got here, that means all the selected maps were invalid, so clearing the display seems reasonable
-					Invoke((MethodInvoker)delegate {
+					Invoke(() => {
 						ClearBeatmapDisplay();
 						_displayedMapset = null;
 						ChartedMapDropdown.Items.Clear();
@@ -1023,7 +1026,7 @@
 					return;
 				}
 
-				Invoke((MethodInvoker)delegate {
+				Invoke(() => {
 					ClearBeatmapDisplay();
 					ClearChart();
 					// add to text results
@@ -1032,7 +1035,6 @@
 					}
 					_displayedMapset = set;
 
-
 					var inGameBeatmap = GetInGameBeatmap(set, _inGameWindowTitle); 
 					if (inGameBeatmap != _inGameBeatmap)
 						Console.WriteLine($"  => beatmap: {inGameBeatmap}");
@@ -1040,7 +1042,7 @@
 
 					// display graph results
 					_chartedBeatmap = inGameBeatmap ?? set.First();
-					UpdateChartOptions(inGameBeatmap);
+					UpdateChartOptions(_chartedBeatmap);
 					RefreshChart();
 				});
 			}
@@ -1129,7 +1131,7 @@
 				if (_osuProcess is null || _osuProcess.HasExitedSafe()) {
 					// osu not found
 					if (TopMost) {
-						Invoke((MethodInvoker)delegate {
+						Invoke(() => {
 							TopMost = false;
 							if (MainTabControl.SelectedTab != _prevTab) {
 								var prevFgWindow = WindowHelper.GetForegroundWindow();
@@ -1151,7 +1153,7 @@
 						return;
 					}
 
-					Invoke((MethodInvoker)delegate {
+					Invoke(() => {
 						// crappy way to check if osu is in-game
 						_isInGame = windowTitle.IndexOf('[') != -1;
 						if (_isInGame)

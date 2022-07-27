@@ -251,12 +251,18 @@
 		protected virtual void Dispose(bool disposing) {
 			if (!_isDisposed) {
 				if (disposing) {
+					// dispose managed state (managed objects)
+					try {
+						ClearCachedSeries();
+						foreach (var points in _allSeriesPoints) {
+							points.Clear();
+						}
+						_allSeriesXValues.Clear();
+					}
+					catch { }
 				}
-				ClearCachedSeries();
-				foreach (var points in _allSeriesPoints) {
-					points.Clear();
-				}
-				_allSeriesXValues.Clear();
+				// free unmanaged resources (unmanaged objects) and override finalizer
+				// set large fields to null
 
 				_isDisposed = true;
 			}

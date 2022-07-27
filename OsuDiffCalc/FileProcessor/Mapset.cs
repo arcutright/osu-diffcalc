@@ -8,7 +8,6 @@
 	// This is a mapset, a collection of different difficulties
 	class Mapset : IEnumerable<Beatmap>, IDisposable {
 		private readonly List<Beatmap> _beatmaps = new();
-		private bool _isDisposed;
 
 		public Mapset(string title, string artist, string creator) {
 			Title = title;
@@ -111,14 +110,18 @@
 
 		public override string ToString() => $"{Artist} - {Title} mapped by {Creator} [{_beatmaps.Count}]";
 
+		private bool _isDisposed = false;
 		protected virtual void Dispose(bool disposing) {
 			if (!_isDisposed) {
 				if (disposing) {
+					// dispose managed state (managed objects)
 					foreach (var map in _beatmaps) {
-						map?.Dispose();
+						try { map?.Dispose(); } catch { }
 					}
 				}
-				Clear();
+				// free unmanaged resources (unmanaged objects) and override finalizer
+				// set large fields to null
+				try { Clear(); } catch { }
 
 				_isDisposed = true;
 			}

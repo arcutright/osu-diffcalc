@@ -154,7 +154,8 @@
 		protected virtual void Dispose(bool disposing) {
 			if (!_isDisposed) {
 				if (disposing) {
-					DiffRating.Dispose();
+					// dispose managed state (managed objects)
+					try { DiffRating?.Dispose(); } catch { }
 				}
 
 				_isDisposed = true;
@@ -163,7 +164,7 @@
 
 		public void Dispose() {
 			// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-			Dispose(disposing: true);
+			Dispose(true);
 			GC.SuppressFinalize(this);
 		}
 	}
