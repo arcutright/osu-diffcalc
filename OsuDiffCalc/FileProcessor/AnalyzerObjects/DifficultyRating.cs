@@ -102,9 +102,7 @@
 				foreach (var points in _allSeriesPoints) {
 					if (points.Series is not null) {
 						try {
-							points.Series.Points.Dispose();
 							points.Series.Points.Clear();
-							points.Series.Dispose();
 						}
 						catch (Exception ex) {
 							Console.WriteLine("failed to clear cached series");
@@ -253,17 +251,27 @@
 				if (disposing) {
 					// dispose managed state (managed objects)
 					try {
-						ClearCachedSeries();
+						_allSeriesXValues.Clear();
 						foreach (var points in _allSeriesPoints) {
+							if (points.Series is not null) {
+								try {
+									points.Series.Points.Dispose();
+									points.Series.Dispose();
+								}
+								catch { }
+								finally {
+									points.Series = null;
+								}
+							}
 							points.Clear();
 						}
-						_allSeriesXValues.Clear();
 					}
 					catch { }
 				}
 				// free unmanaged resources (unmanaged objects) and override finalizer
 				// set large fields to null
 
+				_areSeriesPrepared = false;
 				_isDisposed = true;
 			}
 		}

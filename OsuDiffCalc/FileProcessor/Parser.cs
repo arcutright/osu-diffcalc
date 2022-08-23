@@ -43,8 +43,7 @@
 			string failureMessage = null;
 			try {
 				var beatmap = new Beatmap(Path.GetFullPath(mapPath));
-				// TODO: use this to check if we need to re-parse a map
-				beatmap.LastModifiedTime = File.GetLastWriteTimeUtc(beatmap.Filepath);
+				// TODO: use LastModifiedTime / MD5 hash to check if we need to re-parse a map
 
 				using var reader = new StreamReader(new FileStream(beatmap.Filepath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 2 * 1024), System.Text.Encoding.UTF8);
 

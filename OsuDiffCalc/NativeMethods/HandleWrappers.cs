@@ -21,34 +21,32 @@ namespace OsuDiffCalc {
 	using HANDLE  = System.IntPtr;
 	using PVOID   = System.IntPtr;
 
-	internal static partial class NativeMethods {
-		[SecurityCritical]
-		[SecurityPermission(SecurityAction.InheritanceDemand, UnmanagedCode = true)]
-		public sealed class SafeObjectHandle : SafeHandleZeroOrMinusOneIsInvalid {
-			private SafeObjectHandle() : base(true) { }
+	[SecurityCritical]
+	[SecurityPermission(SecurityAction.InheritanceDemand, UnmanagedCode = true)]
+	public sealed class SafeObjectHandle : SafeHandleZeroOrMinusOneIsInvalid {
+		public SafeObjectHandle() : base(true) { }
 
-			internal SafeObjectHandle(IntPtr preexistingHandle, bool ownsHandle) : base(ownsHandle) {
-				base.SetHandle(preexistingHandle);
-			}
-
-			protected override bool ReleaseHandle() {
-				return CloseHandle(base.handle);
-			}
+		public SafeObjectHandle(IntPtr preexistingHandle, bool ownsHandle) : base(ownsHandle) {
+			base.SetHandle(preexistingHandle);
 		}
 
-		[SecurityCritical]
-		[SecurityPermission(SecurityAction.InheritanceDemand, UnmanagedCode = true)]
-		public sealed class SafeProcessHandle : SafeHandleZeroOrMinusOneIsInvalid {
-			private SafeProcessHandle() : base(true) {
-			}
+		protected override bool ReleaseHandle() {
+			return NativeMethods.CloseHandle(base.handle);
+		}
+	}
 
-			internal SafeProcessHandle(IntPtr preexistingHandle, bool ownsHandle) : base(ownsHandle) {
-				base.SetHandle(preexistingHandle);
-			}
+	[SecurityCritical]
+	[SecurityPermission(SecurityAction.InheritanceDemand, UnmanagedCode = true)]
+	public sealed class SafeProcessHandle : SafeHandleZeroOrMinusOneIsInvalid {
+		public SafeProcessHandle() : base(true) {
+		}
 
-			protected override bool ReleaseHandle() {
-				return CloseHandle(base.handle);
-			}
+		public SafeProcessHandle(IntPtr preexistingHandle, bool ownsHandle) : base(ownsHandle) {
+			base.SetHandle(preexistingHandle);
+		}
+
+		protected override bool ReleaseHandle() {
+			return NativeMethods.CloseHandle(base.handle);
 		}
 	}
 }

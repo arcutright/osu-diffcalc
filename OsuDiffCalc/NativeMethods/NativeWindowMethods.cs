@@ -167,7 +167,7 @@ namespace OsuDiffCalc {
 		///     C++ ( Type: Type: HWND )<br /> The return value is a handle to the foreground window. The foreground window
 		///     can be NULL in certain circumstances, such as when a window is losing activation.
 		/// </returns>
-		[DllImport("user32.dll", SetLastError = SetLastError)]
+		[DllImport("user32.dll", EntryPoint = "GetForegroundWindow", SetLastError = SetLastError)]
 		public static extern IntPtr GetForegroundWindow();
 
 		/// <summary>
@@ -544,8 +544,22 @@ namespace OsuDiffCalc {
 		[DllImport("user32.dll", SetLastError = SetLastError)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		public static extern bool SetWindowPos(
-			[In] IntPtr hWnd,
-			[In] IntPtr hWndInsertAfter,
+			[In] HANDLE hWnd,
+			[In] HANDLE hWndInsertAfter,
+			[In] int x,
+			[In] int y,
+			[In] int cx,
+			[In] int cy,
+			[In] SetWindowPosFlags uFlags
+		);
+
+		/// <inheritdoc cref="SetWindowPos(HANDLE, HANDLE, int, int, int, int, SetWindowPosFlags)"/>
+		[DllImport("user32.dll", SetLastError = SetLastError)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool SetWindowPos(
+			[In] HANDLE hWnd,
+			[MarshalAs(UnmanagedType.SysInt)]
+			[In] SpecialWindowHandles hWndInsertAfter,
 			[In] int x,
 			[In] int y,
 			[In] int cx,

@@ -12,6 +12,8 @@
 namespace OsuDiffCalc {
 	using System;
 	using System.Collections.Generic;
+	using System.ComponentModel;
+	using System.Diagnostics;
 	using System.Linq;
 	using System.Runtime.InteropServices;
 	using System.Runtime.ConstrainedExecution;
@@ -128,7 +130,7 @@ namespace OsuDiffCalc {
 		/// https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getcurrentthreadid
 		/// </remarks>
 		[DllImport("kernel32.dll", SetLastError = SetLastError)]
-		public static extern uint GetCurrentThreadId();
+		public static extern int GetCurrentThreadId();
 
 		/// <summary>
 		/// Sets the process-default DPI awareness to system-DPI awareness. 
@@ -182,10 +184,26 @@ namespace OsuDiffCalc {
 
 		/// <inheritdoc cref="OpenProcessUnsafe(ProcessAccessRights, BOOL, DWORD)"/>
 		[DllImport("kernel32.dll", EntryPoint = "OpenProcess", SetLastError = SetLastError)]
+		public static extern HANDLE OpenProcessUnsafe(
+			[In] ProcessAccessRights dwDesiredAccess,
+			[In, MarshalAs(UnmanagedType.Bool)] bool bInheritHandle,
+			[In] int dwProcessId
+		);
+
+		/// <inheritdoc cref="OpenProcessUnsafe(ProcessAccessRights, BOOL, DWORD)"/>
+		[DllImport("kernel32.dll", EntryPoint = "OpenProcess", SetLastError = SetLastError)]
 		public static extern SafeProcessHandle OpenProcess(
 			[In] ProcessAccessRights dwDesiredAccess,
 			[In, MarshalAs(UnmanagedType.Bool)] bool bInheritHandle,
 			[In] DWORD dwProcessId
+		);
+
+		/// <inheritdoc cref="OpenProcessUnsafe(ProcessAccessRights, BOOL, DWORD)"/>
+		[DllImport("kernel32.dll", EntryPoint = "OpenProcess", SetLastError = SetLastError)]
+		public static extern SafeProcessHandle OpenProcess(
+			[In] ProcessAccessRights dwDesiredAccess,
+			[In, MarshalAs(UnmanagedType.Bool)] bool bInheritHandle,
+			[In] int dwProcessId
 		);
 
 		/// <summary>
@@ -307,6 +325,14 @@ namespace OsuDiffCalc {
 			[In] BOOL fAttach
 		);
 
+		/// <inheritdoc cref="AttachThreadInput(DWORD, DWORD, BOOL)"/>
+		[DllImport("user32.dll", SetLastError = SetLastError)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool AttachThreadInput(
+			[In] int idAttach,
+			[In] int idAttachTo,
+			[In] BOOL fAttach
+		);
 		#endregion
 	}
 }

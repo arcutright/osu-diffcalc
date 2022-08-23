@@ -82,6 +82,8 @@
 			SetText(Settings_UpdateIntervalNormalTextbox, $"{Settings.UpdateIntervalNormalMs}");
 			SetText(Settings_UpdateIntervalMinimizedTextbox, $"{Settings.UpdateIntervalMinimizedMs}");
 			SetText(Settings_UpdateIntervalOsuNotFoundTextbox, $"{Settings.UpdateIntervalOsuNotFoundMs}");
+			SetText(timeDisplay1, string.Empty);
+			SetText(timeDisplay2, string.Empty);
 
 			// attach event handlers for text box updates
 			Settings_StarTargetMinTextbox.TextChanged += SettingsTextbox_TextChanged;
@@ -262,17 +264,6 @@
 
 		#endregion
 
-		#region Public methods
-
-		/// <summary>
-		/// Update the "parse + analyze" time text in the UI
-		/// </summary>
-		public void SetAnalyzeTime(string timeString) {
-			SetText(timeDisplay2, timeString);
-		}
-
-		#endregion
-
 		//starts and stops all background threads
 		protected override async void OnResize(EventArgs e) {
 			try {
@@ -304,8 +295,19 @@
 		protected override async void OnFormClosing(FormClosingEventArgs e) {
 			if (e?.CloseReason == CloseReason.UserClosing) {
 				try {
-					// detach heavy event handlers
+					// detach event handlers
 					Chart.MouseMove -= Chart_MouseMove;
+					MainTabControl.SelectedIndexChanged -= MainTabControl_TabChanged;
+					Settings_StarTargetMinTextbox.TextChanged             -= SettingsTextbox_TextChanged;
+					Settings_StarTargetMinTextbox.LostFocus               -= SettingsTextbox_TextChanged;
+					Settings_StarTargetMaxTextbox.TextChanged             -= SettingsTextbox_TextChanged;
+					Settings_StarTargetMaxTextbox.LostFocus               -= SettingsTextbox_TextChanged;
+					Settings_UpdateIntervalNormalTextbox.TextChanged      -= SettingsTextbox_TextChanged;
+					Settings_UpdateIntervalNormalTextbox.LostFocus        -= SettingsTextbox_TextChanged;
+					Settings_UpdateIntervalMinimizedTextbox.TextChanged   -= SettingsTextbox_TextChanged;
+					Settings_UpdateIntervalMinimizedTextbox.LostFocus     -= SettingsTextbox_TextChanged;
+					Settings_UpdateIntervalOsuNotFoundTextbox.TextChanged -= SettingsTextbox_TextChanged;
+					Settings_UpdateIntervalOsuNotFoundTextbox.LostFocus   -= SettingsTextbox_TextChanged;
 					// wait for work to end
 					await Task.WhenAll(StopAutoWindowUpdater(), StopAutoBeatmapAnalyzer());
 				}
@@ -396,7 +398,7 @@
 		private Point? _chartMousePrevPosition = null;
 
 		private void Chart_MouseMove(object sender, MouseEventArgs e) {
-			if (sender is not Chart chart || e is null)
+			if (sender is not Chart chart || e is null || !chart.Enabled)
 				return;
 			var pos = e.Location;
 			if (_chartMousePrevPosition.HasValue && pos == _chartMousePrevPosition.Value)
@@ -501,6 +503,14 @@
 		#endregion
 
 		#region Private Helpers
+
+		private void SetFindActiveBeatmapTime(string timeString) {
+			SetText(timeDisplay1, timeString);
+		}
+
+		private void SetParseAndAnalyzeTime(string timeString) {
+			SetText(timeDisplay2, timeString);
+		}
 
 		private void ClearBeatmapDisplay() {
 			difficultyDisplayPanel.Controls.Clear();
@@ -876,15 +886,7 @@
 				if (newMapOptions.Length == ChartedMapDropdown.Items.Count) {
 					if (newMapOptions.Length == 0)
 						return;
-					int i = 0;
-					bool equal = true;
-					foreach (var item in ChartedMapDropdown.Items) {
-						if (newMapOptions[i] != item?.ToString()) {
-							equal = false;
-							break;
-						}
-						++i;
-					}
+					bool equal = Enumerable.SequenceEqual(newMapOptions, ChartedMapDropdown.Items.Cast<object>().Select(item => item?.ToString()));
 					if (equal) {
 						int currentIndex = ChartedMapDropdown.SelectedIndex;
 						if (selectedIndex != -1 && currentIndex != selectedIndex) {
@@ -906,7 +908,6 @@
 					if (selectedIndex >= 0)
 						ChartedMapDropdown.SelectedIndex = selectedIndex;
 					else {
-
 						// pick the most appropriate initial map according to the settings
 						int numMaps = _displayedMapset.Count;
 						if (numMaps > 1) {
@@ -984,7 +985,7 @@
 					set?.Dispose();
 					return;
 				}
-				SetText(timeDisplay1, $"0 ms");
+				SetFindActiveBeatmapTime($"0 ms");
 				Console.WriteLine("set built");
 
 				var sw = Stopwatch.StartNew();
@@ -1011,7 +1012,7 @@
 					}
 				}
 				sw.Stop();
-				SetAnalyzeTime($"{sw.ElapsedMilliseconds} ms");
+				SetParseAndAnalyzeTime($"{sw.ElapsedMilliseconds} ms");
 
 				if (set.Count == 0) {
 					// if we got here, that means all the selected maps were invalid, so clearing the display seems reasonable
@@ -1020,8 +1021,8 @@
 						_displayedMapset = null;
 						ChartedMapDropdown.Items.Clear();
 						ClearChart();
-						SetText(timeDisplay1, string.Empty);
-						SetText(timeDisplay2, string.Empty);
+						SetFindActiveBeatmapTime(string.Empty);
+						SetParseAndAnalyzeTime(string.Empty);
 					});
 					return;
 				}
@@ -1060,7 +1061,8 @@
 			if (_autoWindowUpdater is null) {
 				if (_autoWindowCancellation.IsCancellationRequested)
 					_autoWindowCancellation = new CancellationTokenSource();
-				_autoWindowUpdater = Task.Run(() => AutoWindowUpdaterBegin(_autoWindowCancellation.Token, AutoWindowUpdaterTimeoutMs));
+
+				_autoWindowUpdater = BackgroundTaskRun(async() => await AutoWindowUpdaterBegin(_autoWindowCancellation.Token, AutoWindowUpdaterTimeoutMs), _autoWindowCancellation.Token);
 			}
 		}
 
@@ -1081,16 +1083,16 @@
 				while (!cancelToken.IsCancellationRequested) {
 					sw.Restart();
 					if (!_pauseAllTasks)
-						await AutoWindowUpdaterThreadTick(cancelToken, timeoutMs);
+						AutoWindowUpdaterThreadTick(cancelToken, timeoutMs);
 					sw.Stop();
 
 					int updateInterval;
 					if (!_isOsuPresent)
 						updateInterval = UpdateIntervalOsuNotFoundMs;
-					else if (!_isInGame && !_isMinimized && Visible)
-						updateInterval = UpdateIntervalNormalMs;
-					else
+					else if (_isInGame || _isMinimized || !Visible)
 						updateInterval = UpdateIntervalMinimizedMs;
+					else
+						updateInterval = UpdateIntervalNormalMs;
 					await Task.Delay(Math.Max(updateInterval, timeoutMs - (int)sw.ElapsedMilliseconds), cancelToken);
 				}
 				cancelToken.ThrowIfCancellationRequested();
@@ -1099,26 +1101,9 @@
 			catch { }
 		}
 
-		private async Task AutoWindowUpdaterThreadTick(CancellationToken cancelToken, int timeoutMs) {
+		private void AutoWindowUpdaterThreadTick(CancellationToken cancelToken, int timeoutMs) {
 			//Console.Write("auto window  ");
 			try {
-				//var t = new Thread(ts) {
-				//	IsBackground = true,
-				//	Priority = ThreadPriority.Lowest
-				//};
-				//t.Start();
-				//var joinTask = Task.Run(t.Join, cancelToken);
-				//await Task.WhenAny(joinTask, Task.Delay(timeoutMs, cancelToken));
-				//if (t.IsAlive) {
-				//	t.Interrupt();
-				//	t.Abort();
-				//}
-				await Task.Run(ts, cancelToken);
-			}
-			catch (OperationCanceledException) { throw; }
-			catch { }
-
-			void ts() {
 				if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 					Thread.CurrentThread.Name = "AutoWindowTickThread";
 
@@ -1248,6 +1233,8 @@
 					});
 				}
 			}
+			catch (OperationCanceledException) { throw; }
+			catch { }
 		}
 
 		Beatmap GetInGameBeatmap(Mapset set, string windowTitle) {
@@ -1268,7 +1255,7 @@
 			if (_autoBeatmapAnalyzer is null) {
 				if (_autoBeatmapCancellation.IsCancellationRequested)
 					_autoBeatmapCancellation = new CancellationTokenSource();
-				_autoBeatmapAnalyzer = Task.Run(() => AutoBeatmapAnalyzerBegin(_autoBeatmapCancellation.Token, AutoBeatmapAnalyzerTimeoutMs));
+				_autoBeatmapAnalyzer = BackgroundTaskRun(() => AutoBeatmapAnalyzerBegin(_autoBeatmapCancellation.Token, AutoBeatmapAnalyzerTimeoutMs), _autoBeatmapCancellation.Token);
 			}
 		}
 
@@ -1281,17 +1268,21 @@
 			_autoBeatmapAnalyzer = null;
 		}
 
-		private async Task AutoBeatmapAnalyzerBegin(CancellationToken cancelToken, int timeoutMs) {
+		private void AutoBeatmapAnalyzerBegin(CancellationToken cancelToken, int timeoutMs) {
 			try {
 				if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 					Thread.CurrentThread.Name = "AutoBeatmapAnalyzerThread";
+
 				var sw = new Stopwatch();
+
 				while (!cancelToken.IsCancellationRequested) {
+					cancelToken.ThrowIfCancellationRequested();
+
 					bool needsAnalyze = _isOsuPresent && !_isMinimized
 						&& ((Visible && !_isInGame) || (_isInGame && _prevMapsetDirectory is null));
 					if (needsAnalyze && !_pauseAllTasks) {
 						sw.Restart();
-						await AutoBeatmapAnalyzerThreadTick(cancelToken, timeoutMs);
+						AutoBeatmapAnalyzerThreadTick(cancelToken, timeoutMs);
 						sw.Stop();
 					}
 
@@ -1310,25 +1301,8 @@
 			catch { }
 		}
 
-		private async Task AutoBeatmapAnalyzerThreadTick(CancellationToken cancelToken, int timeoutMs) {
+		private void AutoBeatmapAnalyzerThreadTick(CancellationToken cancelToken, int timeoutMs) {
 			try {
-				//var t = new Thread(ts) {
-				//	IsBackground = true,
-				//	Priority = ThreadPriority.BelowNormal
-				//};
-				//t.Start();
-				//var joinTask = Task.Run(t.Join, cancelToken);
-				//await Task.WhenAny(joinTask, Task.Delay(timeoutMs, cancelToken));
-				//if (t.IsAlive) {
-				//	t.Interrupt();
-				//	t.Abort();
-				//}
-				await Task.Run(ts, cancelToken);
-			}
-			catch (OperationCanceledException) { throw; }
-			catch { }
-
-			void ts() {
 				if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 					Thread.CurrentThread.Name = "AutoBeatmapTickThread";
 
@@ -1341,11 +1315,20 @@
 					_currentMapsetDirectory = MapsetManager.GetCurrentMapsetDirectory(_osuProcess, _inGameWindowTitle, _prevMapsetDirectory);
 
 				sw.Stop();
-				SetText(timeDisplay1, $"{sw.ElapsedMilliseconds} ms");
+				SetFindActiveBeatmapTime($"{sw.ElapsedMilliseconds} ms");
+				cancelToken.ThrowIfCancellationRequested();
 
-				if (_currentMapsetDirectory != _prevMapsetDirectory && Directory.Exists(_currentMapsetDirectory)) {
-					//analyze the mapset
+				bool needsReanalyze = _currentMapsetDirectory != _prevMapsetDirectory && Directory.Exists(_currentMapsetDirectory);
+
+				if (needsReanalyze) {
+					// analyze the mapset
+					sw.Restart();
 					Mapset set = MapsetManager.AnalyzeMapset(_currentMapsetDirectory, this, true, EnableXmlCache);
+					sw.Stop();
+					SetParseAndAnalyzeTime($"{sw.ElapsedMilliseconds} ms");
+					if (set is null)
+						return;
+
 					// show on GUI
 					var prevSet = _displayedMapset;
 					DisplayMapset(set);
@@ -1361,9 +1344,25 @@
 					}
 				}
 			}
+			catch (OperationCanceledException) { throw; }
+			catch { }
 		}
 
 		#endregion
+
+		private async Task BackgroundTaskRun(ThreadStart ts, CancellationToken cancelToken) {
+			// await Task.Run(ts.Invoke, cancelToken);
+			var t = new Thread(ts) { // default stack size for 32bit: 1MB, 64bit: 4MB
+				IsBackground = true,
+				Priority = ThreadPriority.BelowNormal,
+			};
+			t.Start();
+			await Task.Run(() => t.Join(), cancelToken);
+			if (t.IsAlive) {
+				t.Interrupt();
+				t.Abort();
+			}
+		}
 
 	}
 }

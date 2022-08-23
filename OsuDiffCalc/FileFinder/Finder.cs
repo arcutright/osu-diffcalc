@@ -169,7 +169,7 @@
 		/// <summary>
 		/// Get a reference to the osu! process. Returns <see langword="null"/> if it cannot be found.
 		/// </summary>
-		static Process GetOsuProcess(int guiPid) {
+		public static Process GetOsuProcess(int guiPid) {
 			Process result = null;
 			int consolePid = Program.ConsolePid;
 
@@ -179,10 +179,15 @@
 			int i = 0;
 			for (; i < processes.Length; ++i) {
 				var p = processes[i];
-				if (MayBeOsuProcess(p, consolePid, guiPid))
-					processesToInterrogate.Add(p);
-				else
-					p.Dispose();
+				try {
+					if (MayBeOsuProcess(p, consolePid, guiPid))
+						processesToInterrogate.Add(p);
+					else
+						p.Dispose();
+				}
+				catch {
+					p?.Dispose();
+				}
 			}
 
 			// interrogate "may be osu processes" to see which one is osu!
@@ -215,9 +220,11 @@
 		static bool MayBeOsuProcess(Process p, int consolePid, int guiPid) {
 			// pre-filter against known pid(s), or wrongly-named processes
 			return p is not null
-				&& !p.HasExitedSafe()
+				// && p.MainWindowHandle != IntPtr.Zero
+				&& !string.IsNullOrEmpty(p.MainWindowTitle)
 				&& p.Id != consolePid
 				&& p.Id != guiPid
+				&& !p.HasExitedSafe()
 				&& string.Equals("osu!", p.ProcessName, StringComparison.OrdinalIgnoreCase)
 				&& string.Equals("osu!", Path.GetFileName(p.MainModule.FileVersionInfo.ProductName), StringComparison.OrdinalIgnoreCase);
 		}

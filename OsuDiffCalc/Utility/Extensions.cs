@@ -61,6 +61,9 @@
 			try {
 				return process.HasExited;
 			}
+			catch (System.ComponentModel.Win32Exception) {
+				return true;
+			}
 			catch {
 				return true;
 			}

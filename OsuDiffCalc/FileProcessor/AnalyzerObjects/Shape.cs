@@ -44,13 +44,13 @@
 				var prevObj = _hitObjects[n - 2];
 
 				// update average time spacing 
-				double lastTimeGapMs = obj.StartTime - prevObj.StartTime;
+				var lastTimeGapMs = obj.StartTime - prevObj.StartTime;
 				AvgTimeGapMs = (AvgTimeGapMs * (n - 2) + lastTimeGapMs) / (n - 1);
 
 				// update distances
-				float lastDistanceX = obj.X - prevObj.X;
-				float lastDistanceY = obj.Y - prevObj.Y;
-				float lastDistance = (float)Math.Sqrt((lastDistanceX * lastDistanceX) + (lastDistanceY * lastDistanceY));
+				var lastDistanceX = obj.X - prevObj.X;
+				var lastDistanceY = obj.Y - prevObj.Y;
+				var lastDistance = (float)Math.Sqrt((lastDistanceX * lastDistanceX) + (lastDistanceY * lastDistanceY));
 				AvgDistancePx = (AvgDistancePx * (n - 2) + lastDistance) / (n - 1);
 				TotalDistancePx += lastDistance;
 

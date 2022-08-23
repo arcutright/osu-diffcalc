@@ -1,6 +1,7 @@
 ﻿namespace OsuDiffCalc.FileProcessor {
 	using System;
 	using System.Collections.Generic;
+	using System.IO;
 	using AnalyzerObjects;
 	using BeatmapObjects;
 
@@ -10,10 +11,12 @@
 		public const int MaxX = 512;
 		public const int MaxY = 384;
 
-		public DateTime LastModifiedTime = DateTime.MinValue;
+		public readonly string Filepath;
+		public DateTime LastModifiedTimeUtc = DateTime.MinValue;
+		private bool _isParsed = false;
 		public string Title, Artist, Creator, Version;
 		public string BeatmapID, BeatmapSetID;
-		public string Filepath, Mp3FileName;
+		public string Mp3FileName;
 		public string BackgroundImage;
 		public double ApproachRate = -1, CircleSize = -1, HpDrain = -1, OverallDifficulty = -1;
 		/// <summary> Base slider velocity in hundreds of osupixels per beat </summary>
@@ -28,10 +31,20 @@
 		public int Format = -1; // osu file format version
 		public int Mode = -1; // osu!standard == 0, taiko == ?, ctb == ?, mania == ? etc.
 		public bool IsAnalyzed;
-		public bool IsParsed;
 		public bool IsMetadataParsed;
 		public bool IsOfficiallySupported;
 		public bool IsOsuStandard => Mode == 0;
+
+		public bool IsParsed {
+			get => _isParsed;
+			set {
+				if (_isParsed == value) return;
+				_isParsed = value;
+
+				if (_isParsed && File.Exists(Filepath))
+					LastModifiedTimeUtc = File.GetLastWriteTimeUtc(Filepath);
+			}
+		}
 
 		public DifficultyRating DiffRating { get; init; } = new();
 
@@ -44,6 +57,9 @@
 
 		public Beatmap(string filepath) {
 			Filepath = filepath;
+
+			if (File.Exists(filepath))
+				LastModifiedTimeUtc = File.GetLastWriteTimeUtc(filepath);
 		}
 
 		public Beatmap(Mapset set, string version) {
