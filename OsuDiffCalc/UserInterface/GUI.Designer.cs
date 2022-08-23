@@ -5,16 +5,6 @@
 		/// </summary>
 		private System.ComponentModel.IContainer components = null;
 
-		/// <summary>
-		/// Clean up any resources being used.
-		/// </summary>
-		/// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-		protected override void Dispose(bool disposing) {
-			if (disposing) {
-				components?.Dispose();
-			}
-			base.Dispose(disposing);
-		}
 		#region Windows Form Designer generated code
 
 		/// <summary>
@@ -428,7 +418,7 @@
 			series1.Name = "Series1";
 			series1.YValuesPerPoint = 6;
 			this.Chart.Series.Add(series1);
-			this.Chart.Size = new System.Drawing.Size(323, 217);
+			this.Chart.Size = new System.Drawing.Size(322, 217);
 			this.Chart.TabIndex = 0;
 			this.Chart.Text = "Chart";
 			// 

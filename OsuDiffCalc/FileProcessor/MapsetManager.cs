@@ -9,20 +9,21 @@
 	using System.Threading;
 	using System.Threading.Tasks;
 	using FileFinder;
+	using Utility;
 
 	class MapsetManager {
-		private static readonly List<Mapset> _allMapsets = new();
+		private static readonly LRUCache<string, Mapset> _allMapsets = new(30, autoDispose: true);
 		private static readonly Regex _titleRegex = new(@"(.*)\s*\[\s*(.*)\s*\]");
 
-		public static void Clear() {
-			foreach (var mapset in _allMapsets) {
-				mapset?.Dispose();
-			}
-			_allMapsets.Clear();
+		/// <inheritdoc cref="LRUCache{TKey, TValue}.Clear(bool?, IList{TValue})"/>
+		public static void Clear(bool? autoDispose = null, IList<Mapset> exceptions = null) {
+			_allMapsets.Clear(autoDispose, exceptions);
 			GC.Collect();
 			GC.WaitForPendingFinalizers();
 			GC.Collect();
 		}
+
+		public static IEnumerable<Mapset> CachedMapsets => _allMapsets.Values;
 
 		/// <summary>
 		/// [Dirty hack] Get mapset directory based on osu's window title
@@ -39,7 +40,7 @@
 				if (!match.Success)
 					return null;
 
-				// TODO: for improved dirty hack, read the osu songs database to find this song
+				// TODO: for more reliable hack, read the osu songs database to find this song
 
 				// find path to osu! Songs folder (where all the beatmaps live)
 				string songsDir;
@@ -51,12 +52,33 @@
 				// look for a directory in the Songs folder with the mapset title from the in-game window
 				string mapsetTitle = match.Groups[1].Value.Trim();
 				string diffName = match.Groups[2].Value.Trim();
-				var possibleMapsetDirectories = Directory.EnumerateDirectories(songsDir, $"*{mapsetTitle}*", SearchOption.TopDirectoryOnly);
-				foreach (string directory in possibleMapsetDirectories) {
-					// name match for the .osu map file
-					var beatmapFiles = Directory.EnumerateFiles(directory, $"*{diffName}*.osu", SearchOption.TopDirectoryOnly);
-					if (beatmapFiles.Any())
-						return directory;
+
+				if (tryFindMap(mapsetTitle, out var mapsetDir))
+					return mapsetDir;
+				else {
+					// sometimes the window title is 'artist - song name (mapper) [difficulty]'
+					// not sure if the parentheses are meaningful so we split on space instead
+					int idx = -1;
+					while ((idx = mapsetTitle.LastIndexOf(' ')) != -1) {
+						mapsetTitle = mapsetTitle[..idx];
+						if (tryFindMap(mapsetTitle, out mapsetDir))
+							return mapsetDir;
+					}
+					return null;
+				}
+
+				bool tryFindMap(string mapsetTitle, out string foundDir) {
+					var possibleMapsetDirectories = Directory.EnumerateDirectories(songsDir, $"*{mapsetTitle}*", SearchOption.TopDirectoryOnly);
+					foreach (string directory in possibleMapsetDirectories) {
+						// name match for the .osu map file
+						var beatmapFiles = Directory.EnumerateFiles(directory, $"*{diffName}*.osu", SearchOption.TopDirectoryOnly);
+						if (beatmapFiles.Any()) {
+							foundDir = directory;
+							return true;
+						}
+					}
+					foundDir = null;
+					return false;
 				}
 			}
 			catch (Exception ex) {
@@ -71,17 +93,8 @@
 
 		//entry point from GUI.cs
 		public static Mapset AnalyzeMapset(string directory, UserInterface.GUI gui, bool clearLists, bool enableXml) {
-			//timing
-			var sw = Stopwatch.StartNew();
 			try {
 				if (Directory.Exists(directory)) {
-					//initalize allMapsets array from xml if needed
-					if (enableXml) {
-						if (!SavefileXMLManager.IsInitialized)
-							SavefileXMLManager.Parse(_allMapsets);
-						Console.WriteLine("xml analyzed");
-					}
-
 					//parse the mapset by iterating on the directory's .osu files
 					var mapPaths = Directory.GetFiles(directory, "*.osu", SearchOption.TopDirectoryOnly);
 					Console.WriteLine("got osu files");
@@ -90,20 +103,19 @@
 					Console.WriteLine("set built");
 
 					if (set.Any()) {
-						set = AnalyzeMapset(set, clearLists, enableXml);
+						void onUIThread(Action action) {
+							if (gui.InvokeRequired)
+								gui.Invoke(action);
+							else
+								action();
+						}
+						set = AnalyzeMapset(set, clearLists, enableXml, onUIThread);
 						Console.WriteLine("mapset analyzed");
 					}
-
-					//timing
-					sw.Stop();
-					if (gui is not null)
-						gui.SetAnalyzeTime($"{sw.ElapsedMilliseconds} ms");
-
 					return set;
 				}
 			}
 			catch (Exception e) {
-				sw.Stop();
 				Console.WriteLine("!!-- Error: could not analyze set");
 				Console.WriteLine(e.GetBaseException());
 #if DEBUG
@@ -113,58 +125,57 @@
 			return null;
 		}
 
-		//main analysis method - every path leads to this
+		// main analysis method - every path leads to this
 		public static bool AnalyzeMap(Beatmap map, bool clearLists = true) {
 			var totwatch = Stopwatch.StartNew();
-			var localwatch = Stopwatch.StartNew();
-			//parse map if needed
-			if (!map.IsParsed && !Parser.TryParse(ref map, out _))
-				return false;
-			localwatch.Stop();
-			Console.WriteLine($"parse [{map.Version}]: {localwatch.ElapsedMilliseconds}ms");
+			var localwatch = new Stopwatch();
+			bool didWork = false;
 
-			//analyze map: streams, jumps, etc
-			localwatch.Restart();
-			if (!map.IsAnalyzed)
+			// parse map if needed
+			if (!map.IsParsed) {
+				localwatch.Restart();
+				if (!Parser.TryParse(ref map, out _))
+					return false;
+				localwatch.Stop();
+				Console.WriteLine($"parse [{map.Version}]: {localwatch.ElapsedMilliseconds}ms");
+				didWork = true;
+			}
+
+			// analyze map: streams, jumps, etc
+			if (!map.IsAnalyzed) {
+				localwatch.Restart();
 				Analyzer.Analyze(map, clearLists);
-			localwatch.Stop();
-			Console.WriteLine($"analyze [{map.Version}]: {localwatch.ElapsedMilliseconds}ms");
+				localwatch.Stop();
+				Console.WriteLine($"analyze [{map.Version}]: {localwatch.ElapsedMilliseconds}ms");
+				didWork = true;
+			}
 
-			//timing
+			// timing
 			totwatch.Stop();
-			Console.WriteLine($"tot [{map.Version}]: {totwatch.ElapsedMilliseconds}ms");
+			if (didWork)
+				Console.WriteLine($"tot [{map.Version}]: {totwatch.ElapsedMilliseconds}ms");
 			return true;
+		}
+
+		/// <summary>
+		/// Save map into xml. This is meant to save maps that are manually chosen
+		/// </summary>
+		public static void SaveMapToXML(Beatmap map) {
+			if (string.IsNullOrEmpty(map?.Title)) return;
+			var set = new Mapset(map);
+			if (map.IsAnalyzed)
+				set.IsAnalyzed = true;
+
+			// save new mapset to xml
+			set.SaveToXML();
 		}
 
 		/// <summary>
 		/// Save map into cache and xml. This is meant to save maps that are manually chosen
 		/// </summary>
-		public static void SaveMap(Beatmap map, bool saveToXml) {
-			if (string.IsNullOrEmpty(map?.Title)) return;
-				var set = new Mapset(map);
-			if (map.IsAnalyzed)
-				set.IsAnalyzed = true;
-			//check if the mapset has been saved
-			int index = CheckForMapset(set);
-			if (index != -1) {
-				//check if the map has been saved
-				var storedSet = _allMapsets[index];
-				var storedMaps = storedSet.Beatmaps.ToList(); // avoid collection-was-modified
-				foreach (var storedMap in storedMaps) {
-					if (storedMap.Version == map.Version) {
-						storedSet.Beatmaps.Remove(storedMap);
-						storedMap.Dispose();
-						break;
-					}
-				}
-				//save map 
-				storedSet.Add(map);
-				if (saveToXml) storedSet.SaveToXML();
-			}
-			else {
-				_allMapsets.Add(set);
-				if (saveToXml) set.SaveToXML();
-			}
+		public static Mapset SaveMapset(Mapset mapset, bool clearLists, bool saveToXml, Action<Action> onUIThread) {
+			if (mapset is null) return null;
+			return AnalyzeMapset(mapset, clearLists, saveToXml, onUIThread);
 		}
 
 		#region Private helpers
@@ -179,78 +190,95 @@
 			return new Mapset(allMaps);
 		}
 
-		private static Mapset AnalyzeMapset(Mapset set, bool clearLists, bool saveToXml) {
-			int index = CheckForMapset(set);
+		private static Mapset AnalyzeMapset(Mapset set, bool clearLists, bool saveToXml, Action<Action> onUIThread) {
+			if (set is null) return null;
 			//Console.Write("analyzing set...");
 			//check if the mapset has been analyzed
-			if (index != -1) {
+			if (!string.IsNullOrEmpty(set.FolderPath) && _allMapsets.TryGetValue(set.FolderPath, out var storedSet)) {
 				//Console.Write("mapset has been analyzed...");
 				//check for missing versions (difficulties)
-				var missingMaps = GetMissingAnalyzedDiffs(set, index);
-				if (missingMaps.Any()) {
-					_allMapsets[index].IsAnalyzed = false;
+				var (missingMaps, needsAnalyzeMaps) = GetMissingAnalyzedDiffs(set, storedSet);
+				if (missingMaps.Any() || needsAnalyzeMaps.Any()) {
 					//Console.Write("some maps are missing...");
-					Parallel.ForEach(missingMaps, map => AnalyzeMap(map));
-					foreach (Beatmap map in missingMaps) {
-						if (map.IsAnalyzed)
-							_allMapsets[index].Add(map);
+					string prevFolderPath = storedSet.FolderPath;
+					foreach (var map in missingMaps) {
+						storedSet.Add(map);
 					}
-					//Console.WriteLine("missing maps analyzed");
+					
+					if (storedSet.FolderPath != prevFolderPath)
+						onUIThread(() => _allMapsets.Remove(prevFolderPath));
+					if (needsAnalyzeMaps.Any())
+						onUIThread(() => needsAnalyzeMaps.ForEach(map => map.DiffRating.ClearCachedSeries()));
+					analyzeAndCacheMapset(storedSet);
+
+					if (missingMaps.Any())
+						Console.WriteLine($"{missingMaps.Count} missing maps analyzed");
+					if (needsAnalyzeMaps.Any())
+						Console.WriteLine($"{needsAnalyzeMaps.Count} maps analyzed");
 				}
 				else {
 					Console.WriteLine("found cached result, no maps are missing");
-					saveToXml = false;
 				}
-				set = _allMapsets[index];
+				onUIThread(() => set.Dispose());
+				return storedSet;
 			}
 			else {
 				//Console.WriteLine("mapset not analyzed...");
-				Parallel.ForEach(set.Beatmaps, map => AnalyzeMap(map));
-				_allMapsets.Add(set);
+				analyzeAndCacheMapset(set);
 				//Console.WriteLine("analyzed");
+				return set;
 			}
-			set.IsAnalyzed = true;
-			if (saveToXml) {
-				//Console.Write("saving set...");
-				if (set.SaveToXML()) { /*Console.WriteLine("set saved");*/ }
-				else { /*Console.WriteLine("!! could not save");*/ }
-			}
-			return set;
-		}
-
-		private static int CheckForMapset(Mapset set) {
-			if (!_allMapsets.Any())
-				return -1;
-			// TODO: may be slow once cache is large, could replace with custom hash function + hashset
-			for (int i = 0; i < _allMapsets.Count; ++i) {
-				var stored = _allMapsets[i];
-				if (stored.Title == set.Title && set.Artist == stored.Artist && set.Creator == stored.Creator)
-					return i;
-			}
-			return -1;
-		}
-
-		private static IList<Beatmap> GetMissingAnalyzedDiffs(Mapset set, int indexForAllMapsetsSearch) {
-			if (indexForAllMapsetsSearch >= _allMapsets.Count)
-				return Array.Empty<Beatmap>();
-
-			var missing = new List<Beatmap>();
-			Mapset searching = _allMapsets[indexForAllMapsetsSearch];
-			if (set.Title == searching.Title && set.Artist == searching.Artist && set.Creator == searching.Creator) {
-				// TODO: may be slow for large sets (lots of diffs)
-				foreach (Beatmap toFind in set.Beatmaps) {
-					bool found = false;
-					foreach (Beatmap storedMap in searching.Beatmaps) {
-						if (storedMap.Version == toFind.Version) {
-							found = true;
-							break;
-						}
+			
+			void analyzeAndCacheMapset(Mapset set) {
+				var errorsLock = new object();
+				Parallel.ForEach(set, map => {
+					try {
+						AnalyzeMap(map, clearLists);
 					}
-					if (!found)
-						missing.Add(toFind);
+					catch (Exception ex) {
+						lock (errorsLock) {
+							Console.WriteLine($"[ERROR] Failed to parse beatmap: \"{map.Artist} - {map.Title} [{map.Version}]\"");
+							Console.WriteLine(ex.ToString());
+						}
+						map.IsAnalyzed = false;
+					}
+				});
+				var toRemove = set.Where(map => !map.IsAnalyzed || !File.Exists(map.Filepath)).ToArray();
+				
+				onUIThread(() => {
+					foreach (Beatmap map in toRemove) {
+						set.Remove(map);
+						map.Dispose();
+					}
+					set.IsAnalyzed = true;
+
+					// add to cache
+					if (!string.IsNullOrEmpty(set.FolderPath))
+						_allMapsets[set.FolderPath] = set;
+
+				});
+
+				if (saveToXml) {
+					//Console.Write("saving set...");
+					if (set.SaveToXML()) { /*Console.WriteLine("set saved");*/ }
+					else { /*Console.WriteLine("!! could not save");*/ }
 				}
 			}
-			return missing;
+		}
+
+		private static (List<Beatmap> missing, List<Beatmap> needsAnalyze) GetMissingAnalyzedDiffs(Mapset set, Mapset targetSet) {
+			if (set.Title == targetSet.Title && set.Artist == targetSet.Artist && set.Creator == targetSet.Creator) {
+				var missing = new List<Beatmap>();
+				var targetVersions = targetSet.Select(map => map.Version).ToHashSet();
+				foreach (Beatmap map in set) {
+					if (!targetVersions.Contains(map.Version))
+						missing.Add(map);
+				}
+				var needsAnalyze = targetSet.Where(map => !map.IsAnalyzed).ToList();
+				return (missing, needsAnalyze);
+			}
+			else
+				return (new(), new());
 		}
 
 		#endregion

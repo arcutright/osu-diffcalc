@@ -942,10 +942,6 @@ namespace OsuDiffCalc {
 		private static extern int DwmGetWindowAttribute(HANDLE hWnd, DwmWindowAttribute dwAttribute, out RECT pvAttribute, DWORD cbAttribute);
 
 		/// <inheritdoc cref="DwmGetWindowAttribute(HANDLE, DwmWindowAttribute, PVOID, DWORD)"/>
-		public static bool DwmGetWindowAttribute(HANDLE hWnd, DwmWindowAttribute dwAttribute, out RECT pvAttribute)
-			=> DwmGetWindowAttribute(hWnd, dwAttribute, out pvAttribute, (DWORD)Marshal.SizeOf<RECT>()) == 0;
-
-		/// <inheritdoc cref="DwmGetWindowAttribute(HANDLE, DwmWindowAttribute, PVOID, DWORD)"/>
 		public static bool DwmGetWindowAttribute(HANDLE hWnd, DwmWindowAttribute dwAttribute, out int pvAttribute)
 			=> DwmGetWindowAttribute(hWnd, dwAttribute, out pvAttribute, sizeof(Int32)) == 0;
 
@@ -1000,9 +996,140 @@ namespace OsuDiffCalc {
 		public static bool DwmSetWindowAttribute(HANDLE hWnd, DwmWindowAttribute dwAttribute, bool pvAttribute)
 			=> DwmSetWindowAttribute(hWnd, dwAttribute, ref pvAttribute, sizeof(Int32)) == 0;
 
-		/// <inheritdoc cref="DwmSetWindowAttribute(HANDLE, DwmWindowAttribute, PVOID, DWORD)"/>
-		public static bool DwmSetWindowAttribute(HANDLE hWnd, DwmWindowAttribute dwAttribute, RECT pvAttribute)
-			=> DwmSetWindowAttribute(hWnd, dwAttribute, ref pvAttribute, (uint)Marshal.SizeOf<RECT>()) == 0;
+
+		/// <summary>
+		/// Sets an event hook function for a range of events.
+		/// </summary>
+		/// <param name="eventMin">
+		/// Specifies the event constant for the lowest event value in the range of events that are handled by the hook function.
+		/// This parameter can be set to EVENT_MIN to indicate the lowest possible event value.
+		/// </param>
+		/// <param name="eventMax">
+		/// Specifies the event constant for the highest event value in the range of events that are handled by the hook function.
+		/// his parameter can be set to EVENT_MAX to indicate the highest possible event value.
+		/// </param>
+		/// <param name="hModWinEventProc">
+		/// Handle to the DLL that contains the hook function at lpfnWinEventProc, if the WINEVENT_INCONTEXT flag is specified
+		/// in the dwFlags parameter. If the hook function is not located in a DLL, or if the WINEVENT_OUTOFCONTEXT flag is
+		/// specified, this parameter is NULL.
+		/// </param>
+		/// <param name="pfnWinEventProc">
+		/// Pointer to the event hook function. For more information about this function, see WinEventProc.
+		/// </param>
+		/// <param name="idProcess">
+		/// Specifies the ID of the process from which the hook function receives events. Specify zero (0) to receive events from
+		/// all processes on the current desktop.
+		/// </param>
+		/// <param name="idThread">
+		/// Specifies the ID of the thread from which the hook function receives events. If this parameter is zero, the hook
+		/// function is associated with all existing threads on the current desktop.
+		/// </param>
+		/// <param name="dwFlags">
+		/// Flag values that specify the location of the hook function and of the events to be skipped. The following flags are valid:
+		/// </param>
+		/// <returns>
+		/// If successful, returns an HWINEVENTHOOK value that identifies this event hook instance.
+		/// Applications save this return value to use it with the UnhookWinEvent function. <br/>
+		/// If unsuccessful, returns zero.
+		/// </returns>
+		/// <remarks>
+		/// <br/> See https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwineventhook
+		/// </remarks>
+		[DllImport("user32.dll", SetLastError = SetLastError)]
+		public static extern SafeWinEventHookHandle SetWinEventHook(
+			[In] EventConstant eventMin,
+			[In] EventConstant eventMax,
+			[In] HANDLE hModWinEventProc,
+			[In] WinEventProc pfnWinEventProc,
+			[In] DWORD idProcess,
+			[In] DWORD idThread,
+			[In] WinEventHookFlags dwFlags
+		);
+
+		/// <inheritdoc cref="SetWinEventHook(EventConstant, EventConstant, HANDLE, WinEventProc, DWORD, DWORD, WinEventHookFlags)"/>
+		[DllImport("user32.dll", SetLastError = SetLastError)]
+		public static extern SafeWinEventHookHandle SetWinEventHook(
+			[In] EventConstant eventMin,
+			[In] EventConstant eventMax,
+			[In] HANDLE hModWinEventProc,
+			[In] WinEventProc pfnWinEventProc,
+			[In] int idProcess,
+			[In] int idThread,
+			[In] WinEventHookFlags dwFlags
+		);
+
+		/// <summary>
+		/// Removes an event hook function created by a previous call to SetWinEventHook.
+		/// </summary>
+		/// <param name="hWinEventHook">Handle to the event hook returned in the previous call to SetWinEventHook.</param>
+		/// <returns>
+		/// If successful, returns TRUE; otherwise, returns FALSE. <br/>
+		/// Three common errors cause this function to fail: <br/>
+		/// - The hWinEventHook parameter is NULL or not valid. <br/>
+		/// - The event hook specified by hWinEventHook was already removed. <br/>
+		/// - UnhookWinEvent is called from a thread that is different from the original call to SetWinEventHook.
+		/// </returns>
+		/// <remarks>
+		/// This function removes the event hook specified by hWinEventHook that prevents the corresponding callback function
+		/// from receiving further event notifications. If the client's thread ends, the system automatically calls this function. <br/>
+		/// Call this function from the same thread that installed the event hook. UnhookWinEvent fails if called from a thread
+		/// different from the call that corresponds to SetWinEventHook. <br/>
+		/// If WINEVENT_INCONTEXT was specified when this event hook was installed, the system attempts to unload the corresponding
+		/// DLL from all processes that loaded it.Although unloading does not occur immediately, the hook function is not called
+		/// after UnhookWinEvent returns.For more information on WINEVENT_INCONTEXT, see In-Context Hook Functions. <br/>
+		/// <br/> See https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-unhookwinevent
+		/// </remarks>
+		[DllImport("user32.dll", SetLastError = SetLastError)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool UnhookWinEvent([In] HANDLE hWinEventHook);
+
+		/// <inheritdoc cref="UnhookWinEvent(HANDLE)"/>
+		[DllImport("user32.dll", SetLastError = SetLastError)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool UnhookWinEvent([In] SafeWinEventHookHandle hWinEventHook);
+
+		/// <summary>
+		/// An application-defined callback (or hook) function that the system calls in response to events generated
+		/// by an accessible object. The hook function processes the event notifications as required. Clients install
+		/// the hook function and request specific types of event notifications by calling SetWinEventHook. <br/>
+		/// The WINEVENTPROC type defines a pointer to this callback function. WinEventProc is a placeholder for the
+		/// application-defined function name.
+		/// </summary>
+		/// <param name="hWinEventHook">
+		/// Handle to an event hook function. This value is returned by SetWinEventHook when the hook function is
+		/// installed and is specific to each instance of the hook function.
+		/// </param>
+		/// <param name="evnt">Specifies the event that occurred. This value is one of the event constants.</param>
+		/// <param name="hWnd">
+		/// Handle to the window that generates the event, or NULL if no window is associated with the event.
+		/// For example, the mouse pointer is not associated with a window.
+		/// </param>
+		/// <param name="objectId">
+		/// Identifies the object associated with the event. This is one of the object identifiers or a custom object ID.
+		/// </param>
+		/// <param name="childId">
+		/// Identifies whether the event was triggered by an object or a child element of the object. If this value is
+		/// CHILDID_SELF, the event was triggered by the object; otherwise, this value is the child ID of the element
+		/// that triggered the event.
+		/// </param>
+		/// <param name="eventThreadId"></param>
+		/// <param name="eventTime">Specifies the time, in milliseconds, that the event was generated.</param>
+		/// <remarks>
+		/// Within the hook function, the parameters hwnd, idObject, and idChild are used when calling AccessibleObjectFromEvent. <br/>
+		/// Servers generate events by calling NotifyWinEvent. <br/>
+		/// Create multiple callback functions to handle different events.For more information, see Registering a Hook Function. <br/>
+		/// <br/> See https://docs.microsoft.com/en-us/windows/win32/api/winuser/nc-winuser-wineventproc
+		/// </remarks>
+		public delegate void WinEventProc(
+			HANDLE hWinEventHook,
+			EventConstant evnt,
+			HANDLE hWnd,
+			int objectId,
+			int childId,
+			DWORD eventThreadId,
+			DWORD eventTime
+		);
+
 
 		#endregion
 	}

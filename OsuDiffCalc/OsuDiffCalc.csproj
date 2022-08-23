@@ -112,6 +112,7 @@
     <Compile Include="Utility\AssociatedApplicationHelper.cs" />
     <Compile Include="FileFinder\Finder.cs" />
     <Compile Include="Utility\Extensions.cs" />
+    <Compile Include="Utility\LRUCache.cs" />
     <Compile Include="Utility\ShortcutHelper.cs" />
     <Compile Include="FileFinder\OpenFilesDetector.cs" />
     <Compile Include="FileProcessor\Analyzer.cs" />

@@ -6,11 +6,13 @@
 	using System.Drawing;
 	using System.IO;
 	using System.Linq;
+	using System.Runtime.InteropServices;
 	using System.Text;
 	using System.Threading;
 	using System.Threading.Tasks;
 	using System.Windows.Forms;
 	using System.Windows.Forms.DataVisualization.Charting;
+
 	using FileFinder;
 	using FileProcessor;
 	using UserInterface.Controls;
@@ -31,6 +33,7 @@
 		private string _prevMapsetDirectory = null, _currentMapsetDirectory = null;
 
 		//background event timers
+		private readonly ManualResetEventSlim _windowStateAnalyzedEvent = new();
 		private Task _autoBeatmapAnalyzer;
 		private CancellationTokenSource _autoBeatmapCancellation = new();
 		/// <summary>
@@ -44,6 +47,7 @@
 		private Mapset _displayedMapset;
 		private TabPage _prevTab;
 		private bool _isChangingTab = false;
+		private bool _didUserChangeTab = false;
 		private bool _isLoaded = false;
 		private bool _isMinimized = false;
 		private bool _isOsuPresent = false;
@@ -58,6 +62,10 @@
 			3000;
 #endif
 
+		private IntPtr _prevActiveWindowHandle;
+		private readonly NativeMethods.WinEventProc _winProcDelegate;
+		private readonly SafeWinEventHookHandle _winEventHookHandle;
+
 		public GUI() {
 			_guiProcess = Process.GetCurrentProcess();
 			_guiPid = _guiProcess?.IdSafe() ?? (int)NativeMethods.GetCurrentThreadId();
@@ -67,6 +75,17 @@
 
 			InitializeComponent();
 			WindowHelper.TrySetUseImmersiveDarkMode(Handle, true);
+
+			// attach windows event hook to capture whenever active window changes
+			// (hold in a local field to prevent delegate from getting GC'd)
+			_winProcDelegate = (hook, evnt, hWnd, objectId, childId, eventThreadId, eventTime) => {
+				if (hWnd != this.Handle && hWnd != Program.ConsoleWindowHandle) {
+					_prevActiveWindowHandle = hWnd;
+				}
+			};
+			var hookEvent = NativeMethods.EventConstant.EVENT_SYSTEM_FOREGROUND;
+			var hookFlags = NativeMethods.WinEventHookFlags.OutOfContext;
+			_winEventHookHandle = NativeMethods.SetWinEventHook(hookEvent, hookEvent, IntPtr.Zero, _winProcDelegate, 0, 0, hookFlags);
 		}
 
 		private void GUI_Load(object sender, EventArgs eArgs) {
@@ -74,7 +93,7 @@
 			int x = Screen.PrimaryScreen.Bounds.Right - Width - (int)(Screen.PrimaryScreen.Bounds.Width * xPadding + 0.5);
 			int y = Screen.PrimaryScreen.Bounds.Y + (Screen.PrimaryScreen.Bounds.Height - Height) / 2;
 			Location = new Point(x, y);
-			TopMost = IsAlwaysOnTop;
+			SetTopMost(IsAlwaysOnTop);
 
 			// initialize text box text
 			SetText(Settings_StarTargetMinTextbox, $"{Settings.FamiliarStarTargetMinimum:f2}");
@@ -117,6 +136,7 @@
 			MainTabControl.SelectedIndexChanged += MainTabControl_TabChanged;
 
 			_prevTab = MainTabControl.SelectedTab;
+			_didUserChangeTab = false;
 			Refresh();
 		}
 
@@ -124,16 +144,32 @@
 
 		// hack to prevent stealing focus when activating this window
 
-		protected override CreateParams CreateParams {
-			get {
-				var createParams = base.CreateParams;
+		protected override void WndProc(ref Message m) {
+			// there are a ton of possible windows messages
+			// See https://docs.microsoft.com/en-us/windows/win32/winmsg/about-messages-and-message-queues#system-defined-messages
+			const int WM_ACTIVATE = 6;
+			const int WA_INACTIVE = 0;
+			// See https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-mouseactivate
+			const int WM_MOUSEACTIVATE = 0x0021;
+			const int WS_EX_NOACTIVATE = 0x08000000;
+			const int WM_CAPTURECHANGED = 0x0215;
+			const int WM_SYSCMD = 0x112;
 
-				const int WS_EX_NOACTIVATE = 0x08000000;
-				//const int WS_EX_TOOLWINDOW = 0x00000080;
-				createParams.ExStyle |= WS_EX_NOACTIVATE;
+			// calling MakeForegroundWindow on WM_ACTIVATE sort of works, but it also captures mouse clicks, so we can't change tabs/checkboxes anymore
+			if (m.Msg == WM_MOUSEACTIVATE) {
+				if (((int)m.WParam & 0xFFFF) != WA_INACTIVE && MainTabControl.SelectedTab != settingsTab) {
+					NativeMethods.SetForegroundWindow(_prevActiveWindowHandle);
 
-				return createParams;
+					// return values for WM_MOUSEACTIVATE
+					const nint MA_ACTIVATE         = 1; // Activates the window, and does not discard the mouse message.
+					const nint MA_ACTIVATEANDEAT   = 2; // Activates the window, and discards the mouse message.
+					const nint MA_NOACTIVATE       = 3; // Does not activate the window, and does not discard the mouse message.
+					const nint MA_NOACTIVATEANDEAT = 4; // Does not activate the window, but discards the mouse message.
+
+					m.Result = MA_NOACTIVATE;
+				}
 			}
+			base.WndProc(ref m);
 		}
 
 		protected override bool ShowWithoutActivation => true;
@@ -143,8 +179,10 @@
 		private void MainTabControl_TabChanged(object sender, EventArgs e) {
 			if (_isChangingTab)
 				_isChangingTab = false;
-			else
+			else {
 				_prevTab = MainTabControl.SelectedTab;
+				_didUserChangeTab = true;
+			}
 		}
 
 		public Properties.Settings Settings => Properties.Settings.Default;
@@ -181,6 +219,7 @@
 				if (IsAlwaysOnTop == value) return;
 				Settings.AlwaysOnTop = value;
 				AlwaysOnTopCheckbox.Checked = value;
+				SetTopMost(value);
 				Settings.Save();
 			}
 		}
@@ -324,7 +363,7 @@
 
 		private void ClearButton_Click(object sender, EventArgs e) {
 			// var displayedMapset = _displayedMapset;
-			MapsetManager.Clear();
+			MapsetManager.Clear(exceptions: new[] { _displayedMapset });
 			SavefileXMLManager.ClearXML();
 			// MapsetManager.SaveMapset(displayedMapset, true, EnableXmlCache);
 		}
@@ -503,6 +542,17 @@
 		#endregion
 
 		#region Private Helpers
+
+		/// <summary>
+		/// Sets the TopMost property and calls a native function to ensure Windows will respect it. <br/>
+		/// See <see cref="WindowHelper.SetTopMost(IntPtr, bool)"/>
+		/// </summary>
+		/// <inheritdoc cref="WindowHelper.SetTopMost(IntPtr, bool)"/>
+		private bool SetTopMost(bool topMost) {
+			TopMost = topMost;
+			bool setOk = WindowHelper.SetTopMost(Handle, topMost);
+			return setOk;
+		}
 
 		private void SetFindActiveBeatmapTime(string timeString) {
 			SetText(timeDisplay1, timeString);
@@ -1062,6 +1112,7 @@
 				if (_autoWindowCancellation.IsCancellationRequested)
 					_autoWindowCancellation = new CancellationTokenSource();
 
+				_windowStateAnalyzedEvent.Reset();
 				_autoWindowUpdater = BackgroundTaskRun(async() => await AutoWindowUpdaterBegin(_autoWindowCancellation.Token, AutoWindowUpdaterTimeoutMs), _autoWindowCancellation.Token);
 			}
 		}
@@ -1117,11 +1168,14 @@
 					// osu not found
 					if (TopMost) {
 						Invoke(() => {
-							TopMost = false;
+							SetTopMost(false);
 							if (MainTabControl.SelectedTab != _prevTab) {
+								_isChangingTab = true;
 								var prevFgWindow = WindowHelper.GetForegroundWindow();
 								MainTabControl.SelectTab(_prevTab);
 								WindowHelper.MakeForegroundWindow(prevFgWindow);
+								_isChangingTab = false;
+								_didUserChangeTab = false;
 							}
 						});
 					}
@@ -1161,14 +1215,17 @@
 							// unminimize if it was auto-minimized, change back to prev user tab if we auto-changed to the charts tab
 							if (_didMinimize && !Visible) Visible = true;
 							if (MainTabControl.SelectedTab != _prevTab) {
+								_isChangingTab = true;
 								var prevFgWindow = WindowHelper.GetForegroundWindow();
 								MainTabControl.SelectTab(_prevTab);
 								WindowHelper.MakeForegroundWindow(prevFgWindow);
+								_isChangingTab = false;
+								_didUserChangeTab = false;
 							}
 							_didMinimize = false;
 						}
 
-						if (!TopMost) TopMost = IsAlwaysOnTop;
+						if (!TopMost) SetTopMost(IsAlwaysOnTop);
 
 						// try to move to a secondary screen
 						try {
@@ -1190,7 +1247,7 @@
 								}
 								else if (_isInGame) {
 									if (!_isMinimized) _didMinimize = _isOnSameScreen;
-									if (TopMost) TopMost = false;
+									if (TopMost) SetTopMost(false);
 									if (Visible) Visible = false;
 								}
 								else if (numScreens == 1 && isOsuFullScreen) {
@@ -1209,32 +1266,42 @@
 						catch { }
 
 						// if we are in-game, switch to charts tab if we aren't on it
-						if (_isInGame) {
-							_prevTab = MainTabControl.SelectedTab;
-							if (_prevTab != chartsTab) {
+						if (_isInGame || _isInEditor) {
+							// TODO: only change 1x in-editor/in-game (need to store 
+							bool didChangeTab = false;
+							var selectedTab = MainTabControl.SelectedTab;
+							if (!_didUserChangeTab && selectedTab != chartsTab) {
 								_isChangingTab = true;
 								var prevFgWindow = WindowHelper.GetForegroundWindow();
 								MainTabControl.SelectTab(chartsTab);
 								WindowHelper.MakeForegroundWindow(prevFgWindow);
+								_isChangingTab = false;
+								_didUserChangeTab = false;
+								didChangeTab = true;
 							}
 
 							// try to figure out what map is being played. This work will only happen once
 							_inGameBeatmap = GetInGameBeatmap(_displayedMapset, windowTitle);
 
 							// switch charted beatmap to in-game map
-							if (_chartedBeatmap != _inGameBeatmap || _prevTab != chartsTab) {
+							if (_chartedBeatmap != _inGameBeatmap) {
 								UpdateChartOptions(_inGameBeatmap);
 								RefreshChart();
 							}
-
-							Console.WriteLine($"In game, window title: '{windowTitle}'");
-							Console.WriteLine($"  => beatmap: {_inGameBeatmap}");
+							if (_chartedBeatmap != _inGameBeatmap || didChangeTab) {
+								Console.WriteLine($"In {(_isInGame ? "game" : "editor")}, window title: '{windowTitle}'");
+								Console.WriteLine($"  => beatmap: {_inGameBeatmap}");
+							}
 						}
 					});
 				}
 			}
 			catch (OperationCanceledException) { throw; }
 			catch { }
+			finally {
+				// tell the beatmap thread it can start reading maps
+				_windowStateAnalyzedEvent.Set();
+			}
 		}
 
 		Beatmap GetInGameBeatmap(Mapset set, string windowTitle) {
@@ -1276,6 +1343,7 @@
 				var sw = new Stopwatch();
 
 				while (!cancelToken.IsCancellationRequested) {
+					_windowStateAnalyzedEvent.Wait(cancelToken);
 					cancelToken.ThrowIfCancellationRequested();
 
 					bool needsAnalyze = _isOsuPresent && !_isMinimized
@@ -1285,15 +1353,7 @@
 						AutoBeatmapAnalyzerThreadTick(cancelToken, timeoutMs);
 						sw.Stop();
 					}
-
-					int updateInterval;
-					if (!_isOsuPresent)
-						updateInterval = UpdateIntervalOsuNotFoundMs;
-					else if (!_isInGame && !_isMinimized && Visible)
-						updateInterval = UpdateIntervalNormalMs;
-					else
-						updateInterval = UpdateIntervalMinimizedMs;
-					await Task.Delay(Math.Max(updateInterval, timeoutMs - (int)sw.ElapsedMilliseconds), cancelToken);
+					_windowStateAnalyzedEvent.Reset();
 				}
 				cancelToken.ThrowIfCancellationRequested();
 			}
@@ -1333,6 +1393,7 @@
 					var prevSet = _displayedMapset;
 					DisplayMapset(set);
 					_prevMapsetDirectory = _currentMapsetDirectory;
+					_didUserChangeTab = false;
 
 					// clear previously cached Series
 					if (set != prevSet && prevSet is not null) {
@@ -1364,5 +1425,23 @@
 			}
 		}
 
+
+		private bool _isDisposed = false;
+
+		/// <summary>
+		/// Clean up any resources being used.
+		/// </summary>
+		/// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+		protected override void Dispose(bool disposing) {
+			if (!_isDisposed) {
+				if (disposing) {
+					components?.Dispose();
+					_winEventHookHandle.Dispose();
+				}
+				components = null;
+				_isDisposed = true;
+			}
+			base.Dispose(disposing);
+		}
 	}
 }

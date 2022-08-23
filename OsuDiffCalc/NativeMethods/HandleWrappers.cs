@@ -49,4 +49,23 @@ namespace OsuDiffCalc {
 			return NativeMethods.CloseHandle(base.handle);
 		}
 	}
+
+	/// <summary>
+	/// Safe wrapper for HWINEVENTHOOK, used by SetWinEventHook and UnhookWinEvent. <br/>
+	/// See https://docs.microsoft.com/en-us/windows/win32/winauto/hwineventhook)
+	/// </summary>
+	[SecurityCritical]
+	[SecurityPermission(SecurityAction.InheritanceDemand, UnmanagedCode = true)]
+	public sealed class SafeWinEventHookHandle : SafeHandleZeroOrMinusOneIsInvalid {
+		public SafeWinEventHookHandle() : base(true) {
+		}
+
+		public SafeWinEventHookHandle(IntPtr preexistingHandle, bool ownsHandle) : base(ownsHandle) {
+			base.SetHandle(preexistingHandle);
+		}
+
+		protected override bool ReleaseHandle() {
+			return NativeMethods.UnhookWinEvent(base.handle);
+		}
+	}
 }

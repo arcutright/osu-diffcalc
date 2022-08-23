@@ -121,12 +121,8 @@
 					y2 = screenTop;
 			}
 			var flags = SetWindowPosFlags.SWP_SHOWWINDOW | SetWindowPosFlags.SWP_NOACTIVATE;
-			return SetWindowPos(hWnd, SpecialWindowHandles.HWND_TOP, x2, y2, width, height, flags);
+			return NativeMethods.SetWindowPos(hWnd, SpecialWindowHandles.HWND_TOP, x2, y2, width, height, flags);
 		}
-
-		/// <inheritdoc cref="SetWindowPos(IntPtr, IntPtr, int, int, int, int, SetWindowPosFlags)"/>
-		public static bool SetWindowPos(IntPtr hWnd, SpecialWindowHandles insertAfter, int x, int y, int cx, int cy, SetWindowPosFlags uFlags)
-			=> NativeMethods.SetWindowPos(hWnd, (IntPtr)insertAfter, x, y, cx, cy, uFlags);
 
 		public static bool GetWindowRect(IntPtr hWnd, out Rectangle lpRect) {
 			if (NativeMethods.GetWindowRect(hWnd, out RECT rect)) {
@@ -141,6 +137,29 @@
 				lpRect = default;
 				return false;
 			}
+		}
+
+		/// <summary>
+		/// Adds the TOPMOST flag to the window, placing it above all non-topmost windows in the z-order. <br/>
+		/// The window maintains this flag even when deactivated. See <see cref="SpecialWindowHandles.HWND_TOPMOST"/>.
+		/// </summary>
+		/// <param name="hWnd">handle to the window</param>
+		/// <param name="topMost"> <para>
+		/// If <see langword="true"/>, adds the TOPMOST flag to the window, placing it above all non-topmost windows in the z-order. <br/>
+		/// The window maintains this flag even when deactivated. See <see cref="SpecialWindowHandles.HWND_TOPMOST"/>.
+		/// </para><para>
+		/// If <see langword="false"/>, removes the TOPMOST flag from the window, placing it behind all topmost windows in the z-order. <br/>
+		/// See <see cref="SpecialWindowHandles.HWND_NOTOPMOST"/>.
+		/// </para></param>
+		/// <returns>
+		/// <see langword="true"/> if the flag was successfully changed, otherwise <see langword="false"/>
+		/// </returns>
+		public static bool SetTopMost(IntPtr hWnd, bool topMost) {
+			var flags = SetWindowPosFlags.SWP_NOMOVE
+								| SetWindowPosFlags.SWP_NOSIZE
+								| SetWindowPosFlags.SWP_NOACTIVATE;
+			var pos = topMost ? SpecialWindowHandles.HWND_TOPMOST : SpecialWindowHandles.HWND_NOTOPMOST;
+			return NativeMethods.SetWindowPos(hWnd, pos, 0, 0, 0, 0, flags);
 		}
 
 		public static bool IsForegroundWindowFullScreen()
@@ -208,7 +227,7 @@
 				| SetWindowPosFlags.SWP_FRAMECHANGED;
 			ShowWindow(hWnd, ShowWindowCommand.SW_SHOWNOACTIVATE);
 			SetForegroundWindow(hWnd);
-			SetWindowPos(hWnd, SpecialWindowHandles.HWND_TOP, 0, 0, 0, 0, flags);
+			NativeMethods.SetWindowPos(hWnd, SpecialWindowHandles.HWND_TOP, 0, 0, 0, 0, flags);
 		}
 
 		/// <summary>
@@ -255,13 +274,13 @@
 				| SetWindowPosFlags.SWP_ASYNCWINDOWPOS
 			;
 			if (fgPid == appPid) {
-				SetWindowPos(hWnd, SpecialWindowHandles.HWND_TOP, 0, 0, 0, 0, swpFlags);
+				NativeMethods.SetWindowPos(hWnd, SpecialWindowHandles.HWND_TOP, 0, 0, 0, 0, swpFlags);
 				return;
 			}
 			// ShowWindow(hWnd, ShowWindowCommand.SW_RESTORE);
 			SetForegroundWindow(hWnd);
 			AttachThreadInput(fgPid, appPid, true);
-			SetWindowPos(hWnd, SpecialWindowHandles.HWND_TOP, 0, 0, 0, 0, swpFlags);
+			NativeMethods.SetWindowPos(hWnd, SpecialWindowHandles.HWND_TOP, 0, 0, 0, 0, swpFlags);
 		}
 
 		/// <summary>
@@ -295,7 +314,7 @@
 				AttachThreadInput(basePid, appPid, true);
 				SetForegroundWindow(hWnd);
 				//BringWindowToTop(hWnd);
-				SetWindowPos(hWnd, SpecialWindowHandles.HWND_TOP, 0, 0, 0, 0, flags);
+				NativeMethods.SetWindowPos(hWnd, SpecialWindowHandles.HWND_TOP, 0, 0, 0, 0, flags);
 				//ShowWindow(hWnd, ShowWindowCommand.SW_SHOWNOACTIVATE);
 				AttachThreadInput(basePid, appPid, false); // this line makes diffcalc hold on to the foreground
 				//AttachThreadInput(appPid, basePid, true); // does not work to pass inputs to osu!
