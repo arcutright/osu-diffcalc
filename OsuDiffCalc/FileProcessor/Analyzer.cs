@@ -41,14 +41,16 @@
 
 			// analysis variables
 			float minStreamAvgMs = -1, minDoubleAvgMs = -1, minTripletAvgMs = -1, minBurstAvgMs = -1;
+			double totalMapPlayTime = 0;
 			var streams = new List<Shape>();
 			var doubles = new List<Shape>();
 			var triplets = new List<Shape>();
 			var bursts = new List<Shape>();
 
 			var shape = new Shape();
-			var lastShape = new Shape();
-			HitObject lastHitObject = null;
+			var prevShape = new Shape();
+			HitObject prevHitObject = null;
+			BeatmapObject prevBeatmapObject = null;
 
 			var jumpDifficultyList = new List<float>();
 			var sliderDifficultyList = new List<float>();
@@ -56,7 +58,7 @@
 			// macro to make life easier
 			void addShapeToAppropriateList(Shape shape) {
 				shape.Analyze();
-				shape.PrevShape = lastShape;
+				shape.PrevShape = prevShape;
 				if (shape.NumObjects == 2) {
 					shape.Type = Shape.ShapeType.Double;
 					doubles.Add(shape);
@@ -78,7 +80,7 @@
 					streams.Add(shape);
 					UpdateMin(ref minStreamAvgMs, shape.AvgTimeGapMs);
 				}
-				lastShape = shape;
+				prevShape = shape;
 			}
 
 			foreach (var obj in beatmap.BeatmapObjects) {
@@ -86,7 +88,7 @@
 				// TODO: calculate spinner properties (min speed for 300, 100, etc -- include some 'get to spinner' margin)
 				if (obj is HitObject hitObj) {
 					// first hit object
-					if (lastHitObject is null)
+					if (prevHitObject is null)
 						shape.Add(hitObj);
 					// shape analysis for triplet, streams, etc
 					else {
@@ -101,7 +103,7 @@
 							//end of stream, start of new stream
 							else {
 								addShapeToAppropriateList(shape);
-								shape = new Shape(lastHitObject, hitObj);
+								shape = new Shape(prevHitObject, hitObj);
 							}
 						}
 					}
@@ -112,19 +114,28 @@
 						sliderDifficultyList.Add(difficulty);
 					}
 					// jump difficulty
-					if (lastHitObject is not null) {
-						var difficulty = GetJumpDifficulty(lastHitObject, hitObj, beatmap);
+					if (prevHitObject is not null) {
+						var difficulty = GetJumpDifficulty(prevHitObject, hitObj, beatmap);
 						beatmap.DiffRating.AddJump(hitObj.StartTime, difficulty);
 						jumpDifficultyList.Add(difficulty);
 					}
 
-					lastHitObject = hitObj;
+					prevHitObject = hitObj;
 				}
 				// obj is a Spinner, BreakSection, etc.
 				else if (shape.NumObjects != 0) {
 					addShapeToAppropriateList(shape);
 					shape = new();
-					lastHitObject = null;
+					prevHitObject = null;
+				}
+				if (obj is not BreakSection) {
+					totalMapPlayTime += (obj.EndTime - obj.StartTime);
+					if (prevBeatmapObject is not null) {
+						var downTime = obj.StartTime - prevBeatmapObject.EndTime;
+						if (downTime > 0 && downTime < 3000)
+							totalMapPlayTime += downTime;
+					}
+					prevBeatmapObject = obj;
 				}
 			}
 			if (shape.NumObjects != 0)
@@ -149,8 +160,9 @@
 			beatmap.DiffRating.TotalDifficulty = totalDifficulty;
 			beatmap.DiffRating.StreamsMaxBPM = streamsMaxBPM;
 			beatmap.DiffRating.StreamsAverageBPM = streamsAvgBPM;
-			beatmap.DiffRating.BurstsMaxBPM = burstsMaxBPM;
-			beatmap.DiffRating.BurstsAverageBPM = burstsAvgBPM;
+			// bursts sometimes round to be sligthly above stream speed even though they're the same
+			beatmap.DiffRating.BurstsMaxBPM = Math.Abs(burstsMaxBPM - streamsMaxBPM) <= 2 ? streamsMaxBPM : burstsMaxBPM;
+			beatmap.DiffRating.BurstsAverageBPM = Math.Abs(burstsAvgBPM - streamsAvgBPM) <= 2 ? streamsAvgBPM : burstsAvgBPM;
 			beatmap.IsAnalyzed = true;
 			/*
 			Console.WriteLine("\n{1:000} jumps diff    = {0:0.0}", jumpsDifficulty, jumpDifficultyList.Count);

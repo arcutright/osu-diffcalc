@@ -133,13 +133,13 @@
 			return GetNormalizedSeries(points);
 		}
 
-		public void AddJump(double timeMs, float difficulty) => Add(timeMs, difficulty, _jumps);
-		public void AddStream(double timeMs, float difficulty) => Add(timeMs, difficulty, _streams);
-		public void AddBurst(double timeMs, float difficulty) => Add(timeMs, difficulty, _bursts);
-		public void AddDouble(double timeMs, float difficulty) => Add(timeMs, difficulty, _doubles);
-		public void AddSlider(double timeMs, float difficulty) => Add(timeMs, difficulty, _sliders);
+		public void AddJump(double timeMs, double difficulty) => Add(timeMs, difficulty, _jumps);
+		public void AddStream(double timeMs, double difficulty) => Add(timeMs, difficulty, _streams);
+		public void AddBurst(double timeMs, double difficulty) => Add(timeMs, difficulty, _bursts);
+		public void AddDouble(double timeMs, double difficulty) => Add(timeMs, difficulty, _doubles);
+		public void AddSlider(double timeMs, double difficulty) => Add(timeMs, difficulty, _sliders);
 
-		private void Add(double timeMs, float diff, SeriesPointCollection dest) {
+		private void Add(double timeMs, double diff, SeriesPointCollection dest) {
 			lock (_pointsLock) {
 				float xValue = (float)(timeMs / 1000.0);
 				_allSeriesXValues.Add(xValue);
