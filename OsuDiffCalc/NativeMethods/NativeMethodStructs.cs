@@ -230,6 +230,105 @@ namespace OsuDiffCalc {
 			public int Bottom;
 			public override string ToString() => $"Left: {Left}, Top: {Top}, Right: {Right}, Bottom: {Bottom}";
 		}
+
+		[StructLayout(LayoutKind.Sequential)]
+		public struct MEMORY_BASIC_INFORMATION {
+			/// <summary>
+			/// A pointer to the base address of the region of pages.
+			/// </summary>
+			public PVOID BaseAddress;
+			/// <summary>
+			/// A pointer to the base address of a range of pages allocated by the VirtualAlloc function.
+			/// The page pointed to by the BaseAddress member is contained within this allocation range.
+			/// </summary>
+			public PVOID AllocationBase;
+			/// <summary>
+			/// The memory protection option when the region was initially allocated. <br/>
+			/// This member can be one of the memory protection constants or 0 if the caller does not have access.
+			/// </summary>
+			public MEM_PROTECT AllocationProtect;
+			/// <summary>
+			/// The size of the region beginning at the base address in which all pages have identical attributes, in bytes.
+			/// </summary>
+			public nint RegionSize;
+			/// <summary>
+			/// The state of the pages in the region.
+			/// </summary>
+			public MBI_STATE State;
+			/// <summary>
+			/// The access protection of the pages in the region. <br/>
+			/// This member is one of the values listed for the AllocationProtect member.
+			/// </summary>
+			public MEM_PROTECT Protect;
+			/// <summary>
+			/// The type of pages in the region.
+			/// </summary>
+			public MBI_TYPE Type;
+		}
+
+		/// <summary>
+		/// Contains information about the current computer system. This includes the architecture and type of the processor,
+		/// the number of processors in the system, the page size, and other such information.
+		/// </summary>
+		/// <remarks>
+		/// See https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/ns-sysinfoapi-system_info
+		/// </remarks>
+		[StructLayout(LayoutKind.Sequential)]
+		public struct SYSTEM_INFO {
+			/// <summary>
+			/// The processor architecture of the installed operating system. This member can be one of the following values.
+			/// </summary>
+			public SI_PROCESSOR_ARCHITECTURE wProcessorArchitecture;
+			/// <summary>
+			/// This member is reserved for future use.
+			/// </summary>
+			public WORD wReserved;
+			/// <summary>
+			/// The page size and the granularity of page protection and commitment.
+			/// This is the page size used by the VirtualAlloc function.
+			/// </summary>
+			public DWORD dwPageSize;
+			/// <summary>
+			/// A pointer to the lowest memory address accessible to applications and dynamic-link libraries (DLLs).
+			/// </summary>
+			public IntPtr lpMinimumApplicationAddress;
+			/// <summary>
+			/// A pointer to the highest memory address accessible to applications and DLLs.
+			/// </summary>
+			public IntPtr lpMaximumApplicationAddress;
+			/// <summary>
+			/// A mask representing the set of processors configured into the system.
+			/// Bit 0 is processor 0; bit 31 is processor 31.
+			/// </summary>
+			public IntPtr dwActiveProcessorMask;
+			/// <summary>
+			/// The number of logical processors in the current group. To retrieve this value, use the
+			/// GetLogicalProcessorInformation function.
+			/// </summary>
+			public DWORD dwNumberOfProcessors;
+			/// <summary>
+			/// An obsolete member that is retained for compatibility. Use the wProcessorArchitecture,
+			/// wProcessorLevel, and wProcessorRevision members to determine the type of processor.
+			/// </summary>
+			public DWORD dwProcessorType;
+			/// <summary>
+			/// The granularity for the starting address at which virtual memory can be allocated.
+			/// For more information, see VirtualAlloc.
+			/// </summary>
+			public DWORD dwAllocationGranularity;
+			/// <summary>
+			/// The architecture-dependent processor level. It should be used only for display purposes.
+			/// To determine the feature set of a processor, use the IsProcessorFeaturePresent function. <br/>
+			/// If wProcessorArchitecture is PROCESSOR_ARCHITECTURE_INTEL, wProcessorLevel is defined by the CPU vendor. <br/>
+			/// If wProcessorArchitecture is PROCESSOR_ARCHITECTURE_IA64, wProcessorLevel is set to 1.
+			/// </summary>
+			public WORD wProcessorLevel;
+			/// <summary>
+			/// The architecture-dependent processor revision. The following table shows how the revision
+			/// value is assembled for each type of processor architecture.
+			/// </summary>
+			public WORD wProcessorRevision;
+		}
 	}
 
 	internal static class NativeStructExtensions {

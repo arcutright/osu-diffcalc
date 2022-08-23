@@ -210,6 +210,166 @@ namespace OsuDiffCalc {
 			WRITE_OWNER = 0x00080000,
 		}
 
+		/// <summary>
+		/// State for <see cref="MEMORY_BASIC_INFORMATION"/>
+		/// </summary>
+		public enum MBI_STATE : DWORD {
+			/// <summary>
+			/// Indicates committed pages for which physical storage has been allocated,
+			/// either in memory or in the paging file on disk. 
+			/// </summary>
+			MEM_COMMIT = 0x1000,
+			/// <summary>
+			/// Indicates free pages not accessible to the calling process and available to be allocated. For free pages,
+			/// the information in the AllocationBase, AllocationProtect, Protect, and Type members is undefined. 
+			/// </summary>
+			MEM_FREE = 0x10000,
+			/// <summary>
+			/// Indicates reserved pages where a range of the process's virtual address space is reserved without any
+			/// physical storage being allocated. For reserved pages, the information in the Protect member is undefined. 
+			/// </summary>
+			MEM_RESERVE = 0x2000,
+		}
+
+		/// <summary>
+		/// Type for <see cref="MEMORY_BASIC_INFORMATION"/>
+		/// </summary>
+		public enum MBI_TYPE : DWORD {
+			/// <summary>
+			/// Indicates that the memory pages within the region are mapped into the view of an image section.
+			/// </summary>
+			MEM_IMAGE = 0x1000000,
+			/// <summary>
+			/// Indicates that the memory pages within the region are mapped into the view of a section.
+			/// </summary>
+			MEM_MAPPED = 0x40000,
+			/// <summary>
+			/// Indicates that the memory pages within the region are private (that is, not shared by other processes).
+			/// </summary>
+			MEM_PRIVATE = 0x20000,
+		}
+
+		/// <summary>
+		/// The following are the memory-protection options; you must specify one of the following values
+		/// when allocating or protecting a page in memory. Protection attributes cannot be assigned to a
+		/// portion of a page; they can only be assigned to a whole page.
+		/// </summary>
+		/// <remarks>
+		/// See https://docs.microsoft.com/en-us/windows/win32/memory/memory-protection-constants
+		/// </remarks>
+		[Flags]
+		public enum MEM_PROTECT : DWORD {
+			/// <summary>
+			/// Enables execute access to the committed region of pages. An attempt to write to the committed region
+			/// results in an access violation. <br/>
+			/// This flag is not supported by the CreateFileMapping function.
+			/// </summary>
+			PAGE_EXECUTE = 0x10,
+			/// <summary>
+			/// Enables execute or read-only access to the committed region of pages. An attempt to write to the
+			/// committed region results in an access violation. <br/>
+			/// Windows Server 2003 and Windows XP: This attribute is not supported by the CreateFileMapping function
+			/// until Windows XP with SP2 and Windows Server 2003 with SP1.
+			/// </summary>
+			PAGE_EXECUTE_READ = 0x20,
+			/// <summary>
+			/// Enables execute, read-only, or read/write access to the committed region of pages. <br/>
+			/// Windows Server 2003 and Windows XP: This attribute is not supported by the CreateFileMapping function
+			/// until Windows XP with SP2 and Windows Server 2003 with SP1.
+			/// </summary>
+			PAGE_EXECUTE_READWRITE = 0x40,
+			/// <summary>
+			/// Enables execute, read-only, or copy-on-write access to a mapped view of a file mapping object. An
+			/// attempt to write to a committed copy-on-write page results in a private copy of the page being made
+			/// for the process. The private page is marked as PAGE_EXECUTE_READWRITE, and the change is written to
+			/// the new page. <br/>
+			/// This flag is not supported by the VirtualAlloc or VirtualAllocEx functions. <br/>
+			/// Windows Vista, Windows Server 2003 and Windows XP: This attribute is not supported by the
+			/// CreateFileMapping function until Windows Vista with SP1 and Windows Server 2008.
+			/// </summary>
+			PAGE_EXECUTE_WRITECOPY = 0x80,
+			/// <summary>
+			/// Disables all access to the committed region of pages. An attempt to read from, write to, or execute
+			/// the committed region results in an access violation. <br/>
+			/// This flag is not supported by the CreateFileMapping function.
+			/// </summary>
+			PAGE_NOACCESS = 0x01,
+			/// <summary>
+			/// Enables read-only access to the committed region of pages. An attempt to write to the committed region
+			/// results in an access violation. If Data Execution Prevention is enabled, an attempt to execute code in
+			/// the committed region results in an access violation.
+			/// </summary>
+			PAGE_READONLY = 0x02,
+			/// <summary>
+			/// Enables read-only or read/write access to the committed region of pages. If Data Execution Prevention
+			/// is enabled, attempting to execute code in the committed region results in an access violation.
+			/// </summary>
+			PAGE_READWRITE = 0x04,
+			/// <summary>
+			/// Enables read-only or copy-on-write access to a mapped view of a file mapping object. An attempt to
+			/// write to a committed copy-on-write page results in a private copy of the page being made for the process.
+			/// The private page is marked as PAGE_READWRITE, and the change is written to the new page. If Data
+			/// Execution Prevention is enabled, attempting to execute code in the committed region results in an
+			/// access violation. <br/>
+			/// This flag is not supported by the VirtualAlloc or VirtualAllocEx functions.
+			/// </summary>
+			PAGE_WRITECOPY = 0x08,
+			/// <summary>
+			/// Sets all locations in the pages as invalid targets for CFG. Used along with any execute page protection
+			/// like PAGE_EXECUTE, PAGE_EXECUTE_READ, PAGE_EXECUTE_READWRITE and PAGE_EXECUTE_WRITECOPY. Any indirect
+			/// call to locations in those pages will fail CFG checks and the process will be terminated. The default
+			/// behavior for executable pages allocated is to be marked valid call targets for CFG. <br/>
+			/// This flag is not supported by the VirtualProtect or CreateFileMapping functions.
+			/// </summary>
+			PAGE_TARGETS_INVALID = 0x40000000,
+			/// <summary>
+			/// Pages in the region will not have their CFG information updated while the protection changes for
+			/// VirtualProtect. For example, if the pages in the region was allocated using PAGE_TARGETS_INVALID, then
+			/// the invalid information will be maintained while the page protection changes. This flag is only valid
+			/// when the protection changes to an executable type like PAGE_EXECUTE, PAGE_EXECUTE_READ,
+			/// PAGE_EXECUTE_READWRITE and PAGE_EXECUTE_WRITECOPY. The default behavior for VirtualProtect protection
+			/// change to executable is to mark all locations as valid call targets for CFG. 
+			/// </summary>
+			PAGE_TARGETS_NO_UPDATE = 0x40000000,
+
+			// the following are modifiers that can be used in addition to the
+			// options provided in the previous table, except as noted.
+
+			/// <summary>
+			/// Pages in the region become guard pages. Any attempt to access a guard page causes the system to raise
+			/// a STATUS_GUARD_PAGE_VIOLATION exception and turn off the guard page status. Guard pages thus act as a
+			/// one-time access alarm. For more information, see Creating Guard Pages. <br/>
+			/// When an access attempt leads the system to turn off guard page status, the underlying page protection
+			/// takes over. If a guard page exception occurs during a system service, the service typically returns a
+			/// failure status indicator. <br/>
+			/// This value cannot be used with PAGE_NOACCESS. <br/>
+			/// This flag is not supported by the CreateFileMapping function.
+			/// </summary>
+			PAGE_GUARD = 0x100,
+			/// <summary>
+			/// Sets all pages to be non-cachable. Applications should not use this attribute except when explicitly
+			/// required for a device. Using the interlocked functions with memory that is mapped with SEC_NOCACHE can
+			/// result in an EXCEPTION_ILLEGAL_INSTRUCTION exception. <br/>
+			/// The PAGE_NOCACHE flag cannot be used with the PAGE_GUARD, PAGE_NOACCESS, or PAGE_WRITECOMBINE flags. <br/>
+			/// The PAGE_NOCACHE flag can be used only when allocating private memory with the VirtualAlloc,
+			/// VirtualAllocEx, or VirtualAllocExNuma functions.To enable non-cached memory access for shared memory,
+			/// specify the SEC_NOCACHE flag when calling the CreateFileMapping function.
+			/// </summary>
+			PAGE_NOCACHE = 0x200,
+			/// <summary>
+			/// Sets all pages to be write-combined. <br/>
+			/// Applications should not use this attribute except when explicitly required for a device. Using the
+			/// interlocked functions with memory that is mapped as write-combined can result in an
+			/// EXCEPTION_ILLEGAL_INSTRUCTION exception. <br/>
+			/// The PAGE_WRITECOMBINE flag cannot be specified with the PAGE_NOACCESS, PAGE_GUARD, and PAGE_NOCACHE flags. <br/>
+			/// The PAGE_WRITECOMBINE flag can be used only when allocating private memory with the VirtualAlloc,
+			/// VirtualAllocEx, or VirtualAllocExNuma functions.To enable write-combined memory access for shared memory,
+			/// specify the SEC_WRITECOMBINE flag when calling the CreateFileMapping function. <br/>
+			/// Windows Server 2003 and Windows XP: This flag is not supported until Windows Server 2003 with SP1.
+			/// </summary>
+			PAGE_WRITECOMBINE = 0x400,
+		}
+
 
 		#region Window show / position enums
 
@@ -782,6 +942,107 @@ namespace OsuDiffCalc {
 			SystemSecurityModelInformation                        = 0xD0,
 			SystemCodeIntegritySyntheticCacheInformation          = 0xD1,
 			MaxSystemInfoClass                                    = 0xD2
+		}
+
+		/// <summary>
+		/// Describes possible machine architectures. Used in GetSystemWow64Directory2,
+		/// IsWow64GuestMachineSupported and IsWow64Process2.
+		/// </summary>
+		/// <remarks>
+		/// <br/> See https://docs.microsoft.com/en-us/windows/win32/sysinfo/image-file-machine-constants
+		/// </remarks>
+		public enum IMAGE_FILE_MACHINE : USHORT {
+			UNKNOWN     = 0,
+			/// <summary>
+			/// Interacts with the host and not a WOW64 guest. <br/>
+			/// This constant is available starting with Windows 10, version 1607 and Windows Server 2016.
+			/// </summary>
+			TARGET_HOST = 1,
+			/// <summary> Intel 386 </summary>
+			I386        = 0x014c,
+			/// <summary> MIPS big endian </summary>
+			R3000_BIG   = 0x0160,
+			/// <summary> MIPS little endian </summary>
+			R3000       = 0x0162,
+			/// <summary> MIPS little endian </summary>
+			R4000       = 0x0166,
+			/// <summary> MIPS little endian </summary>
+			R10000      = 0x0168,
+			/// <summary> MIPS little endian WCE v2 </summary>
+			WCEMIPSV2   = 0x0169,
+			/// <summary> ALPHA AXP </summary>
+			ALPHA       = 0x0184,
+			/// <summary> SH3 little endian </summary>
+			SH3         = 0x01a2,
+			/// <summary> SH3 DSP </summary>
+			SH3DSP      = 0x01a3,
+			/// <summary> SH3E little endian </summary>
+			SH3E        = 0x01a4,
+			/// <summary> SH4 little endian </summary>
+			SH4         = 0x01a6,
+			/// <summary> SH5 </summary>
+			SH5         = 0x01a8,
+			/// <summary> ARM little endian </summary>
+			ARM         = 0x01c0,
+			/// <summary> ARM Thumb / Thumb-2 little endian </summary>
+			THUMB       = 0x01c2,
+			/// <summary>
+			/// ARM Thumb-2 little endian. <br/>
+			/// This constant is available starting with Windows 7 and Windows Server 2008 R2.
+			/// </summary>
+			ARMNT       = 0x01c4,
+			/// <summary> TAM33BD </summary>
+			AM33        = 0x01d3,
+			/// <summary> IBM PowerPC little endian </summary>
+			POWERPC     = 0x01f0,
+			/// <summary> PowerPC FP </summary>
+			POWERPCFP   = 0x01f1,
+			/// <summary> Intel 64 </summary>
+			IA64        = 0x0200,
+			/// <summary> MIPS </summary>
+			MIPS16      = 0x0266,
+			/// <summary> ALPHA64 </summary>
+			ALPHA64     = 0x0284,
+			/// <summary> MIPS </summary>
+			MIPSFPU     = 0x0366,
+			/// <summary> MIPS </summary>
+			MIPSFPU16   = 0x0466,
+			/// <summary> AXP64 </summary>
+			AXP64       = 0x0284,
+			/// <summary> Infineon </summary>
+			TRICORE     = 0x0520,
+			/// <summary> CEF </summary>
+			CEF         = 0x0cef,
+			/// <summary> EFI Byte Code </summary>
+			EBC         = 0x0ebc,
+			/// <summary> AMD64 (K8) </summary>
+			AMD64       = 0x8664,
+			/// <summary> M32R little-endian </summary>
+			M32R        = 0x9041,
+			/// <summary>
+			/// ARM64 little endian. <br/>
+			/// This constant is available starting with Windows 8.1 and Windows Server 2012 R2.
+			/// </summary>
+			ARM64       = 0xaa64,
+			/// <summary> CEE </summary>
+			CEE         = 0x0cee,
+		}
+
+		/// <summary>
+		/// Processor architecture of the installed operating system, used by the SYSTEM_INFO struct.
+		/// </summary>
+		public enum SI_PROCESSOR_ARCHITECTURE : WORD {
+			X86     = 0,
+			/// <summary> x86 </summary>
+			INTEL   = X86,
+			/// <summary> x64 (AMD or Intel) </summary>
+			AMD64   = 9,
+			X64     = AMD64,
+			ARM     = 5,
+			ARM64   = 12,
+			/// <summary> Intel Itanium-based </summary>
+			IA64    = 6,
+			UNKNOWN = 0xffff,
 		}
 
 		/// <summary>

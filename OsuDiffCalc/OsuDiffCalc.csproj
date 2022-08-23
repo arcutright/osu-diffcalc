@@ -100,6 +100,15 @@
   <ItemGroup>
     <Compile Include="CSharp9Features.cs" />
     <Compile Include="EquatableReadOnlyList.cs" />
+    <Compile Include="OsuMemoryReader\ProcessPropertyReader\AddressFinder.cs" />
+    <Compile Include="OsuMemoryReader\OsuMemoryModels\CurrentBeatmap.cs" />
+    <Compile Include="OsuMemoryReader\ProcessPropertyReader\MemoryReader.cs" />
+    <Compile Include="OsuMemoryReader\ProcessPropertyReader\ObjectReader.cs" />
+    <Compile Include="OsuMemoryReader\OsuMemoryModels\Enums.cs" />
+    <Compile Include="OsuMemoryReader\OsuMemoryModels\GeneralData.cs" />
+    <Compile Include="OsuMemoryReader\ProcessPropertyReader.cs" />
+    <Compile Include="OsuMemoryReader\MemoryAddressInfoAttribute.cs" />
+    <Compile Include="OsuMemoryReader\OsuStateReader.cs" />
     <Compile Include="FileProcessor\AnalyzerObjects\SeriesPoint.cs" />
     <Compile Include="FileProcessor\AnalyzerObjects\SeriesPointCollection.cs" />
     <Compile Include="FileProcessor\BeatmapObjects\SliderPathHelpers\Interpolation.cs" />

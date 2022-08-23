@@ -15,6 +15,7 @@
 
 	using FileFinder;
 	using FileProcessor;
+	using OsuMemoryReader;
 	using UserInterface.Controls;
 	using Utility;
 
@@ -28,9 +29,12 @@
 		// osu state variables
 		private Process _osuProcess = null;
 		private bool _isInGame = false;
+		private bool _isInEditor = false;
 		private string _inGameWindowTitle = null;
 		private Beatmap _inGameBeatmap = null;
 		private string _prevMapsetDirectory = null, _currentMapsetDirectory = null;
+		private OsuMemoryState _prevOsuState = OsuMemoryState.Invalid;
+		private OsuMemoryState _currentOsuState = OsuMemoryState.Invalid;
 
 		//background event timers
 		private readonly ManualResetEventSlim _windowStateAnalyzedEvent = new();
@@ -105,16 +109,16 @@
 			SetText(timeDisplay2, string.Empty);
 
 			// attach event handlers for text box updates
-			Settings_StarTargetMinTextbox.TextChanged += SettingsTextbox_TextChanged;
-			Settings_StarTargetMinTextbox.LostFocus += SettingsTextbox_TextChanged;
-			Settings_StarTargetMaxTextbox.TextChanged += SettingsTextbox_TextChanged;
-			Settings_StarTargetMaxTextbox.LostFocus += SettingsTextbox_TextChanged;
-			Settings_UpdateIntervalNormalTextbox.TextChanged += SettingsTextbox_TextChanged;
-			Settings_UpdateIntervalNormalTextbox.LostFocus += SettingsTextbox_TextChanged;
-			Settings_UpdateIntervalMinimizedTextbox.TextChanged += SettingsTextbox_TextChanged;
-			Settings_UpdateIntervalMinimizedTextbox.LostFocus += SettingsTextbox_TextChanged;
+			Settings_StarTargetMinTextbox.TextChanged             += SettingsTextbox_TextChanged;
+			Settings_StarTargetMinTextbox.LostFocus               += SettingsTextbox_TextChanged;
+			Settings_StarTargetMaxTextbox.TextChanged             += SettingsTextbox_TextChanged;
+			Settings_StarTargetMaxTextbox.LostFocus               += SettingsTextbox_TextChanged;
+			Settings_UpdateIntervalNormalTextbox.TextChanged      += SettingsTextbox_TextChanged;
+			Settings_UpdateIntervalNormalTextbox.LostFocus        += SettingsTextbox_TextChanged;
+			Settings_UpdateIntervalMinimizedTextbox.TextChanged   += SettingsTextbox_TextChanged;
+			Settings_UpdateIntervalMinimizedTextbox.LostFocus     += SettingsTextbox_TextChanged;
 			Settings_UpdateIntervalOsuNotFoundTextbox.TextChanged += SettingsTextbox_TextChanged;
-			Settings_UpdateIntervalOsuNotFoundTextbox.LostFocus += SettingsTextbox_TextChanged;
+			Settings_UpdateIntervalOsuNotFoundTextbox.LostFocus   += SettingsTextbox_TextChanged;
 
 			ChartStyleDropdown.Items.Clear();
 			ChartStyleDropdown.Items.AddRange(new object[] {
@@ -601,7 +605,7 @@
 					// display all maps
 					if (set != _displayedMapset) {
 						ClearBeatmapDisplay();
-					foreach (Beatmap map in set) {
+						foreach (Beatmap map in set) {
 							AddBeatmapToDisplay(map);
 						}
 						_displayedMapset = set;
@@ -1142,6 +1146,8 @@
 						updateInterval = UpdateIntervalOsuNotFoundMs;
 					else if (_isInGame || _isMinimized || !Visible)
 						updateInterval = UpdateIntervalMinimizedMs;
+					else if (_isInEditor)
+						updateInterval = UpdateIntervalMinimizedMs;
 					else
 						updateInterval = UpdateIntervalNormalMs;
 					await Task.Delay(Math.Max(updateInterval, timeoutMs - (int)sw.ElapsedMilliseconds), cancelToken);
@@ -1179,26 +1185,63 @@
 							}
 						});
 					}
+					_currentOsuState = OsuMemoryState.Invalid;
+					_prevOsuState = OsuMemoryState.Invalid;
 					_isOsuPresent = false;
 					_isInGame = false;
+					_isInEditor = false;
 					_didMinimize = false;
 				}
 				else {
 					// osu found and we may be in-game
 					_isOsuPresent = true;
 
-					if (_isInGame && windowTitle == _inGameWindowTitle) {
-						// definitely in-game
-						return;
+					// read osu state to get in-game/in-editor, etc.
+					bool couldReadState = OsuStateReader.TryReadCurrentOsuState(_osuProcess, out _currentOsuState);
+					if (!couldReadState) {
+						// fallback is sometimes needed to "force a refresh" to fix issues with the process handle
+						_osuProcess.Dispose();
+						_osuProcess = Finder.GetOsuProcess(_guiPid);
+						couldReadState = OsuStateReader.TryReadCurrentOsuState(_osuProcess, out _currentOsuState);
+					}
+					// try-catch in case of invalid path characters
+					try {
+						if (couldReadState) {
+							_currentMapsetDirectory = Path.Combine(Finder.GetOsuSongsDirectory(_osuProcess), _currentOsuState.FolderName);
+							_isInGame = _currentOsuState.IsInGame;
+							_isInEditor = _currentOsuState.IsInEditor;
+							_inGameWindowTitle = _currentOsuState.IsInGame ? windowTitle : null;
+							couldReadState = true;
+						}
+						else
+							_currentMapsetDirectory = null;
+					}
+					catch {
+						_currentMapsetDirectory = null;
+						couldReadState = false;
 					}
 
+					if (couldReadState && _isInGame)
+						return;
+					if (!couldReadState) {
+						// crappy way to check if osu is in-game/in-editor
+						int indexOfDiff = windowTitle.IndexOf('[');
+						_isInGame = indexOfDiff != -1;
+						_isInEditor = _isInGame && windowTitle.IndexOf(')', indexOfDiff - 3) != -1;
+						_isInGame &= !_isInEditor;
+					}
+
+					// return early if in-game
+					// (if failed to read state, check if window title has changed to see if still in game)
+					if (_isInGame && (couldReadState || windowTitle == _inGameWindowTitle))
+						return;
+					
+					cancelToken.ThrowIfCancellationRequested();
+					if (!couldReadState)
+						_inGameWindowTitle = _isInGame ? windowTitle : null;
+
 					Invoke(() => {
-						// crappy way to check if osu is in-game
-						_isInGame = windowTitle.IndexOf('[') != -1;
-						if (_isInGame)
-							_inGameWindowTitle = windowTitle;
-						else
-							_inGameWindowTitle = null;
+						var prevInGameBeatmap = _inGameBeatmap;
 
 						// find the screen bounds of each process
 						Rectangle? osuScreenBounds = null, thisScreenBounds = null;
@@ -1210,7 +1253,7 @@
 						}
 						catch { }
 						
-						if (!_isInGame) {
+						if (!_isInGame && !_isInEditor) {
 							// not in game
 							// unminimize if it was auto-minimized, change back to prev user tab if we auto-changed to the charts tab
 							if (_didMinimize && !Visible) Visible = true;
@@ -1236,7 +1279,7 @@
 								// if we are not in game and we are on the same screen
 								int numScreens = Screen.AllScreens.Length;
 								bool isOsuFullScreen = WindowHelper.IsFullScreen(_osuProcess);
-								if (numScreens > 1 && (isOsuFullScreen || _isInGame)) {
+								if (numScreens > 1 && (isOsuFullScreen || _isInGame || _isInEditor)) {
 									// move to a different screen if osu is full screen
 									// (we can't act as an overlay with WinForms UI, would require a rewrite in DirectX or something)
 									var otherScreen = Screen.AllScreens.First(s => s.Bounds != osuScreenBounds);
@@ -1305,13 +1348,31 @@
 		}
 
 		Beatmap GetInGameBeatmap(Mapset set, string windowTitle) {
-			if (set is not null && !string.IsNullOrEmpty(windowTitle)) {
-				var inGameBeatmap = set.FirstOrDefault(map => windowTitle.EndsWith($"[{map.Version}]", StringComparison.Ordinal));
-				inGameBeatmap ??= set.FirstOrDefault(map => windowTitle.Contains($"[{map.Version}]") && windowTitle.Contains($"{map.Title}"));
-				return inGameBeatmap;
-			}
-			else
+			if (set is null)
 				return null;
+			if (!string.IsNullOrEmpty(_currentOsuState.OsuFileName)) {
+				string filename = _currentOsuState.OsuFileName;
+				var inGameBeatmap = set.FirstOrDefault(map => Path.GetFileName(map.Filepath) == filename);
+				if (inGameBeatmap is not null)
+					return inGameBeatmap;
+			}
+			if (!string.IsNullOrEmpty(_currentOsuState.MapString)) {
+				var inGameBeatmap = getInGameBeatmap_inner($"osu! - {_currentOsuState.MapString}");
+				if (inGameBeatmap is not null)
+					return inGameBeatmap;
+			}
+			return getInGameBeatmap_inner(windowTitle);
+
+			Beatmap getInGameBeatmap_inner(string windowTitle) {
+				Beatmap inGameBeatmap = null;
+				if (!string.IsNullOrEmpty(windowTitle)) {
+					inGameBeatmap = set.FirstOrDefault(map => windowTitle.EndsWith($"[{map.Version}]", StringComparison.Ordinal));
+					inGameBeatmap ??= set.FirstOrDefault(map => windowTitle.Contains($"[{map.Version}]") && windowTitle.Contains($"{map.Title}"));
+					return inGameBeatmap;
+				}
+				else
+					return null;
+			}
 		}
 
 		#endregion
@@ -1347,7 +1408,7 @@
 					cancelToken.ThrowIfCancellationRequested();
 
 					bool needsAnalyze = _isOsuPresent && !_isMinimized
-						&& ((Visible && !_isInGame) || (_isInGame && _prevMapsetDirectory is null));
+						                  && ((Visible && !_isInGame) || (_isInGame && _prevMapsetDirectory is null));
 					if (needsAnalyze && !_pauseAllTasks) {
 						sw.Restart();
 						AutoBeatmapAnalyzerThreadTick(cancelToken, timeoutMs);
@@ -1366,19 +1427,52 @@
 				if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 					Thread.CurrentThread.Name = "AutoBeatmapTickThread";
 
+				// fallbacks in case memory reader didn't work
+				// these fallbacks can be slow
 				var sw = Stopwatch.StartNew();
-
-				_osuProcess ??= Finder.GetOsuProcess(_guiPid, _osuProcess); // secondary HOT PATH
-				cancelToken.ThrowIfCancellationRequested();
-				_currentMapsetDirectory = Finder.GetActiveBeatmapDirectory(_osuProcess?.Id); // true HOT PATH
-				if (_currentMapsetDirectory is null && _isInGame)
+				if (_osuProcess is not null && !_osuProcess.HasExitedSafe()) {
+					if (!Directory.Exists(_currentMapsetDirectory))
+						_currentMapsetDirectory = Finder.GetActiveBeatmapDirectory(_osuProcess.IdSafe()); // true HOT PATH
+				}
+				if (_currentMapsetDirectory is null && (_isInGame || _isInEditor))
 					_currentMapsetDirectory = MapsetManager.GetCurrentMapsetDirectory(_osuProcess, _inGameWindowTitle, _prevMapsetDirectory);
-
+				if (_currentMapsetDirectory is null && !string.IsNullOrEmpty(_currentOsuState.MapString))
+					_currentMapsetDirectory = MapsetManager.GetCurrentMapsetDirectory(_osuProcess, $"osu! - {_currentOsuState.MapString}", _prevMapsetDirectory);
+				
 				sw.Stop();
 				SetFindActiveBeatmapTime($"{sw.ElapsedMilliseconds} ms");
 				cancelToken.ThrowIfCancellationRequested();
 
 				bool needsReanalyze = _currentMapsetDirectory != _prevMapsetDirectory && Directory.Exists(_currentMapsetDirectory);
+				if (!needsReanalyze && !string.IsNullOrEmpty(_currentOsuState.OsuFileName)) {
+					// this can happen if difficulties were somehow missing from the previous analysis
+					// or if the user saves a map while in the editor
+					string fileName = _currentOsuState.OsuFileName;
+					var storedMap = _displayedMapset.FirstOrDefault(map => Path.GetFileName(map.Filepath) == fileName);
+					if (storedMap is not null) {
+						// re-analyze on map update
+						try {
+							DateTime lastModified = File.GetLastWriteTimeUtc(storedMap.Filepath);
+							if (lastModified != storedMap.LastModifiedTimeUtc) {
+								Console.WriteLine($"Map has been updated: {_currentOsuState.MapString}");
+								storedMap.IsParsed = false;
+								storedMap.IsAnalyzed = false;
+								_displayedMapset.IsAnalyzed = false;
+								needsReanalyze = true;
+							}
+						}
+						catch { }
+					}
+					else {
+						// TODO: doesn't handle when user creates a new diff in the editor
+						// analyze missing map added to present set
+						needsReanalyze = true;
+						_displayedMapset = null;
+						Invoke(() => {
+							ChartedMapDropdown.Items.Clear();
+						});
+					}
+				}
 
 				if (needsReanalyze) {
 					// analyze the mapset
@@ -1393,6 +1487,7 @@
 					var prevSet = _displayedMapset;
 					DisplayMapset(set);
 					_prevMapsetDirectory = _currentMapsetDirectory;
+					_prevOsuState = _currentOsuState;
 					_didUserChangeTab = false;
 
 					// clear previously cached Series
@@ -1403,6 +1498,11 @@
 							}
 						});
 					}
+				}
+				else if (!string.IsNullOrEmpty(_currentOsuState.MapString) && _currentOsuState != _prevOsuState) {
+					DisplayMapset(_displayedMapset);
+					_prevOsuState = _currentOsuState;
+					_didUserChangeTab = false;
 				}
 			}
 			catch (OperationCanceledException) { throw; }

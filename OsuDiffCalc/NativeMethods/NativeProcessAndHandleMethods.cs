@@ -333,6 +333,302 @@ namespace OsuDiffCalc {
 			[In] int idAttachTo,
 			[In] BOOL fAttach
 		);
+
+		/// <summary>
+		/// Retrieves information about a range of pages within the virtual address space of a specified process.
+		/// </summary>
+		/// <param name="hProcess">
+		/// A handle to the process whose memory information is queried. The handle must have been opened with the
+		/// PROCESS_QUERY_INFORMATION access right, which enables using the handle to read information from the 
+		/// process object. For more information, see Process Security and Access Rights.
+		/// </param>
+		/// <param name="lpAddress">
+		/// A pointer to the base address of the region of pages to be queried. This value is rounded down to the next
+		/// page boundary. To determine the size of a page on the host computer, use the GetSystemInfo function. <br/>
+		/// If lpAddress specifies an address above the highest memory address accessible to the process, the function
+		/// fails with ERROR_INVALID_PARAMETER.
+		/// </param>
+		/// <param name="lpBuffer">A structure in which information about the specified page range is returned.</param>
+		/// <param name="dwLength">The size of the buffer pointed to by the lpBuffer parameter, in bytes.</param>
+		/// <returns>
+		/// The return value is the actual number of bytes returned in the information buffer. <br/>
+		/// If the function fails, the return value is zero. To get extended error information, call GetLastError.
+		/// Possible error values include ERROR_INVALID_PARAMETER.
+		/// </returns>
+		/// <remarks>
+		/// <br/> See https://www.pinvoke.net/default.aspx/kernel32/VirtualQueryEx.html
+		/// <br/> See https://docs.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-virtualqueryex
+		/// </remarks>
+		[DllImport("kernel32.dll", EntryPoint = "VirtualQueryEx", SetLastError = SetLastError)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool VirtualQueryEx(
+			[In] HANDLE hProcess,
+			[In] PVOID lpAddress,
+			[Out] out MEMORY_BASIC_INFORMATION lpBuffer,
+			[In] nuint dwLength
+		);
+
+		/// <inheritdoc cref="VirtualQueryEx(HANDLE, PVOID, out MEMORY_BASIC_INFORMATION, nuint)"/>
+		[DllImport("kernel32.dll", EntryPoint = "VirtualQueryEx", SetLastError = SetLastError)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool VirtualQueryEx(
+			[In] SafeHandle hProcess,
+			[In] PVOID lpAddress,
+			[Out] out MEMORY_BASIC_INFORMATION lpBuffer,
+			[In] nuint dwLength
+		);
+
+		/// <inheritdoc cref="VirtualQueryEx(HANDLE, PVOID, out MEMORY_BASIC_INFORMATION, nuint)"/>
+		[DllImport("kernel32.dll", EntryPoint = "VirtualQueryEx", SetLastError = SetLastError)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool VirtualQueryEx(
+			[In] HANDLE hProcess,
+			[In] nuint lpAddress,
+			[Out] out MEMORY_BASIC_INFORMATION lpBuffer,
+			[In] nuint dwLength
+		);
+
+		/// <inheritdoc cref="VirtualQueryEx(HANDLE, PVOID, out MEMORY_BASIC_INFORMATION, nuint)"/>
+		[DllImport("kernel32.dll", EntryPoint = "VirtualQueryEx", SetLastError = SetLastError)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool VirtualQueryEx(
+			[In] SafeHandle hProcess,
+			[In] nuint lpAddress,
+			[Out] out MEMORY_BASIC_INFORMATION lpBuffer,
+			[In] nuint dwLength
+		);
+
+		/// <summary>
+		/// Retrieves information about the current system. <br/>
+		/// To retrieve accurate information for an application running on WOW64, call the GetNativeSystemInfo function.
+		/// </summary>
+		/// <param name="Info"> A pointer to a SYSTEM_INFO structure that receives the information. </param>
+		/// <remarks>
+		/// <br/> See https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsysteminfo
+		/// <br/> See https://www.pinvoke.net/default.aspx/kernel32.getsysteminfo
+		/// </remarks>
+		[DllImport("kernel32.dll", SetLastError = SetLastError)]
+		public static extern void GetSystemInfo([Out] out SYSTEM_INFO Info);
+
+		/// <summary>
+		/// Retrieves information about the current system to an application running under WOW64. <br/>
+		/// If the function is called from a 64-bit application, it is equivalent to the GetSystemInfo function.  <br/>
+		/// If the function is called from an x86 or x64 application running on a 64-bit system that does not have
+		/// an Intel64 or x64 processor (such as ARM64), it will return information as if the system is x86 only
+		/// if x86 emulation is supported (or x64 if x64 emulation is also supported).
+		/// </summary>
+		/// <param name="Info">A pointer to a SYSTEM_INFO structure that receives the information.</param>
+		[DllImport("kernel32.dll", SetLastError = SetLastError)]
+		public static extern void GetNativeSystemInfo([Out] out SYSTEM_INFO Info);
+
+		/// <summary>
+		/// Read the memory of some process
+		/// </summary>
+		/// <param name="hProcess">
+		/// A handle to the process with memory that is being read. The handle must have PROCESS_VM_READ access to the process.
+		/// </param>
+		/// <param name="lpBaseAddress">
+		/// A pointer to the base address in the specified process from which to read. Before any data transfer occurs,
+		/// the system verifies that all data in the base address and memory of the specified size is accessible for
+		/// read access, and if it is not accessible the function fails.
+		/// </param>
+		/// <param name="lpBuffer">
+		/// A pointer to a buffer that receives the contents from the address space of the specified process.
+		/// </param>
+		/// <param name="nSize">
+		/// The number of bytes to be read from the specified process.
+		/// </param>
+		/// <param name="lpNumberOfBytesRead">
+		/// A pointer to a variable that receives the number of bytes transferred into the specified buffer.
+		/// If lpNumberOfBytesRead is NULL, the parameter is ignored.
+		/// </param>
+		/// <returns>
+		/// If the function succeeds, the return value is nonzero. <br/>
+		/// If the function fails, the return value is 0 (zero). To get extended error information, call GetLastError. <br/>
+		/// The function fails if the requested read operation crosses into an area of the process that is inaccessible.
+		/// </returns>
+		/// <remarks>
+		/// ReadProcessMemory copies the data in the specified address range from the address space of the specified
+		/// process into the specified buffer of the current process. Any process that has a handle with PROCESS_VM_READ
+		/// access can call the function. <br/>
+		/// The entire area to be read must be accessible, and if it is not accessible, the function fails.
+		/// <br/> See https://docs.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-readprocessmemory
+		/// </remarks>
+		[DllImport("kernel32.dll", EntryPoint = "ReadProcessMemory", SetLastError = SetLastError)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool ReadProcessMemory(
+			[In] HANDLE hProcess,
+			[In] PVOID lpBaseAddress,
+			[In][Out] byte[] lpBuffer,
+			[In] nuint nSize,
+			[Out] out nuint lpNumberOfBytesRead
+		);
+
+		/// <inheritdoc cref="ReadProcessMemory(HANDLE, HANDLE, UCHAR[], nuint, out nuint)"/>
+		[DllImport("kernel32.dll", EntryPoint = "ReadProcessMemory", SetLastError = SetLastError)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool ReadProcessMemory(
+			[In] SafeHandle hProcess,
+			[In] PVOID lpBaseAddress,
+			[In][Out] byte[] lpBuffer,
+			[In] nuint nSize,
+			[Out] out nuint lpNumberOfBytesRead
+		);
+
+		/// <inheritdoc cref="ReadProcessMemory(HANDLE, HANDLE, UCHAR[], nuint, out nuint)"/>
+		[DllImport("kernel32.dll", EntryPoint = "ReadProcessMemory", SetLastError = SetLastError)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool ReadProcessMemory(
+			[In] HANDLE hProcess,
+			[In] PVOID lpBaseAddress,
+			[In][Out] byte[] lpBuffer,
+			[In] nint nSize,
+			[Out] out nint lpNumberOfBytesRead
+		);
+
+		/// <inheritdoc cref="ReadProcessMemory(HANDLE, HANDLE, UCHAR[], nuint, out nuint)"/>
+		[DllImport("kernel32.dll", EntryPoint = "ReadProcessMemory", SetLastError = SetLastError)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool ReadProcessMemory(
+			[In] SafeHandle hProcess,
+			[In] PVOID lpBaseAddress,
+			[In][Out] byte[] lpBuffer,
+			[In] nint nSize,
+			[Out] out nint lpNumberOfBytesRead
+		);
+
+		/// <summary>
+		/// Determines whether the specified process is running under WOW64 or an Intel64 of x64 processor. <br/>
+		/// It will return true if the process is a 32-bit process running on a 64-bit operating system
+		/// in a compatibility layer called Wow64 (Windows-32-on-Windows-64).
+		/// <code>
+		/// 32-bit on 32-bit Windows => false
+		/// 32-bit on 64-bit Windows => true
+		/// 64-bit on 64-bit Windows => false
+		/// </code>
+		/// </summary>
+		/// <param name="processHandle">
+		/// A handle to the process. The handle must have the PROCESS_QUERY_INFORMATION or
+		/// PROCESS_QUERY_LIMITED_INFORMATION access right. For more information, see Process Security
+		/// and Access Rights. <br/>
+		/// Windows Server 2003 and Windows XP: The handle must have the PROCESS_QUERY_INFORMATION access right.</param>
+		/// <param name="wow64Process">
+		/// A pointer to a value that is set to TRUE if the process is running under WOW64 on an Intel64 or
+		/// x64 processor. If the process is running under 32-bit Windows, the value is set to FALSE.
+		/// If the process is a 32-bit application running under 64-bit Windows 10 on ARM, the value
+		/// is set to FALSE. If the process is a 64-bit application running under 64-bit Windows, the value
+		/// is also set to FALSE.
+		/// </param>
+		/// <returns>
+		/// If the function succeeds, the return value is a nonzero value. <br/>
+		/// If the function fails, the return value is zero. To get extended error information, call GetLastError.
+		/// </returns>
+		/// <remarks>
+		/// Applications should use IsWow64Process2 instead of IsWow64Process to determine if a process is running under WOW. <br/>
+		/// IsWow64Process2 removes the ambiguity inherent to multiple WOW environments by explicitly returning both the
+		/// architecture of the host and guest for a given process. Applications can use this information to reliably
+		/// identify situations such as running under emulation on ARM64. To compile an application that uses this function,
+		/// define _WIN32_WINNT as 0x0501 or later. For more information, see Using the Windows Headers. 
+		/// <br/> See https://docs.microsoft.com/en-us/windows/win32/api/wow64apiset/nf-wow64apiset-iswow64process
+		/// </remarks>
+		[DllImport("kernel32.dll", CallingConvention = CallingConvention.Winapi, SetLastError = true)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool IsWow64Process(
+			[In] HANDLE processHandle,
+			[Out, MarshalAs(UnmanagedType.Bool)] out bool wow64Process
+		);
+
+		/// <inheritdoc cref="IsWow64Process(HANDLE, out BOOL)"/>
+		[DllImport("kernel32.dll", CallingConvention = CallingConvention.Winapi, SetLastError = true)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool IsWow64Process(
+			[In] SafeHandle processHandle,
+			[Out, MarshalAs(UnmanagedType.Bool)] out bool wow64Process
+		);
+
+		/// <summary>
+		/// Determines whether the specified process is running under WOW64; also returns additional
+		/// machine process and architecture information.
+		/// </summary>
+		/// <param name="hProcess">
+		/// A handle to the process. The handle must have the PROCESS_QUERY_INFORMATION or PROCESS_QUERY_LIMITED_INFORMATION
+		/// access right. For more information, see Process Security and Access Rights.
+		/// </param>
+		/// <param name="pProccessMachine">
+		/// On success, returns a pointer to an IMAGE_FILE_MACHINE_* value. The value will be IMAGE_FILE_MACHINE_UNKNOWN
+		/// if the target process is not a WOW64 process; otherwise, it will identify the type of WoW process.
+		/// </param>
+		/// <param name="pNativeMachine">
+		/// On success, returns a pointer to a possible IMAGE_FILE_MACHINE_* value identifying the native architecture of host system.
+		/// </param>
+		/// <returns>
+		/// If the function succeeds, the return value is a nonzero value. <br/>
+		/// If the function fails, the return value is zero. To get extended error information, call GetLastError.
+		/// </returns>
+		/// <remarks>
+		/// IsWow64Process2 provides an improved direct replacement for IsWow64Process. In addition to determining
+		/// if the specified process is running under WOW64, IsWow64Process2 returns the following information: <br/>
+		/// - Whether the target process, specified by hProcess, is running under Wow or not. <br/>
+		/// - The architecture of the target process. <br/>
+		/// - Optionally, the architecture of the host system. <br/>
+		/// <br/> See https://docs.microsoft.com/en-us/windows/win32/api/wow64apiset/nf-wow64apiset-iswow64process2
+		/// </remarks>
+		[DllImport("kernel32.dll", CallingConvention = CallingConvention.Winapi, SetLastError = true)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool IsWow64Process2(
+			[In] HANDLE hProcess,
+			[Out] out IMAGE_FILE_MACHINE pProccessMachine,
+			[Out] out IMAGE_FILE_MACHINE pNativeMachine
+		);
+
+		/// <inheritdoc cref="IsWow64Process2(HANDLE, out IMAGE_FILE_MACHINE, out IMAGE_FILE_MACHINE)"/>
+		[DllImport("kernel32.dll", CallingConvention = CallingConvention.Winapi, SetLastError = true)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool IsWow64Process2(
+			[In] SafeHandle hProcess,
+			[Out] out IMAGE_FILE_MACHINE pProccessMachine,
+			[Out] out IMAGE_FILE_MACHINE pNativeMachine
+		);
+
+		/// <inheritdoc cref="IsWow64Process2(HANDLE, out IMAGE_FILE_MACHINE, out IMAGE_FILE_MACHINE)"/>
+		[DllImport("kernel32.dll", CallingConvention = CallingConvention.Winapi, SetLastError = true)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool IsWow64Process2(
+			[In] HANDLE hProcess,
+			[Out] out IMAGE_FILE_MACHINE pProccessMachine
+		);
+
+		/// <inheritdoc cref="IsWow64Process2(HANDLE, out IMAGE_FILE_MACHINE, out IMAGE_FILE_MACHINE)"/>
+		[DllImport("kernel32.dll", CallingConvention = CallingConvention.Winapi, SetLastError = true)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool IsWow64Process2(
+			[In] SafeHandle hProcess,
+			[Out] out IMAGE_FILE_MACHINE pProccessMachine
+		);
+
+		/// <summary>
+		/// Test whether a process is using 64 bit address pointers
+		/// </summary>
+		/// <exception cref="Win32Exception"></exception>
+		public static bool Is64BitProcess(int pid) {
+			if (pid == 0 || !Environment.Is64BitOperatingSystem)
+				return false;
+
+			using var pHandle = OpenProcess(ProcessAccessRights.PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
+			if (!IsWow64Process(pHandle, out bool isWow64Emulated))
+				throw new Win32Exception(Marshal.GetLastWin32Error());
+
+			return !isWow64Emulated;
+		}
+
+		/// <inheritdoc cref="Is64BitProcess(int)"/>
+		public static bool Is64BitProcess(this Process process) {
+			if (process is null)
+				return false;
+			else
+				return Is64BitProcess(process.Id);
+		}
+
 		#endregion
 	}
 }

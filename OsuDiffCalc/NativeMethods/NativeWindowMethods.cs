@@ -558,7 +558,6 @@ namespace OsuDiffCalc {
 		[return: MarshalAs(UnmanagedType.Bool)]
 		public static extern bool SetWindowPos(
 			[In] HANDLE hWnd,
-			[MarshalAs(UnmanagedType.SysInt)]
 			[In] SpecialWindowHandles hWndInsertAfter,
 			[In] int x,
 			[In] int y,
