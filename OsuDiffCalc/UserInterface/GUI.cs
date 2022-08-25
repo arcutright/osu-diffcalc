@@ -140,7 +140,6 @@
 			MainTabControl.SelectedIndexChanged += MainTabControl_TabChanged;
 
 			_prevTab = MainTabControl.SelectedTab;
-			_didUserChangeTab = false;
 			Refresh();
 		}
 
@@ -370,6 +369,9 @@
 			MapsetManager.Clear(exceptions: new[] { _displayedMapset });
 			SavefileXMLManager.ClearXML();
 			// MapsetManager.SaveMapset(displayedMapset, true, EnableXmlCache);
+			_currentOsuState = OsuMemoryState.Invalid;
+			_prevOsuState = OsuMemoryState.Invalid;
+			_osuProcess = null;
 		}
 
 		private void ScaleRatings_CheckedChanged(object sender, EventArgs e) {
@@ -1181,7 +1183,6 @@
 								MainTabControl.SelectTab(_prevTab);
 								WindowHelper.MakeForegroundWindow(prevFgWindow);
 								_isChangingTab = false;
-								_didUserChangeTab = false;
 							}
 						});
 					}
@@ -1263,7 +1264,6 @@
 								MainTabControl.SelectTab(_prevTab);
 								WindowHelper.MakeForegroundWindow(prevFgWindow);
 								_isChangingTab = false;
-								_didUserChangeTab = false;
 							}
 							_didMinimize = false;
 						}
@@ -1312,8 +1312,8 @@
 						if (_isInGame || _isInEditor) {
 							// TODO: only change 1x in-editor/in-game (need to store 
 							bool didChangeTab = false;
-							var selectedTab = MainTabControl.SelectedTab;
-							if (!_didUserChangeTab && selectedTab != chartsTab) {
+							bool shouldChangeToCharts = !_prevOsuState.IsInGame && !_prevOsuState.IsInEditor;
+							if ((!_didUserChangeTab || shouldChangeToCharts) && MainTabControl.SelectedTab != chartsTab) {
 								_isChangingTab = true;
 								var prevFgWindow = WindowHelper.GetForegroundWindow();
 								MainTabControl.SelectTab(chartsTab);
@@ -1407,8 +1407,9 @@
 					_windowStateAnalyzedEvent.Wait(cancelToken);
 					cancelToken.ThrowIfCancellationRequested();
 
-					bool needsAnalyze = _isOsuPresent && !_isMinimized
-						                  && ((Visible && !_isInGame) || (_isInGame && _prevMapsetDirectory is null));
+					bool needsAnalyze =
+						_isOsuPresent && !_isMinimized
+						&& ((Visible && !_isInGame) || (_isInGame && _prevMapsetDirectory is null));
 					if (needsAnalyze && !_pauseAllTasks) {
 						sw.Restart();
 						AutoBeatmapAnalyzerThreadTick(cancelToken, timeoutMs);
@@ -1434,7 +1435,7 @@
 					if (!Directory.Exists(_currentMapsetDirectory))
 						_currentMapsetDirectory = Finder.GetActiveBeatmapDirectory(_osuProcess.IdSafe()); // true HOT PATH
 				}
-				if (_currentMapsetDirectory is null && (_isInGame || _isInEditor))
+				if (_currentMapsetDirectory is null && (_isInGame || _isInEditor) && !string.IsNullOrEmpty(_inGameWindowTitle))
 					_currentMapsetDirectory = MapsetManager.GetCurrentMapsetDirectory(_osuProcess, _inGameWindowTitle, _prevMapsetDirectory);
 				if (_currentMapsetDirectory is null && !string.IsNullOrEmpty(_currentOsuState.MapString))
 					_currentMapsetDirectory = MapsetManager.GetCurrentMapsetDirectory(_osuProcess, $"osu! - {_currentOsuState.MapString}", _prevMapsetDirectory);
@@ -1450,11 +1451,15 @@
 					string fileName = _currentOsuState.OsuFileName;
 					var storedMap = _displayedMapset.FirstOrDefault(map => Path.GetFileName(map.Filepath) == fileName);
 					if (storedMap is not null) {
-						// re-analyze on map update
+						// re-analyze on map updated (saved in editor, downloaded an update, etc.)
 						try {
-							DateTime lastModified = File.GetLastWriteTimeUtc(storedMap.Filepath);
-							if (lastModified != storedMap.LastModifiedTimeUtc) {
-								Console.WriteLine($"Map has been updated: {_currentOsuState.MapString}");
+							bool mapModified = _currentOsuState.MD5FileHash != _prevOsuState.MD5FileHash;
+							if (!mapModified) {
+								DateTime lastModified = File.GetLastWriteTimeUtc(storedMap.Filepath);
+								mapModified = lastModified != storedMap.LastModifiedTimeUtc;
+							}
+							if (mapModified) {
+								Console.WriteLine($"Map was modified: {_currentOsuState.MapString}");
 								storedMap.IsParsed = false;
 								storedMap.IsAnalyzed = false;
 								_displayedMapset.IsAnalyzed = false;
@@ -1463,9 +1468,8 @@
 						}
 						catch { }
 					}
-					else {
-						// TODO: doesn't handle when user creates a new diff in the editor
-						// analyze missing map added to present set
+					else if (_currentOsuState.MapString != _prevOsuState.MapString) {
+						// missing map added to present set
 						needsReanalyze = true;
 						_displayedMapset = null;
 						Invoke(() => {
@@ -1486,9 +1490,6 @@
 					// show on GUI
 					var prevSet = _displayedMapset;
 					DisplayMapset(set);
-					_prevMapsetDirectory = _currentMapsetDirectory;
-					_prevOsuState = _currentOsuState;
-					_didUserChangeTab = false;
 
 					// clear previously cached Series
 					if (set != prevSet && prevSet is not null) {
@@ -1501,12 +1502,14 @@
 				}
 				else if (!string.IsNullOrEmpty(_currentOsuState.MapString) && _currentOsuState != _prevOsuState) {
 					DisplayMapset(_displayedMapset);
-					_prevOsuState = _currentOsuState;
-					_didUserChangeTab = false;
 				}
 			}
 			catch (OperationCanceledException) { throw; }
 			catch { }
+			finally {
+				_prevOsuState = _currentOsuState;
+				_prevMapsetDirectory = _currentMapsetDirectory;
+			}
 		}
 
 		#endregion
