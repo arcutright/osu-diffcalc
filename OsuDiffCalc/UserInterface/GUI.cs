@@ -1468,8 +1468,9 @@
 						}
 						catch { }
 					}
-					else if (_currentOsuState.MapString != _prevOsuState.MapString) {
+					else if (_currentOsuState.MapString != _prevOsuState.MapString) { // || _currentOsuState.Mods != _prevOsuState.Mods) {
 						// missing map added to present set
+						// TODO: re-parse when selected mods changed, if we support parsing maps with those mods added
 						needsReanalyze = true;
 						_displayedMapset = null;
 						Invoke(() => {

@@ -1,4 +1,7 @@
-﻿namespace OsuDiffCalc.OsuMemoryReader.OsuMemoryModels;
+﻿using System;
+
+namespace OsuDiffCalc.OsuMemoryReader.OsuMemoryModels;
+
 
 public enum OsuGameMode : int {
 	Unknown  = -1,
@@ -32,4 +35,49 @@ public enum OsuStatus : int {
 	RankingTeam              = 18,
 	ProcessingBeatmaps       = 19,
 	Tourney                  = 22,
+}
+
+/// <summary>
+/// Currently selected mods are a combination of flags. Lots of unknown values.
+/// </summary>
+[Flags]
+public enum OsuMods : int {
+	Unknown     = -1,
+	None        = 0,
+	NoFail      = 1,
+	Easy        = 1 << 1,
+	// ?        = 1 << 2,
+	Hidden      = 1 << 3,
+	HardRock    = 1 << 4,
+	SuddenDeath = 1 << 5,
+	DoubleTime  = 1 << 6,
+	/// <summary> Automatic clicks but you aim </summary>
+	Relax       = 1 << 7,
+	HalfTime    = 1 << 8,
+	NightCore   = 1 << 9, // when NC chosen in game, ModFlags = 1<<9 | DT
+	Flashlight  = 1 << 10,
+	/// <summary> osu! plays perfectly for you </summary>
+	AutoPlay    = 1 << 11,
+	SpunOut     = 1 << 12,
+	/// <summary> Automatic aim but you click </summary>
+	AutoPilot   = 1 << 13,
+	Perfect     = 1 << 14, // when PF chosen in game, ModFlags = 1<<14 | SD
+	// ?        = 1 << 15 .. 1 << 21
+	/// <summary> Just listen to the song + see background. The thing after clicking Auto twice </summary>
+	Cinema      = 1 << 22, // when Cinema chosen in game, ModFlags = 1<<22 | AutoPlay
+	// ?        = 1 << 23 .. 1 << 28
+	ScoreV2     = 1 << 29,
+	// common shortened names
+	NF = NoFail,
+	EZ = Easy,
+	HD = Hidden,
+	HR = HardRock,
+	SD = SuddenDeath,
+	DT = DoubleTime,
+	RX = Relax,
+	HT = HalfTime,
+	NC = NightCore,
+	FL = Flashlight,
+	SO = SpunOut,
+	PF = Perfect,
 }

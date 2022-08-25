@@ -9,6 +9,7 @@ namespace OsuDiffCalc.OsuMemoryReader;
 internal readonly record struct OsuMemoryState(
 	OsuStatus Status,
 	OsuGameMode GameMode,
+	OsuMods Mods,
 	int MapId,
 	int SetId,
 	string MapString,
@@ -17,7 +18,7 @@ internal readonly record struct OsuMemoryState(
 	string MD5FileHash
 ) {
 	public OsuMemoryState()
-		: this(OsuStatus.Unknown, OsuGameMode.Unknown, 0, 0, null, null, null, null) {
+		: this(OsuStatus.Unknown, OsuGameMode.Unknown, OsuMods.None, 0, 0, null, null, null, null) {
 	}
 	public static OsuMemoryState Invalid => new();
 
@@ -35,6 +36,7 @@ internal class OsuStateReader {
 	
 	private static OsuStatus _prevStatus = OsuStatus.Unknown;
 	private static OsuGameMode _prevGameMode = OsuGameMode.Unknown;
+	private static OsuMods _prevMods = OsuMods.None;
 
 	public static bool TryReadCurrentOsuState(Process osuProcess, out OsuMemoryState currentState) {
 		if (osuProcess is not null && !osuProcess.HasExitedSafe()) {
@@ -42,12 +44,13 @@ internal class OsuStateReader {
 				_memoryReader.TargetProcess = osuProcess;
 
 				currentState = new OsuMemoryState {
-					Status      = _memoryReader.ReadProperty<GeneralData, OsuStatus>(nameof(GeneralData.RawStatus), OsuStatus.Unknown),
-					GameMode    = _memoryReader.ReadProperty<GeneralData, OsuGameMode>(nameof(GeneralData.GameMode), OsuGameMode.Unknown),
-					MapId       = _memoryReader.ReadProperty<GeneralData, int>(nameof(CurrentBeatmap.Id)),
-					SetId       = _memoryReader.ReadProperty<GeneralData, int>(nameof(CurrentBeatmap.SetId)),
-					MapString   = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.MapString)),
-					FolderName  = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.FolderName)),
+					Status = _memoryReader.ReadProperty<GeneralData, OsuStatus>(nameof(GeneralData.RawStatus), OsuStatus.Unknown),
+					GameMode = _memoryReader.ReadProperty<GeneralData, OsuGameMode>(nameof(GeneralData.GameMode), OsuGameMode.Unknown),
+					Mods = _memoryReader.ReadProperty<GeneralData, OsuMods>(nameof(GeneralData.Mods), OsuMods.Unknown),
+					MapId = _memoryReader.ReadProperty<GeneralData, int>(nameof(CurrentBeatmap.Id)),
+					SetId = _memoryReader.ReadProperty<GeneralData, int>(nameof(CurrentBeatmap.SetId)),
+					MapString = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.MapString)),
+					FolderName = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.FolderName)),
 					OsuFileName = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.OsuFileName)),
 					MD5FileHash = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.MD5FileHash)),
 				};
@@ -59,6 +62,10 @@ internal class OsuStateReader {
 				if (currentState.GameMode != _prevGameMode) {
 					Console.WriteLine($"   memory current game mode: {currentState.GameMode}");
 					_prevGameMode = currentState.GameMode;
+				}
+				if (currentState.Mods != _prevMods) {
+					Console.WriteLine($"   memory current mods: {currentState.Mods}");
+					_prevMods = currentState.Mods;
 				}
 
 				// under rare circumstances, can end up with broken strings if user is changing state while we are reading memory

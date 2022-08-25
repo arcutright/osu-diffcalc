@@ -8,12 +8,12 @@ partial class ProcessPropertyReader {
 	class AddressFinder : IDisposable {
 		private readonly MemoryReader _memoryReader;
 		private readonly ObjectReader _objectReader;
-		private readonly byte[] _baseAddressBytes;
+		private readonly byte?[] _baseAddressBytes;
 		private IntPtr _baseAddress;
 
 		/// <param name="baseAddressNeedleHexString">
 		/// The needle to look for in the process memory to mark the "base" address for properties. <br/>
-		/// This should be a hex string (eg. 'F003652A', optional leading 0x)
+		/// This should be a hex string (eg. 'F003652A', optional leading 0x, where 2 chars map to 1 byte and '??' will translate to a wildcard)
 		/// </param>
 		public AddressFinder(MemoryReader memoryReader, ObjectReader objectReader, string baseAddressNeedleHexString) {
 			_memoryReader = memoryReader;
@@ -25,7 +25,17 @@ partial class ProcessPropertyReader {
 		public AddressFinder(MemoryReader memoryReader, ObjectReader objectReader, ReadOnlySpan<byte> baseAddressNeedle) {
 			_memoryReader = memoryReader;
 			_objectReader = objectReader;
-			_baseAddressBytes = baseAddressNeedle.ToArray();
+			_baseAddressBytes = baseAddressNeedle.ToArray().Cast<byte?>().ToArray();
+		}
+
+		/// <param name="baseAddressNeedle">
+		/// The needle to look for in the process memory to mark the "base" address for properties. <br/>
+		/// A 'none' (empty 'byte?', not \0) counts as a wildcard, eg. any byte will match.
+		/// </param>
+		public AddressFinder(MemoryReader memoryReader, ObjectReader objectReader, ReadOnlySpan<byte?> baseAddressNeedle) {
+			_memoryReader = memoryReader;
+			_objectReader = objectReader;
+			_baseAddressBytes = baseAddressNeedle.ToArray().Cast<byte?>().ToArray();
 		}
 
 		/// <summary>
@@ -59,7 +69,7 @@ partial class ProcessPropertyReader {
 				var (classBaseAddress, classPtrOffset) = FindAttributeTarget(_baseAddress, classAttr);
 				var (targetBaseAddress, propertyPtrOffset) = FindAttributeTarget(classBaseAddress, propAttr);
 
-				if (classAttr is null || !classAttr.IndirectClassPointer) {
+				if (classAttr is null || !classAttr.ShouldFollowClassPointer) {
 					classAddress = IntPtr.Zero;
 					propertyAddress = _objectReader.ReadPointer(targetBaseAddress + propertyPtrOffset); // [Base-0x3C]
 				}
@@ -88,35 +98,71 @@ partial class ProcessPropertyReader {
 
 		private (IntPtr addr, int offset) FindAttributeTarget(IntPtr baseAddr, MemoryAddressInfoAttribute attr) {
 			if (attr is not null) {
-				string targetPath = attr.Path;
-				if (string.IsNullOrEmpty(targetPath) || targetPath == "Base")
+				if (string.Compare(attr.Path, "base", StringComparison.OrdinalIgnoreCase) == 0)
 					return (baseAddr, attr.Offset);
-				else {
-					// TODO: support for relative offsets
+				else if (!string.IsNullOrEmpty(attr.Path)) {
+					// assume Path is a valid constant address in the process' memory space
+					string path = attr.Path.Trim();
+					var buffer = HexStringToByteArrayConstant(path);
+					if (buffer.Length > 4) {
+						var addr = new IntPtr(BitConverter.ToInt64(buffer, 0));
+						return (addr, attr.Offset);
+					}
+					else {
+						var addr = new IntPtr(BitConverter.ToInt32(buffer, 0));
+						return (addr, attr.Offset);
+					}
+				}
+				else if (!string.IsNullOrEmpty(attr.PathNeedle)) {
+					// TODO: support for things besides needles
+					string needle = attr.PathNeedle;
 
-					var hexSpan = targetPath.AsSpan();
-					if (targetPath.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+					var hexSpan = needle.AsSpan();
+					if (needle.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
 						hexSpan = hexSpan[2..];
 
 					int halfLen = hexSpan.Length / 2;
-					Span<byte> buffer = halfLen < 1024 ? stackalloc byte[halfLen] : new byte[halfLen];
-					HexStringToByteArray(hexSpan, buffer);
-					var targetBaseAddress = _memoryReader.FindNeedle(buffer);
+					IntPtr targetBaseAddress;
+					bool hasWildcard = needle.Contains("??");
+					if (hasWildcard) {
+						Span<byte?> buffer = halfLen < 1024 ? stackalloc byte?[halfLen] : new byte?[halfLen];
+						HexStringToByteArray(hexSpan, buffer);
+						targetBaseAddress = _memoryReader.FindNeedle(buffer);
+					}
+					else {
+						Span<byte> buffer = halfLen < 1024 ? stackalloc byte[halfLen] : new byte[halfLen];
+						HexStringToByteArray(hexSpan, buffer);
+						targetBaseAddress = _memoryReader.FindNeedle(buffer);
+					}
 					return (targetBaseAddress, attr.Offset);
 				}
+				else if (string.IsNullOrEmpty(attr.Path))
+					return (baseAddr, attr.Offset);
 			}
-			else
-				return (baseAddr, 0);
+			return (baseAddr, 0);
 		}
 
-		private static byte[] HexStringToByteArray(string hex) {
+		private static byte[] HexStringToByteArrayConstant(string hex) {
 			if (hex is null) return null;
 			var hexSpan = hex.AsSpan();
 			if (hex.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
 				hexSpan = hexSpan[2..];
 
 			int halfLen = hexSpan.Length / 2;
-			byte[] arr = new byte[halfLen];
+			var arr = new byte[halfLen];
+			HexStringToByteArray(hexSpan, arr);
+			return arr;
+		}
+
+		/// <inheritdoc cref="HexStringToByteArray(ReadOnlySpan{char}, Span{byte?})"/>
+		private static byte?[] HexStringToByteArray(string hex) {
+			if (hex is null) return null;
+			var hexSpan = hex.AsSpan();
+			if (hex.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+				hexSpan = hexSpan[2..];
+
+			int halfLen = hexSpan.Length / 2;
+			var arr = new byte?[halfLen];
 			HexStringToByteArray(hexSpan, arr);
 			return arr;
 		}
@@ -125,14 +171,28 @@ partial class ProcessPropertyReader {
 			int halfLen = hex.Length / 2;
 			for (int i = 0; i < halfLen; ++i) {
 				int j = i * 2;
-				buffer[i] = (byte)((getHexVal(hex[j]) * 16) + getHexVal(hex[j + 1]));
+				buffer[i] = (byte)((GetHexVal(hex[j]) * 16) + GetHexVal(hex[j + 1]));
 			}
+		}
 
-			static int getHexVal(char hex) {
-				//return hex - (hex < 58 ? 48 : 55); // uppercase
-				//return hex - (hex < 58 ? 48 : 87); // lowercase
-				return hex - (hex < 58 ? 48 : (hex < 97 ? 55 : 87)); // both
+		/// <summary>
+		/// For this one, "??" maps to null, which is then interpreted as a wildcard byte when looking for a match
+		/// </summary>
+		private static void HexStringToByteArray(ReadOnlySpan<char> hex, Span<byte?> buffer) {
+			int halfLen = hex.Length / 2;
+			for (int i = 0; i < halfLen; ++i) {
+				int j = i * 2;
+				if (hex[j] == '?' && hex[j + 1] == '?')
+					buffer[i] = null;
+				else
+					buffer[i] = (byte)((GetHexVal(hex[j]) * 16) + GetHexVal(hex[j + 1]));
 			}
+		}
+
+		static int GetHexVal(char hex) {
+			//return hex - (hex < 58 ? 48 : 55); // uppercase
+			//return hex - (hex < 58 ? 48 : 87); // lowercase
+			return hex - (hex < 58 ? 48 : (hex < 97 ? 55 : 87)); // both
 		}
 
 

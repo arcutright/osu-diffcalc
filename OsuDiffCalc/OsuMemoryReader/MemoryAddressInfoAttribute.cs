@@ -12,17 +12,6 @@ namespace OsuDiffCalc.OsuMemoryReader;
 class MemoryAddressInfoAttribute : Attribute {
 	private Encoding _encoding = null;
 
-	/// <summary> Base memory path. Default = Base. If this is a class, all properties will be based off of this </summary>
-	public string Path { get; init; } = null;
-	public int Offset { get; init; } = 0;
-	public bool IndirectClassPointer { get; init; } = true;
-	public int BytesPerChar { get; init; } = 2;
-	public string EncodingName { get; init; } = "Unicode";
-	public Encoding Encoding {
-		get => _encoding ??= GetEncoding(EncodingName);
-		set => _encoding = value;
-	}
-
 	public MemoryAddressInfoAttribute() {
 		if (BytesPerChar <= 0)
 			BytesPerChar = GetBytesPerChar(Encoding);
@@ -34,6 +23,56 @@ class MemoryAddressInfoAttribute : Attribute {
 			BytesPerChar = GetBytesPerChar(Encoding);
 		if (Encoding is null)
 			Encoding = GetEncoding(BytesPerChar);
+	}
+
+	/// <summary>
+	/// Base memory address path. null/"base" = process base. <br/>
+	/// Currently only supports null/"base" or constant hex string (no wildcards),
+	/// where the hex string is a valid address in the process' memory space. <br/>
+	/// If this is attribute is attached to a class, all properties will be based off of this.
+	/// </summary>
+	public string Path { get; init; } = null;
+
+	/// <summary>
+	/// Search for this needle in the memory to act as the base path. <br/>
+	/// Supports hex string needle ("??" for wildcard), eg "12FD348A" or "????A6B4C3". <br/>
+	/// If this is attribute is attached to a class, all properties will be based off of this. <br/>
+	/// <br/>
+	/// Note that Path will override this if it is non-empty.
+	/// </summary>
+	public string PathNeedle { get; init; } = null;
+
+	/// <summary>
+	/// Offset from the Path (or from the start of the address of the PathNeedle)
+	/// </summary>
+	public int Offset { get; init; } = 0;
+
+	/// <summary>
+	/// If <see langword="true"/>, will cache the property path calculations (only when possible, otherwise this is ignored). <br/>
+	/// If <see langword="false"/>, may end up scanning the process' memory constantly
+	/// (if we need to scan for a PathNeedle, for example).
+	/// </summary>
+	public bool IsConstantPath { get; init; } = true;
+
+	/// <summary>
+	/// If <see langword="true"/>, dereference the pointer at [ClassAttr.Path + ClassAttr.Offset] before adding [PropAttr.Offset]. <br/>
+	/// This only has meaning when this attribute is attached to a class and while evaluating the class' property values.
+	/// </summary>
+	public bool ShouldFollowClassPointer { get; init; } = true;
+
+	/// <inheritdoc cref="Encoding"/>
+	public int BytesPerChar { get; init; } = 2;
+
+	/// <inheritdoc cref="Encoding"/>
+	public string EncodingName { get; init; } = "Unicode";
+
+	/// <summary>
+	/// String encoding (if this is attached to a string property, otherwise this is ignored). <br/>
+	/// Note that dotnet processes always store strings in UTF16 (aka Unicode) 2-byte-per-char.
+	/// </summary>
+	public Encoding Encoding {
+		get => _encoding ??= GetEncoding(EncodingName);
+		set => _encoding = value;
 	}
 
 	private Encoding GetEncoding(string name) {
