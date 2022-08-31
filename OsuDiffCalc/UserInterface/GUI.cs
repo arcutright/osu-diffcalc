@@ -1162,6 +1162,8 @@
 
 		private void AutoWindowUpdaterThreadTick(CancellationToken cancelToken, int timeoutMs) {
 			//Console.Write("auto window  ");
+			bool couldReadState = false;
+			string windowTitle = null;
 			try {
 				if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 					Thread.CurrentThread.Name = "AutoWindowTickThread";
@@ -1169,7 +1171,7 @@
 				// ensure we have the correct process for osu (in case player restarted osu, etc)
 				_osuProcess = Finder.GetOsuProcess(_guiPid, _osuProcess);
 				cancelToken.ThrowIfCancellationRequested();
-				string windowTitle =  _osuProcess?.MainWindowTitle?.Trim();
+				windowTitle = _osuProcess?.MainWindowTitle?.Trim();
 
 				// update visibility
 				if (_osuProcess is null || _osuProcess.HasExitedSafe()) {
@@ -1188,6 +1190,9 @@
 					}
 					_currentOsuState = OsuMemoryState.Invalid;
 					_prevOsuState = OsuMemoryState.Invalid;
+					OsuStateReader.ClearCache();
+					_inGameBeatmap = null;
+					_inGameWindowTitle = null;
 					_isOsuPresent = false;
 					_isInGame = false;
 					_isInEditor = false;
@@ -1198,11 +1203,12 @@
 					_isOsuPresent = true;
 
 					// read osu state to get in-game/in-editor, etc.
-					bool couldReadState = OsuStateReader.TryReadCurrentOsuState(_osuProcess, out _currentOsuState);
+					couldReadState = OsuStateReader.TryReadCurrentOsuState(_osuProcess, out _currentOsuState);
 					if (!couldReadState) {
 						// fallback is sometimes needed to "force a refresh" to fix issues with the process handle
 						_osuProcess.Dispose();
 						_osuProcess = Finder.GetOsuProcess(_guiPid);
+						OsuStateReader.ClearCache();
 						couldReadState = OsuStateReader.TryReadCurrentOsuState(_osuProcess, out _currentOsuState);
 					}
 					// try-catch in case of invalid path characters
@@ -1211,35 +1217,31 @@
 							_currentMapsetDirectory = Path.Combine(Finder.GetOsuSongsDirectory(_osuProcess), _currentOsuState.FolderName);
 							_isInGame = _currentOsuState.IsInGame;
 							_isInEditor = _currentOsuState.IsInEditor;
-							_inGameWindowTitle = _currentOsuState.IsInGame ? windowTitle : null;
 							couldReadState = true;
 						}
-						else
+						else {
 							_currentMapsetDirectory = null;
+						}
 					}
 					catch {
 						_currentMapsetDirectory = null;
 						couldReadState = false;
 					}
 
-					if (couldReadState && _isInGame)
-						return;
 					if (!couldReadState) {
 						// crappy way to check if osu is in-game/in-editor
-						int indexOfDiff = windowTitle.IndexOf('[');
-						_isInGame = indexOfDiff != -1;
-						_isInEditor = _isInGame && windowTitle.IndexOf(')', indexOfDiff - 3) != -1;
+						// title looks like `osu! - Artist - song [difficulty] (mapper)`
+						int indexOfMapDiff = windowTitle.IndexOf('['); 
+						_isInGame = indexOfMapDiff != -1;
+						_isInEditor = _isInGame && windowTitle.IndexOf(')', indexOfMapDiff - 3) != -1;
 						_isInGame &= !_isInEditor;
-					}
 
-					// return early if in-game
-					// (if failed to read state, check if window title has changed to see if still in game)
-					if (_isInGame && (couldReadState || windowTitle == _inGameWindowTitle))
-						return;
+						_currentOsuState = OsuMemoryState.Invalid;
+					}
 					
+					_inGameWindowTitle = _isInGame ? windowTitle : null;
+
 					cancelToken.ThrowIfCancellationRequested();
-					if (!couldReadState)
-						_inGameWindowTitle = _isInGame ? windowTitle : null;
 
 					Invoke(() => {
 						var prevInGameBeatmap = _inGameBeatmap;
@@ -1312,7 +1314,7 @@
 						if (_isInGame || _isInEditor) {
 							// TODO: only change 1x in-editor/in-game (need to store 
 							bool didChangeTab = false;
-							bool shouldChangeToCharts = !_prevOsuState.IsInGame && !_prevOsuState.IsInEditor;
+							bool shouldChangeToCharts = _prevOsuState != OsuMemoryState.Invalid && !_prevOsuState.IsInGame && !_prevOsuState.IsInEditor;
 							if ((!_didUserChangeTab || shouldChangeToCharts) && MainTabControl.SelectedTab != chartsTab) {
 								_isChangingTab = true;
 								var prevFgWindow = WindowHelper.GetForegroundWindow();
@@ -1326,14 +1328,15 @@
 							// try to figure out what map is being played. This work will only happen once
 							_inGameBeatmap = GetInGameBeatmap(_displayedMapset, windowTitle);
 
-							// switch charted beatmap to in-game map
-							if (_chartedBeatmap != _inGameBeatmap) {
-								UpdateChartOptions(_inGameBeatmap);
-								RefreshChart();
-							}
 							if (_chartedBeatmap != _inGameBeatmap || didChangeTab) {
 								Console.WriteLine($"In {(_isInGame ? "game" : "editor")}, window title: '{windowTitle}'");
 								Console.WriteLine($"  => beatmap: {_inGameBeatmap}");
+
+								// switch charted beatmap to in-game map
+								if (_chartedBeatmap != _inGameBeatmap) {
+									UpdateChartOptions(_inGameBeatmap);
+									RefreshChart();
+								}
 							}
 						}
 					});
@@ -1342,8 +1345,13 @@
 			catch (OperationCanceledException) { throw; }
 			catch { }
 			finally {
-				// tell the beatmap thread it can start reading maps
-				_windowStateAnalyzedEvent.Set();
+				// if failed to read state, check if window title has changed to see if still in game
+				// don't trigger the analysis thread since the alternate beatmap analysis logic is slow
+				// (the memory technique is very fast)
+				if (couldReadState || !(_isInGame && windowTitle == _inGameWindowTitle)) {
+					// tell the beatmap thread it can start reading maps
+					_windowStateAnalyzedEvent.Set();
+				}
 			}
 		}
 

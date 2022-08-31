@@ -18,7 +18,7 @@ internal readonly record struct OsuMemoryState(
 	string MD5FileHash
 ) {
 	public OsuMemoryState()
-		: this(OsuStatus.Unknown, OsuGameMode.Unknown, OsuMods.None, 0, 0, null, null, null, null) {
+		: this(OsuStatus.Unknown, OsuGameMode.Unknown, OsuMods.Unknown, -1, -1, null, null, null, null) {
 	}
 	public static OsuMemoryState Invalid => new();
 
@@ -36,7 +36,20 @@ internal class OsuStateReader {
 	
 	private static OsuStatus _prevStatus = OsuStatus.Unknown;
 	private static OsuGameMode _prevGameMode = OsuGameMode.Unknown;
-	private static OsuMods _prevMods = OsuMods.None;
+	private static OsuMods _prevMods = OsuMods.Unknown;
+
+	/// <summary>
+	/// Throw away references to the previously cached process used when reading
+	/// the memory state and reset all the property address lookups. <br/>
+	/// Future calls to <see cref="TryReadCurrentOsuState"/> will open a new handle
+	/// and rebuild the property cache tree.
+	/// </summary>
+	public static void ClearCache() {
+		_memoryReader.TargetProcess = null;
+		_prevStatus = OsuStatus.Unknown;
+		_prevGameMode = OsuGameMode.Unknown;
+		_prevMods = OsuMods.Unknown;
+	}
 
 	public static bool TryReadCurrentOsuState(Process osuProcess, out OsuMemoryState currentState) {
 		if (osuProcess is not null && !osuProcess.HasExitedSafe()) {
@@ -47,8 +60,8 @@ internal class OsuStateReader {
 					Status = _memoryReader.ReadProperty<GeneralData, OsuStatus>(nameof(GeneralData.RawStatus), OsuStatus.Unknown),
 					GameMode = _memoryReader.ReadProperty<GeneralData, OsuGameMode>(nameof(GeneralData.GameMode), OsuGameMode.Unknown),
 					Mods = _memoryReader.ReadProperty<GeneralData, OsuMods>(nameof(GeneralData.Mods), OsuMods.Unknown),
-					MapId = _memoryReader.ReadProperty<GeneralData, int>(nameof(CurrentBeatmap.Id)),
-					SetId = _memoryReader.ReadProperty<GeneralData, int>(nameof(CurrentBeatmap.SetId)),
+					MapId = _memoryReader.ReadProperty<GeneralData, int>(nameof(CurrentBeatmap.Id), -1),
+					SetId = _memoryReader.ReadProperty<GeneralData, int>(nameof(CurrentBeatmap.SetId), -1),
 					MapString = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.MapString)),
 					FolderName = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.FolderName)),
 					OsuFileName = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.OsuFileName)),

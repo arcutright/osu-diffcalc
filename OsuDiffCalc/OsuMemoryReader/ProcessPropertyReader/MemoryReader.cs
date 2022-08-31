@@ -29,6 +29,7 @@ partial class ProcessPropertyReader {
 			get => _currentProcess;
 			internal set {
 				if (ReferenceEquals(_currentProcess, value)) return;
+				CloseHandle();
 				_currentProcess = value;
 				IntPtrSize = NativeMethods.Is64BitProcess(value) ? 8 : 4;
 				OpenHandle();
@@ -338,9 +339,11 @@ partial class ProcessPropertyReader {
 		}
 
 		private void CloseHandle() {
-			if (_hProcess is not null && !_hProcess.IsInvalid)
-				NativeMethods.CloseHandle(_hProcess);
-			_hProcess?.Dispose();
+			if (_hProcess is not null) {
+				if (!_hProcess.IsInvalid)
+					NativeMethods.CloseHandle(_hProcess);
+				_hProcess.Dispose();
+			}
 			_hProcess = new();
 		}
 
