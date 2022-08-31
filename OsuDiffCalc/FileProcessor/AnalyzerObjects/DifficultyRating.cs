@@ -21,7 +21,7 @@
 		private readonly SeriesPointCollection[] _allSeriesPoints;
 		private readonly object _pointsLock = new();
 
-		private readonly HashSet<float> _allSeriesXValues = new(1024);
+		private readonly HashSet<double> _allSeriesXValues = new(1024);
 		private bool _areSeriesPrepared;
 		private bool _arePointsPrepared;
 
@@ -101,16 +101,7 @@
 			lock (_pointsLock) {
 				foreach (var points in _allSeriesPoints) {
 					if (points.Series is not null) {
-						try {
-							points.Series.Points.Clear();
-						}
-						catch (Exception ex) {
-							Console.WriteLine("failed to clear cached series");
-							Console.WriteLine(ex);
-#if DEBUG
-							System.Diagnostics.Debugger.Break();
-#endif
-						}
+						points.Series.Points.Clear();
 						points.Series = null;
 					}
 				}
@@ -141,7 +132,7 @@
 
 		private void Add(double timeMs, double diff, SeriesPointCollection dest) {
 			lock (_pointsLock) {
-				float xValue = (float)(timeMs / 1000.0);
+				var xValue = timeMs / 1000.0;
 				_allSeriesXValues.Add(xValue);
 				dest.Add(new SeriesPoint(xValue, diff));
 
@@ -258,7 +249,13 @@
 									points.Series.Points.Dispose();
 									points.Series.Dispose();
 								}
-								catch { }
+								catch (Exception ex) {
+									Console.WriteLine("failed to dispose series");
+									Console.WriteLine(ex);
+#if DEBUG
+									System.Diagnostics.Debugger.Break();
+#endif
+								}
 								finally {
 									points.Series = null;
 								}

@@ -230,11 +230,15 @@
 			NativeMethods.SetWindowPos(hWnd, SpecialWindowHandles.HWND_TOP, 0, 0, 0, 0, flags);
 		}
 
+		/// <inheritdoc cref="MakeForegroundWindow2(IntPtr)"/>
+		public static void MakeForegroundWindow2(Process process) {
+			MakeForegroundWindow2(process.MainWindowHandle);
+		}
+
 		/// <summary>
 		/// "works" but glitches in and out (only shows for a fraction of a second)
 		/// </summary>
-		public static void MakeForegroundWindow2(Process process) {
-			IntPtr hWnd = process.MainWindowHandle;
+		public static void MakeForegroundWindow2(IntPtr hWnd) {
 			uint fgThread = GetWindowThreadProcessId(GetForegroundWindow());
 			uint appThread = GetWindowThreadProcessId(hWnd);
 			if (fgThread == appThread) return;
@@ -261,15 +265,19 @@
 		 * }
 		 */
 
+		/// <inheritdoc cref="MakeForegroundWindow3(IntPtr)"/>
+		public static void MakeForegroundWindow3(Process process) {
+			MakeForegroundWindow3(process.MainWindowHandle);
+		}
+
 		/// <summary>
 		/// "works" but glitches in and out (only shows for a fraction of a second)
 		/// </summary>
-		public static void MakeForegroundWindow3(Process process) {
-			IntPtr hWnd = process.MainWindowHandle;
+		public static void MakeForegroundWindow3(IntPtr hWnd) {
 			uint fgPid = GetWindowThreadProcessId(GetForegroundWindow());
 			uint appPid = GetWindowThreadProcessId(hWnd);
 			var swpFlags = SetWindowPosFlags.SWP_NOMOVE | SetWindowPosFlags.SWP_NOSIZE
-				| SetWindowPosFlags.SWP_SHOWWINDOW 
+				| SetWindowPosFlags.SWP_SHOWWINDOW
 				| SetWindowPosFlags.SWP_NOACTIVATE
 				| SetWindowPosFlags.SWP_ASYNCWINDOWPOS
 			;

@@ -44,11 +44,11 @@
 			return null;
 		}
 
-		protected static float? GetFloatFromLine(string line, string startsWith, char delimiter = ':') {
+		protected static double? GetDoubleFromLine(string line, string startsWith, char delimiter = ':') {
 			if (!line.StartsWith(startsWith, StringComparison.OrdinalIgnoreCase))
 				return null;
 			int index = line.IndexOf(delimiter);
-			if (index != -1 && float.TryParse(line[(index + 1)..], out var value))
+			if (index != -1 && double.TryParse(line[(index + 1)..], out var value))
 				return value;
 			else
 				return null;
@@ -58,7 +58,7 @@
 			try {
 				string line = reader.ReadLine()?.Trim();
 				if (!string.IsNullOrEmpty(line))
-					return GetFloatFromLine(line, startsWith, delimiter);
+					return GetDoubleFromLine(line, startsWith, delimiter);
 				else
 					return null;
 			}
@@ -104,18 +104,18 @@
 			return false;
 		}
 
-		protected static bool TryAssignFloatFromLine(string line, string startsWith, out float result, char delimeter = ':') {
-			var rawResult = GetFloatFromLine(line, startsWith, delimeter);
+		protected static bool TryAssignDoubleFromLine(string line, string startsWith, out double result, char delimeter = ':') {
+			var rawResult = GetDoubleFromLine(line, startsWith, delimeter);
 			if (rawResult.HasValue) {
 				result = rawResult.Value;
 				return true;
 			}
-			result = float.NaN;
+			result = double.NaN;
 			return false;
 		}
 
 		protected static bool TryAssignIntFromLine(string line, string startsWith, out int result, char delimeter = ':') {
-			if (TryAssignFloatFromLine(line, startsWith, out var value, delimeter)) {
+			if (TryAssignDoubleFromLine(line, startsWith, out var value, delimeter)) {
 				result = (int)Math.Round(value, MidpointRounding.AwayFromZero);
 				return true;
 			}

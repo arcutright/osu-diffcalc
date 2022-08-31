@@ -27,7 +27,7 @@
 		public double MarginOfErrorMs300;
 		/// <summary> Window in ms to get 50 on a hit circle </summary>
 		public double MarginOfErrorMs50;
-		public float CircleSizePx; // actual circle size
+		public double CircleSizePx; // actual circle size
 		public int Format = -1; // osu file format version
 		public int Mode = -1; // osu!standard == 0, taiko == ?, ctb == ?, mania == ? etc.
 		public bool IsAnalyzed;

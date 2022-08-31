@@ -10,9 +10,9 @@
 		protected double Effective1_4bpm = 0; //bpm when mapped at 1/4 time-spacing for 4/4 timing
 		public double AvgTimeGapMs = 0;
 		public double TotalDistancePx = 0;
-		public float AvgDistancePx = 0;
-		public float MinDistancePx = -1;
-		public float MaxDistancePx = -1;
+		public double AvgDistancePx = 0;
+		public double MinDistancePx = -1;
+		public double MaxDistancePx = -1;
 		public double StartTime = -1;
 		public double EndTime = -1;
 		public ShapeType Type;
@@ -50,7 +50,7 @@
 				// update distances
 				var lastDistanceX = obj.X - prevObj.X;
 				var lastDistanceY = obj.Y - prevObj.Y;
-				var lastDistance = (float)Math.Sqrt((lastDistanceX * lastDistanceX) + (lastDistanceY * lastDistanceY));
+				var lastDistance = Math.Sqrt((lastDistanceX * lastDistanceX) + (lastDistanceY * lastDistanceY));
 				AvgDistancePx = (AvgDistancePx * (n - 2) + lastDistance) / (n - 1);
 				TotalDistancePx += lastDistance;
 
