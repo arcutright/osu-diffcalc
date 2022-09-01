@@ -1452,12 +1452,15 @@
 				SetFindActiveBeatmapTime($"{sw.ElapsedMilliseconds} ms");
 				cancelToken.ThrowIfCancellationRequested();
 
-				bool needsReanalyze = _currentMapsetDirectory != _prevMapsetDirectory && Directory.Exists(_currentMapsetDirectory);
+				bool needsReanalyze = 
+					(_currentMapsetDirectory != _prevMapsetDirectory && Directory.Exists(_currentMapsetDirectory))
+					|| (_displayedMapset is null && _currentOsuState.GameMode is OsuMemoryReader.OsuMemoryModels.OsuGameMode.Standard);
+
 				if (!needsReanalyze && !string.IsNullOrEmpty(_currentOsuState.OsuFileName)) {
 					// this can happen if difficulties were somehow missing from the previous analysis
 					// or if the user saves a map while in the editor
 					string fileName = _currentOsuState.OsuFileName;
-					var storedMap = _displayedMapset.FirstOrDefault(map => Path.GetFileName(map.Filepath) == fileName);
+					var storedMap = _displayedMapset?.FirstOrDefault(map => Path.GetFileName(map.Filepath) == fileName);
 					if (storedMap is not null) {
 						// re-analyze on map updated (saved in editor, downloaded an update, etc.)
 						try {
