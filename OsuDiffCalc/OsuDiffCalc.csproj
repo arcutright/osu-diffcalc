@@ -81,6 +81,25 @@
     <Prefer32Bit>true</Prefer32Bit>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release - testing|AnyCPU'">
+    <OutputPath>bin\Release - testing\</OutputPath>
+    <DefineConstants>TRACE;RELEASE_TESTING;AnyCPU</DefineConstants>
+    <Optimize>true</Optimize>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release - testing|x64'">
+    <OutputPath>bin\x64\Release - testing\</OutputPath>
+    <DefineConstants>TRACE;RELEASE_TESTING;X64</DefineConstants>
+    <Optimize>true</Optimize>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release - testing|x86'">
+    <OutputPath>bin\x86\Release - testing\</OutputPath>
+    <DefineConstants>TRACE;RELEASE_TESTING;X86</DefineConstants>
+    <Optimize>true</Optimize>
+    <PlatformTarget>x86</PlatformTarget>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />

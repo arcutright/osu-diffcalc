@@ -36,7 +36,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyFileVersion("1.2.0.0")]
 
 
-#if DEBUG
+#if DEBUG || RELEASE_TESTING
 
 [assembly: InternalsVisibleTo("OsuDiffCalc.Tests")]
 
