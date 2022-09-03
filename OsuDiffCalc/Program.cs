@@ -14,6 +14,10 @@
 		//the STAThread is needed to call Ux.getFileFromDialog()->.openFileDialog()
 		[STAThread]
 		static void Main(string[] args) {
+#if NET5_0_OR_GREATER && PUBLISH_TRIMMED
+			// support trimming for WinForms apps using nuget package WinFormsComInterop
+			System.Runtime.InteropServices.ComWrappers.RegisterForMarshalling(WinFormsComInterop.WinFormsComWrappers.Instance);
+#endif
 			if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 				Thread.CurrentThread.Name = "Main.Thread";
 

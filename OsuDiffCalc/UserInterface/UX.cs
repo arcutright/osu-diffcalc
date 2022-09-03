@@ -29,7 +29,9 @@
 				Title = title,
 				Filter = filter,
 				InitialDirectory = _searchDirectory,
-				Multiselect = true,
+#if !(NET5_0_OR_GREATER && PUBLISH_TRIMMED)
+				Multiselect = true, // disabled due to bug in ComWrappers, see https://github.com/kant2002/WinFormsComInterop/issues/40
+#endif
 				DereferenceLinks = true,
 			};
 			try {
