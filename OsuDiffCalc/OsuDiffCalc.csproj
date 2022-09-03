@@ -1,233 +1,127 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{615BCB15-B9D0-49FC-8BD0-A91EA763F0E9}</ProjectGuid>
+    <TargetFrameworks>net48;net6.0-windows</TargetFrameworks>
     <OutputType>Exe</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>OsuDiffCalc</RootNamespace>
-    <AssemblyName>OsuDiffCalc</AssemblyName>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Deterministic>true</Deterministic>
     <LangVersion>10.0</LangVersion>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
-    <TargetFrameworkProfile />
-  </PropertyGroup>
-  <PropertyGroup>
+		
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
+		<ApplicationHighDpiMode>true</ApplicationHighDpiMode>
+		<!--<ApplicationDefaultFont></ApplicationDefaultFont>-->
+		
+    <PlatformTarget>x64</PlatformTarget>
+    <Platforms>AnyCPU;x64;x86</Platforms>
+    <Configurations>Debug;Release;Release - testing</Configurations>
+		<Prefer32Bit>false</Prefer32Bit>
+		
+		<Deterministic>true</Deterministic>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+
+		<AssemblyName>OsuDiffCalc</AssemblyName>
+		<ProductName>OsuDiffCalc</ProductName>
+		<Description>Alternate difficulty calculator for osu!</Description>
+		<Title>$(ProductName)</Title>
+		<Title>$(ProductName)</Title>
+		<Copyright>Copyright 2022</Copyright>
+		<Company></Company>
+
+		<Version>1.2.0</Version>
+		<AssemblyVersion>$(Version)</AssemblyVersion>
+		<FileVersion>$(Version)</FileVersion>
+		
     <StartupObject>OsuDiffCalc.Program</StartupObject>
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE;AnyCPU</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
+	
+	<PropertyGroup>
+		<DefineConstants>TRACE</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+		<DefineConstants>DEBUG</DefineConstants>
+		<Optimize>false</Optimize>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+		<DefineConstants>RELEASE</DefineConstants>
+		<Optimize>true</Optimize>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)' == 'Release - testing' ">
+		<DefineConstants>RELEASE_TESTING</DefineConstants>
+		<Optimize>true</Optimize>
+	</PropertyGroup>
+  <PropertyGroup Condition=" '$(Platform)' == 'AnyCPU' ">
+    <DefineConstants>AnyCPU</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;AnyCPU</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x64\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE;X64</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>bin\x64\Release\</OutputPath>
-    <DefineConstants>TRACE;X64</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x86\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE;X86</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <Prefer32Bit>true</Prefer32Bit>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
-    <OutputPath>bin\x86\Release\</OutputPath>
-    <DefineConstants>TRACE;X86</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <Prefer32Bit>true</Prefer32Bit>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release - testing|AnyCPU'">
-    <OutputPath>bin\Release - testing\</OutputPath>
-    <DefineConstants>TRACE;RELEASE_TESTING;AnyCPU</DefineConstants>
-    <Optimize>true</Optimize>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release - testing|x64'">
-    <OutputPath>bin\x64\Release - testing\</OutputPath>
-    <DefineConstants>TRACE;RELEASE_TESTING;X64</DefineConstants>
-    <Optimize>true</Optimize>
-    <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release - testing|x86'">
-    <OutputPath>bin\x86\Release - testing\</OutputPath>
-    <DefineConstants>TRACE;RELEASE_TESTING;X86</DefineConstants>
-    <Optimize>true</Optimize>
-    <PlatformTarget>x86</PlatformTarget>
-    <Prefer32Bit>true</Prefer32Bit>
-  </PropertyGroup>
+	<PropertyGroup Condition=" '$(Platform)' == 'x86' ">
+		<DefineConstants>X86</DefineConstants>
+		<PlatformTarget>x86</PlatformTarget>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Platform)' == 'x64' ">
+		<DefineConstants>X64</DefineConstants>
+		<PlatformTarget>x64</PlatformTarget>
+	</PropertyGroup>
+	
+	<!-- File include/exclude -->
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Configuration" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.EnterpriseServices" />
-    <Reference Include="System.Windows.Forms" />
+    <Content Include="TODO.txt" CopyToOutputDirectory="Never" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<Compile Update="Properties\Settings.Designer.cs">
+			<DesignTimeSharedInput>True</DesignTimeSharedInput>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>Settings.settings</DependentUpon>
+		</Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="Properties\Settings.settings">
+			<Generator>PublicSettingsSingleFileGenerator</Generator>
+			<LastGenOutput>Settings.Designer.cs</LastGenOutput>
+		</None>
+	</ItemGroup>
+	
+	<!-- remove shim to add many C#9 features to dotnet framework, it is not useful in modern dotnet -->
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net48' And '$(TargetFramework)' != 'net472' And '$(TargetFramework)' != 'net462' ">
+    <Compile Remove="CSharp9Features.cs" />
+  </ItemGroup>
+	<ItemGroup Condition=" '$(TargetFramework)' == 'net48' Or '$(TargetFramework)' == 'net472' Or '$(TargetFramework)' == 'net462' ">
+		<!-- These libs are to add other modern features to dotnet framework, it is not useful in modern dotnet -->
+    <PackageReference Include="IndexRange" Version="1.0.2" />
+    <PackageReference Include="System.Memory" Version="4.5.5" />
+	</ItemGroup>
+	
+	<!-- helpers for compatibility -->
+	<ItemGroup Condition=" '$(PublishTrimmed)' == 'true' And '$(TargetFramework)' != 'net48' And '$(TargetFramework)' != 'net472' And '$(TargetFramework)' != 'net462' ">
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="6.0.0" />
+    <PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.4.336902">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+	</ItemGroup>
+	<ItemGroup Condition=" '$(TargetFramework)' == 'net48' Or '$(TargetFramework)' == 'net472' Or '$(TargetFramework)' == 'net462' ">
+		<Reference Include="System" />
+		<Reference Include="System.Configuration" />
+		<Reference Include="System.Core" />
+		<Reference Include="System.Drawing" />
+		<Reference Include="System.EnterpriseServices" />
+		<Reference Include="System.Windows.Forms" />
+		<Reference Include="System.Xml" />
+		<Reference Include="System.Xml.Linq" />
+	</ItemGroup>
+	
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
+  </ItemGroup>
+	
+	<!-- WinForms charting -->
+	<ItemGroup Condition=" '$(TargetFramework)' == 'net48' Or '$(TargetFramework)' == 'net472' Or '$(TargetFramework)' == 'net462' ">
     <Reference Include="System.Windows.Forms.DataVisualization" />
     <Reference Include="System.Windows.Forms.DataVisualization.Design" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="CSharp9Features.cs" />
-    <Compile Include="EquatableReadOnlyList.cs" />
-    <Compile Include="OsuMemoryReader\ProcessPropertyReader\AddressFinder.cs" />
-    <Compile Include="OsuMemoryReader\OsuMemoryModels\CurrentBeatmap.cs" />
-    <Compile Include="OsuMemoryReader\ProcessPropertyReader\MemoryReader.cs" />
-    <Compile Include="OsuMemoryReader\ProcessPropertyReader\ObjectReader.cs" />
-    <Compile Include="OsuMemoryReader\OsuMemoryModels\Enums.cs" />
-    <Compile Include="OsuMemoryReader\OsuMemoryModels\GeneralData.cs" />
-    <Compile Include="OsuMemoryReader\ProcessPropertyReader.cs" />
-    <Compile Include="OsuMemoryReader\MemoryAddressInfoAttribute.cs" />
-    <Compile Include="OsuMemoryReader\OsuStateReader.cs" />
-    <Compile Include="FileProcessor\AnalyzerObjects\SeriesPoint.cs" />
-    <Compile Include="FileProcessor\AnalyzerObjects\SeriesPointCollection.cs" />
-    <Compile Include="FileProcessor\BeatmapObjects\SliderPathHelpers\Interpolation.cs" />
-    <Compile Include="FileProcessor\BeatmapObjects\SliderPathHelpers\PathApproximator.cs" />
-    <Compile Include="FileProcessor\BeatmapObjects\SliderPathHelpers\PathControlPoint.cs" />
-    <Compile Include="FileProcessor\BeatmapObjects\SliderPathHelpers\PathType.cs" />
-    <Compile Include="FileProcessor\BeatmapObjects\SliderPathHelpers\Precision.cs" />
-    <Compile Include="FileProcessor\BeatmapObjects\SliderPathHelpers\SliderPath.cs" />
-    <Compile Include="UserInterface\Controls\CustomChart.cs" />
-    <Compile Include="Utility\AssociatedApplicationHelper.cs" />
-    <Compile Include="FileFinder\Finder.cs" />
-    <Compile Include="Utility\Extensions.cs" />
-    <Compile Include="Utility\LRUCache.cs" />
-    <Compile Include="Utility\ShortcutHelper.cs" />
-    <Compile Include="FileFinder\OpenFilesDetector.cs" />
-    <Compile Include="FileProcessor\Analyzer.cs" />
-    <Compile Include="FileProcessor\AnalyzerObjects\DifficultyRating.cs" />
-    <Compile Include="FileProcessor\AnalyzerObjects\Shape.cs" />
-    <Compile Include="FileProcessor\Beatmap.cs" />
-    <Compile Include="FileProcessor\BeatmapObjects\BeatmapObject.cs" />
-    <Compile Include="FileProcessor\FileParserHelpers\FormatParser.cs" />
-    <Compile Include="FileProcessor\FileParserHelpers\ParserBase.cs" />
-    <Compile Include="FileProcessor\SavefileXMLManager.cs" />
-    <Compile Include="FileProcessor\MapsetManager.cs" />
-    <Compile Include="FileProcessor\BeatmapObjects\BreakSection.cs" />
-    <Compile Include="FileProcessor\BeatmapObjects\Hitcircle.cs" />
-    <Compile Include="FileProcessor\BeatmapObjects\HitObject.cs" />
-    <Compile Include="FileProcessor\BeatmapObjects\Slider.cs" />
-    <Compile Include="FileProcessor\BeatmapObjects\Spinner.cs" />
-    <Compile Include="FileProcessor\BeatmapObjects\TimingPoint.cs" />
-    <Compile Include="FileProcessor\Mapset.cs" />
-    <Compile Include="FileProcessor\FileParserHelpers\DifficultyParser.cs" />
-    <Compile Include="FileProcessor\FileParserHelpers\EventsParser.cs" />
-    <Compile Include="FileProcessor\FileParserHelpers\GeneralParser.cs" />
-    <Compile Include="FileProcessor\FileParserHelpers\HitObjectsParser.cs" />
-    <Compile Include="FileProcessor\FileParserHelpers\MetadataParser.cs" />
-    <Compile Include="FileProcessor\Parser.cs" />
-    <Compile Include="FileProcessor\FileParserHelpers\TimingParser.cs" />
-    <Compile Include="Utility\WindowHelper.cs" />
-    <Compile Include="NativeMethods\NativeMethodEnums.cs" />
-    <Compile Include="NativeMethods\NativeMethodStructs.cs" />
-    <Compile Include="NativeMethods\NativeProcessAndHandleMethods.cs" />
-    <Compile Include="NativeMethods\NativeWindowMethods.cs" />
-    <Compile Include="NativeMethods\HandleWrappers.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Program.cs" />
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-    <Compile Include="Properties\Settings.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <DependentUpon>Settings.settings</DependentUpon>
-    </Compile>
-    <Compile Include="Properties\Settings.cs" />
-    <Compile Include="Properties\PortableSettingsProvider.cs" />
-    <Compile Include="UserInterface\Controls\CustomToolTip.cs" />
-    <Compile Include="UserInterface\Controls\DoubleTextBox.cs" />
-    <Compile Include="UserInterface\GUI.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="UserInterface\GUI.Designer.cs">
-      <DependentUpon>GUI.cs</DependentUpon>
-    </Compile>
-    <Compile Include="UserInterface\Controls\IntTextBox.cs" />
-    <Compile Include="UserInterface\Controls\NumericTextBox.cs" />
-    <Compile Include="UserInterface\UX.cs" />
-    <Compile Include="UserInterface\Controls\ValidatingTextBox.cs" />
-    <Compile Include="Vector2.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Properties\App.config" />
-    <None Include="Properties\app.manifest" />
-    <None Include="Properties\Settings.settings">
-      <Generator>PublicSettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="TODO.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="UserInterface\GUI.resx">
-      <DependentUpon>GUI.cs</DependentUpon>
-    </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="IndexRange">
-      <Version>1.0.2</Version>
-    </PackageReference>
-    <PackageReference Include="System.Memory">
-      <Version>4.5.5</Version>
-    </PackageReference>
-  </ItemGroup>
+	</ItemGroup>
+	<ItemGroup Condition=" '$(TargetFramework)' != 'net48' And '$(TargetFramework)' != 'net472' And '$(TargetFramework)' != 'net462' ">
+    <PackageReference Include="System.Windows.Forms.DataVisualization" Version="1.0.0-prerelease.20110.1" />
+	</ItemGroup>
+	
   <ItemGroup>
     <COMReference Include="Shell32">
       <Guid>{50A7E9B0-70EF-11D1-B75A-00A0C90564FE}</Guid>
@@ -239,13 +133,4 @@
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
   </ItemGroup>
-  <ItemGroup />
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>

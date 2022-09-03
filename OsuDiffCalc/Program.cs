@@ -18,6 +18,9 @@
 				Thread.CurrentThread.Name = "Main.Thread";
 
 			// ensure fonts look OK on monitors with non-default scaling set
+#if NET5_0_OR_GREATER
+			System.Windows.Forms.Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
+#endif
 			if (Environment.OSVersion.Version.Major >= 6)
 				NativeMethods.SetProcessDPIAware();
 
