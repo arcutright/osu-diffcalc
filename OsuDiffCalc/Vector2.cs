@@ -44,6 +44,7 @@
 
 		/// <inheritdoc cref="System.Numerics.Vector2.DistanceSquared(System.Numerics.Vector2, System.Numerics.Vector2)"/>
 		public static float DistanceSquared(Vector2 value1, Vector2 value2) {
+#if NET47_OR_GREATER
 			if (System.Numerics.Vector.IsHardwareAccelerated) {
 				Vector2 vector = value1 - value2;
 				return Dot(vector, vector);
@@ -53,6 +54,11 @@
 				float dy = value1.Y - value2.Y;
 				return dx * dx + dy * dy;
 			}
+#else
+			float dx = value1.X - value2.X;
+			float dy = value1.Y - value2.Y;
+			return dx * dx + dy * dy;
+#endif
 		}
 
 		#endregion
@@ -84,6 +90,6 @@
 		public static implicit operator System.Numerics.Vector2(Vector2 value) => new(value.X, value.Y);
 		public static implicit operator Vector2(System.Numerics.Vector2 value) => new(value.X, value.Y);
 
-		#endregion
+#endregion
 	}
 }

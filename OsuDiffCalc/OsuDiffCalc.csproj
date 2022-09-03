@@ -3,7 +3,11 @@
     <TargetFrameworks>net48;net6.0-windows</TargetFrameworks>
     <OutputType>Exe</OutputType>
     <LangVersion>10.0</LangVersion>
+		<Nullable>annotations</Nullable>
 		
+		<!-- 
+		TODO: form size (width/height) is larger with net6+, not sure why yet
+		-->
     <UseWindowsForms>true</UseWindowsForms>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
 		<ApplicationHighDpiMode>true</ApplicationHighDpiMode>
@@ -15,7 +19,9 @@
 		<Prefer32Bit>false</Prefer32Bit>
 		
 		<Deterministic>true</Deterministic>
-    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<DisableWinExeOutputInference>true</DisableWinExeOutputInference>
+		<IsPackable>false</IsPackable>
 
 		<AssemblyName>OsuDiffCalc</AssemblyName>
 		<ProductName>OsuDiffCalc</ProductName>
@@ -33,6 +39,23 @@
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
   </PropertyGroup>
 	
+	<Choose>
+		<When Condition=" '$(TargetFramework)'=='net481' Or '$(TargetFramework)'=='net48'
+					Or '$(TargetFramework)'=='net472' Or '$(TargetFramework)'=='net471' Or '$(TargetFramework)'=='net470' Or '$(TargetFramework)'=='net47' 
+					Or '$(TargetFramework)'=='net462' Or '$(TargetFramework)'=='net461' Or '$(TargetFramework)'=='net460' Or '$(TargetFramework)'=='net46'
+					Or '$(TargetFramework)'=='net452' Or '$(TargetFramework)'=='net451' Or '$(TargetFramework)'=='net450' Or '$(TargetFramework)'=='net45'
+					Or '$(TargetFramework)'=='net403' Or '$(TargetFramework)'=='net40' ">
+			<PropertyGroup>
+				<IsNetFramework>true</IsNetFramework>
+			</PropertyGroup>
+		</When>
+		<Otherwise>
+			<PropertyGroup>
+				<IsNetFramework>false</IsNetFramework>
+			</PropertyGroup>
+		</Otherwise>
+	</Choose>
+
 	<PropertyGroup>
 		<DefineConstants>TRACE</DefineConstants>
 	</PropertyGroup>
@@ -59,9 +82,10 @@
 		<DefineConstants>X64</DefineConstants>
 		<PlatformTarget>x64</PlatformTarget>
 	</PropertyGroup>
-	
+
+
 	<!-- File include/exclude -->
-  <ItemGroup>
+	<ItemGroup>
     <Content Include="TODO.txt" CopyToOutputDirectory="Never" />
   </ItemGroup>
 
@@ -79,25 +103,35 @@
 			<LastGenOutput>Settings.Designer.cs</LastGenOutput>
 		</None>
 	</ItemGroup>
-	
+
 	<!-- remove shim to add many C#9 features to dotnet framework, it is not useful in modern dotnet -->
-  <ItemGroup Condition=" '$(TargetFramework)' != 'net48' And '$(TargetFramework)' != 'net472' And '$(TargetFramework)' != 'net462' ">
-    <Compile Remove="CSharp9Features.cs" />
-  </ItemGroup>
-	<ItemGroup Condition=" '$(TargetFramework)' == 'net48' Or '$(TargetFramework)' == 'net472' Or '$(TargetFramework)' == 'net462' ">
+	<ItemGroup Condition=" '$(IsNetFramework)' != 'true' ">
+		<Compile Remove="CSharp9Features.cs" />
+	</ItemGroup>
+	<ItemGroup Condition=" '$(IsNetFramework)' == 'true' ">
 		<!-- These libs are to add other modern features to dotnet framework, it is not useful in modern dotnet -->
-    <PackageReference Include="IndexRange" Version="1.0.2" />
-    <PackageReference Include="System.Memory" Version="4.5.5" />
+		<PackageReference Include="IndexRange" Version="1.0.2" />
+		<PackageReference Include="System.Memory" Version="4.5.5" />
 	</ItemGroup>
 	
+	<!-- assembly merging for dotnet framework builds -->
+	<ItemGroup Condition=" '$(IsNetFramework)' == 'true' ">
+		<PackageReference Include="ILRepack" Version="2.0.18" />
+	</ItemGroup>
+
 	<!-- helpers for compatibility -->
-	<ItemGroup Condition=" '$(PublishTrimmed)' == 'true' And '$(TargetFramework)' != 'net48' And '$(TargetFramework)' != 'net472' And '$(TargetFramework)' != 'net462' ">
-    <PackageReference Include="Microsoft.Windows.Compatibility" Version="6.0.0" />
-    <PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.4.336902">
+	<ItemGroup Condition=" '$(IsNetFramework)' != 'true' ">
+		<!-- adds ~10MB to the output, but at least some parts of it are required -->
+		<!--<PackageReference Include="Microsoft.Windows.Compatibility" Version="6.0.0" />-->
+		
+		<!-- required for WinForms Charts -->
+		<PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
+		
+		<PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.4.336902">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
 	</ItemGroup>
-	<ItemGroup Condition=" '$(TargetFramework)' == 'net48' Or '$(TargetFramework)' == 'net472' Or '$(TargetFramework)' == 'net462' ">
+	<ItemGroup Condition=" '$(IsNetFramework)' == 'true' ">
 		<Reference Include="System" />
 		<Reference Include="System.Configuration" />
 		<Reference Include="System.Core" />
@@ -111,17 +145,17 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
-  </ItemGroup>
-	
+	</ItemGroup>
+
 	<!-- WinForms charting -->
-	<ItemGroup Condition=" '$(TargetFramework)' == 'net48' Or '$(TargetFramework)' == 'net472' Or '$(TargetFramework)' == 'net462' ">
-    <Reference Include="System.Windows.Forms.DataVisualization" />
-    <Reference Include="System.Windows.Forms.DataVisualization.Design" />
+	<ItemGroup Condition=" '$(IsNetFramework)' == 'true' ">
+		<Reference Include="System.Windows.Forms.DataVisualization" />
+		<Reference Include="System.Windows.Forms.DataVisualization.Design" />
 	</ItemGroup>
-	<ItemGroup Condition=" '$(TargetFramework)' != 'net48' And '$(TargetFramework)' != 'net472' And '$(TargetFramework)' != 'net462' ">
-    <PackageReference Include="System.Windows.Forms.DataVisualization" Version="1.0.0-prerelease.20110.1" />
+	<ItemGroup Condition=" '$(IsNetFramework)' != 'true' ">
+		<PackageReference Include="System.Windows.Forms.DataVisualization" Version="1.0.0-prerelease.20110.1" />
 	</ItemGroup>
-	
+
   <ItemGroup>
     <COMReference Include="Shell32">
       <Guid>{50A7E9B0-70EF-11D1-B75A-00A0C90564FE}</Guid>
@@ -132,5 +166,69 @@
       <Isolated>False</Isolated>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
-  </ItemGroup>
+	</ItemGroup>
+
+	<!-- build / publish events -->
+	<Target Name="RemoveOldPublishFiles" BeforeTargets="Publish;BeforePublish;AfterBuild;AfterCompile;PostBuildEvent;PostBuild" Condition=" '$(PublishDir)' != '' And Exists('$(PublishDir)') ">
+		<ItemGroup Condition=" '$(PublishDir)' != '' ">
+			<PrePublishDirsToDelete Remove="@(PrePublishDirsToDelete)" />
+			<PrePublishDirsToDelete Include="$([System.IO.Directory]::GetDirectories('$(PublishDir)', '*', System.IO.SearchOption.AllDirectories))" />
+
+			<PrePublishFilesToDelete Remove="@(PrePublishFilesToDelete)" />
+			<PrePublishFilesToDelete Include="$(PublishDir)**\*.*" />
+			<PrePublishFilesToDelete Remove="@(PrePublishDirsToDelete)" />
+		</ItemGroup>
+		<Delete Files="@(PrePublishFilesToDelete)" />
+		<RemoveDir Directories="@(PrePublishDirsToDelete)" />
+	</Target>
+
+	<!--
+	https://docs.microsoft.com/en-us/visualstudio/msbuild/msbuild-items?view=vs-2022
+	
+	-->
+
+	<!-- assembly merging into 1 exe for dotnet framework -->
+	<Target Name="MergeAssembliesForDotnetFramework" AfterTargets="Publish" Condition=" '$(IsNetFramework)' == 'true' And  '$(PublishDir)' != '' And Exists('$(PublishDir)') ">
+		<Message Importance="high" Text="PublishDir: '$(PublishDir)', TargetName: '$(TargetName)', ..." />
+		<ItemGroup>
+			<Libs Remove="@(Libs)" />
+			<Libs Include="$(PublishDir)*.dll" />
+			<Libs Include="$(PublishDir)*.exe" Exclude="$(PublishDir)$(TargetName).exe" />
+
+			<FilesToDelete Remove="@(FilesToDelete)" />
+			<FilesToDelete Include="$(PublishDir)*.xml" />
+			<FilesToDelete Include="$(PublishDir)**\*.pdb" />
+			<FilesToDelete Include="$(PublishDir)*.settings" />
+			<FilesToDelete Remove="@(Libs)" />
+		</ItemGroup>
+		<Delete Files="@(FilesToDelete)" />
+
+		<Exec Command="$(PkgILRepack)\tools\ILRepack.exe /out:&quot;$(TargetName).exe&quot; &quot;$(TargetName).exe&quot; @(Libs->'&quot;%(filename)%(extension)&quot;', ' ')" WorkingDirectory="$(ProjectDir)\$(PublishDir)" ConsoleToMsBuild="true">
+			<Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
+		</Exec>
+		<Delete Files="@(Libs)" />
+	</Target>
+
+	<Target Name="CleanPublishDir" AfterTargets="Publish;MergeAssemblies" Condition=" '$(PublishDir)' != '' And Exists('$(PublishDir)') ">
+		<ItemGroup>
+			<FilesToDelete Remove="@(FilesToDelete)" />
+			<FilesToDelete Include="$(PublishDir)*.xml" />
+			<FilesToDelete Include="$(PublishDir)**\*.pdb" />
+			<FilesToDelete Include="$(PublishDir)**\*.dll.config" />
+			<FilesToDelete Include="$(PublishDir)**\*.exe.config" />
+			<FilesToDelete Include="$(PublishDir)*.settings" />
+		</ItemGroup>
+		<Delete Files="@(FilesToDelete)" />
+		
+		<!-- remove all "empty" directories -->
+		<ItemGroup>
+			<Dirs Remove="@(Dirs)" />
+			<Dirs Include="$([System.IO.Directory]::GetDirectories('$(PublishDir)', '*', System.IO.SearchOption.AllDirectories))" />
+			<Dirs>
+				<!--<DirFiles Remove="@(DirFiles)" />-->
+				<DirFiles>$([System.IO.Directory]::GetFiles("%(Dirs.Identity)", "*", System.IO.SearchOption.AllDirectories).get_Length())</DirFiles>
+			</Dirs>
+		</ItemGroup>
+		<RemoveDir Directories="@(Dirs)" Condition="%(DirFiles)=='0'" />
+	</Target>
 </Project>

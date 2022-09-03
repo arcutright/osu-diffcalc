@@ -21,6 +21,10 @@ namespace OsuDiffCalc {
 	using HANDLE  = System.IntPtr;
 	using PVOID   = System.IntPtr;
 
+#if NET5_0_OR_GREATER
+#pragma warning disable SYSLIB0003 // Type or member is obsolete
+#endif 
+
 	[SecurityCritical]
 	[SecurityPermission(SecurityAction.InheritanceDemand, UnmanagedCode = true)]
 	public sealed class SafeObjectHandle : SafeHandleZeroOrMinusOneIsInvalid {

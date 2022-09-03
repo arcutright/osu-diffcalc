@@ -21,7 +21,12 @@
 		private readonly SeriesPointCollection[] _allSeriesPoints;
 		private readonly object _pointsLock = new();
 
-		private readonly HashSet<double> _allSeriesXValues = new(1024);
+		private readonly HashSet<double> _allSeriesXValues
+#if NET472_OR_GREATER
+			= new(1024);
+#else
+			= new();
+#endif
 		private bool _areSeriesPrepared;
 		private bool _arePointsPrepared;
 

@@ -75,6 +75,10 @@ class MemoryAddressInfoAttribute : Attribute {
 		set => _encoding = value;
 	}
 
+#if NET5_0_OR_GREATER
+#pragma warning disable SYSLIB0001 // Type or member is obsolete
+#endif
+
 	private Encoding GetEncoding(string name) {
 		return name?.ToLower() switch {
 			null or "" => null,

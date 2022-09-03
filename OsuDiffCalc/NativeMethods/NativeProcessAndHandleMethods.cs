@@ -259,7 +259,9 @@ namespace OsuDiffCalc {
 		///   <br/> https://www.pinvoke.net/default.aspx/kernel32/CloseHandle.html
 		/// </remarks>
 		[DllImport("kernel32.dll", SetLastError = SetLastError)]
+#if !NET5_0_OR_GREATER
 		[ReliabilityContract(Consistency.WillNotCorruptState, Cer.Success)]
+#endif
 		[SuppressUnmanagedCodeSecurity]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		public static extern bool CloseHandle([In] HANDLE hObject);

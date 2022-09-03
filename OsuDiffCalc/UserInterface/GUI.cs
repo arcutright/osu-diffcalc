@@ -1119,7 +1119,8 @@
 					_autoWindowCancellation = new CancellationTokenSource();
 
 				_windowStateAnalyzedEvent.Reset();
-				_autoWindowUpdater = BackgroundTaskRun(async() => await AutoWindowUpdaterBegin(_autoWindowCancellation.Token, AutoWindowUpdaterTimeoutMs), _autoWindowCancellation.Token);
+				 _autoWindowUpdater = BackgroundTaskRun(async() => await AutoWindowUpdaterBegin(_autoWindowCancellation.Token, AutoWindowUpdaterTimeoutMs), _autoWindowCancellation.Token);
+				//_autoWindowUpdater = Task.Run(async () => await AutoWindowUpdaterBegin(_autoWindowCancellation.Token, AutoWindowUpdaterTimeoutMs), _autoWindowCancellation.Token);
 			}
 		}
 
@@ -1392,6 +1393,7 @@
 				if (_autoBeatmapCancellation.IsCancellationRequested)
 					_autoBeatmapCancellation = new CancellationTokenSource();
 				_autoBeatmapAnalyzer = BackgroundTaskRun(() => AutoBeatmapAnalyzerBegin(_autoBeatmapCancellation.Token, AutoBeatmapAnalyzerTimeoutMs), _autoBeatmapCancellation.Token);
+				//_autoBeatmapAnalyzer = Task.Run(() => AutoBeatmapAnalyzerBegin(_autoBeatmapCancellation.Token, AutoBeatmapAnalyzerTimeoutMs), _autoBeatmapCancellation.Token);
 			}
 		}
 
@@ -1526,9 +1528,11 @@
 
 		#endregion
 
-		private async Task BackgroundTaskRun(ThreadStart ts, CancellationToken cancelToken) {
-			// await Task.Run(ts.Invoke, cancelToken);
-			var t = new Thread(ts) { // default stack size for 32bit: 1MB, 64bit: 4MB
+		private static async Task BackgroundTaskRun(Action ts, CancellationToken cancelToken) {
+#if NET5_0_OR_GREATER
+			await Task.Run(ts, cancelToken);
+#else
+			var t = new Thread(() => ts()) { // default stack size for 32bit: 1MB, 64bit: 4MB
 				IsBackground = true,
 				Priority = ThreadPriority.BelowNormal,
 			};
@@ -1538,8 +1542,25 @@
 				t.Interrupt();
 				t.Abort();
 			}
+#endif
 		}
 
+		private static async Task BackgroundTaskRun(Func<Task> ts, CancellationToken cancelToken) {
+#if NET5_0_OR_GREATER
+			await Task.Run(ts, cancelToken);
+#else
+			var t = new Thread(() => ts()) { // default stack size for 32bit: 1MB, 64bit: 4MB
+				IsBackground = true,
+				Priority = ThreadPriority.BelowNormal,
+			};
+			t.Start();
+			await Task.Run(() => t.Join(), cancelToken);
+			if (t.IsAlive) {
+				t.Interrupt();
+				t.Abort();
+			}
+#endif
+		}
 
 		private bool _isDisposed = false;
 
