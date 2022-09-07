@@ -364,14 +364,28 @@
 			Task.Run(ManualBeatmapAnalyzer);
 		}
 
-		private void ClearButton_Click(object sender, EventArgs e) {
-			// var displayedMapset = _displayedMapset;
-			MapsetManager.Clear(exceptions: new[] { _displayedMapset });
-			SavefileXMLManager.ClearXML();
-			// MapsetManager.SaveMapset(displayedMapset, true, EnableXmlCache);
-			_currentOsuState = OsuMemoryState.Invalid;
-			_prevOsuState = OsuMemoryState.Invalid;
-			_osuProcess = null;
+		private async void ClearButton_Click(object sender, EventArgs e) {
+			// var prevDisplayedMapset = _displayedMapset;
+			bool prevPauseAllTasks = _pauseAllTasks;
+			try {
+				_pauseAllTasks = true;
+				_windowStateAnalyzedEvent.Reset();
+				await Task.WhenAll(StopAutoWindowUpdater(), StopAutoBeatmapAnalyzer());
+
+				MapsetManager.Clear(exceptions: new[] { _displayedMapset });
+				SavefileXMLManager.ClearXML();
+				// MapsetManager.SaveMapset(displayedMapset, true, EnableXmlCache);
+				OsuStateReader.ClearCache();
+				_osuProcess?.Dispose();
+			}
+			catch { }
+			finally {
+				_currentOsuState = OsuMemoryState.Invalid;
+				_prevOsuState = OsuMemoryState.Invalid;
+				_osuProcess = null;
+				_pauseAllTasks = prevPauseAllTasks;
+				StartTasksIfNeeded();
+			}
 		}
 
 		private void ScaleRatings_CheckedChanged(object sender, EventArgs e) {
@@ -1126,8 +1140,7 @@
 					_autoWindowCancellation = new CancellationTokenSource();
 
 				_windowStateAnalyzedEvent.Reset();
-				 _autoWindowUpdater = BackgroundTaskRun(async() => await AutoWindowUpdaterBegin(_autoWindowCancellation.Token, AutoWindowUpdaterTimeoutMs), _autoWindowCancellation.Token);
-				//_autoWindowUpdater = Task.Run(async () => await AutoWindowUpdaterBegin(_autoWindowCancellation.Token, AutoWindowUpdaterTimeoutMs), _autoWindowCancellation.Token);
+				_autoWindowUpdater = Task.Run(async () => await AutoWindowUpdaterBegin(_autoWindowCancellation.Token, AutoWindowUpdaterTimeoutMs), _autoWindowCancellation.Token);
 			}
 		}
 
@@ -1200,6 +1213,8 @@
 					_currentOsuState = OsuMemoryState.Invalid;
 					_prevOsuState = OsuMemoryState.Invalid;
 					OsuStateReader.ClearCache();
+					_osuProcess?.Dispose();
+					_osuProcess = null;
 					_inGameBeatmap = null;
 					_inGameWindowTitle = null;
 					_isOsuPresent = false;
@@ -1400,8 +1415,8 @@
 			if (_autoBeatmapAnalyzer is null) {
 				if (_autoBeatmapCancellation.IsCancellationRequested)
 					_autoBeatmapCancellation = new CancellationTokenSource();
-				_autoBeatmapAnalyzer = BackgroundTaskRun(() => AutoBeatmapAnalyzerBegin(_autoBeatmapCancellation.Token, AutoBeatmapAnalyzerTimeoutMs), _autoBeatmapCancellation.Token);
-				//_autoBeatmapAnalyzer = Task.Run(() => AutoBeatmapAnalyzerBegin(_autoBeatmapCancellation.Token, AutoBeatmapAnalyzerTimeoutMs), _autoBeatmapCancellation.Token);
+
+				_autoBeatmapAnalyzer = Task.Run(() => AutoBeatmapAnalyzerBegin(_autoBeatmapCancellation.Token, AutoBeatmapAnalyzerTimeoutMs), _autoBeatmapCancellation.Token);
 			}
 		}
 
@@ -1538,39 +1553,6 @@
 
 		#endregion
 
-		private static async Task BackgroundTaskRun(Action ts, CancellationToken cancelToken) {
-#if NET5_0_OR_GREATER
-			await Task.Run(ts, cancelToken);
-#else
-			var t = new Thread(() => ts()) { // default stack size for 32bit: 1MB, 64bit: 4MB
-				IsBackground = true,
-				Priority = ThreadPriority.BelowNormal,
-			};
-			t.Start();
-			await Task.Run(() => t.Join(), cancelToken);
-			if (t.IsAlive) {
-				t.Interrupt();
-				t.Abort();
-			}
-#endif
-		}
-
-		private static async Task BackgroundTaskRun(Func<Task> ts, CancellationToken cancelToken) {
-#if NET5_0_OR_GREATER
-			await Task.Run(ts, cancelToken);
-#else
-			var t = new Thread(() => ts()) { // default stack size for 32bit: 1MB, 64bit: 4MB
-				IsBackground = true,
-				Priority = ThreadPriority.BelowNormal,
-			};
-			t.Start();
-			await Task.Run(() => t.Join(), cancelToken);
-			if (t.IsAlive) {
-				t.Interrupt();
-				t.Abort();
-			}
-#endif
-		}
 
 		private bool _isDisposed = false;
 

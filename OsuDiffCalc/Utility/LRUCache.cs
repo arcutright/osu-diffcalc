@@ -133,6 +133,7 @@ internal class LRUCache<TKey, TValue> : IDictionary<TKey, TValue> {
 	/// <param name="exceptions"> Any values which should remain in the cache after clearing </param>
 	public void Clear(bool? autoDispose, IList<TValue> exceptions = null) {
 		bool shouldDispose = autoDispose ?? AutoDispose;
+		exceptions = exceptions?.Where(x => x is not null).ToList();
 		if (exceptions is null || exceptions.Count == 0) {
 			if (shouldDispose) {
 				foreach (var (_, (value, _)) in _cache) {
