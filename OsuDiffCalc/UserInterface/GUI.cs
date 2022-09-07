@@ -1035,7 +1035,14 @@
 			bool prevPauseAllTasks = _pauseAllTasks;
 			try {
 				_pauseAllTasks = true;
-				var selectedFileNames = (string[])Invoke(() => UX.GetFilenamesFromDialog());
+
+				// if osu is running, use the active mapset dir as the initial 'open files here' path
+				string searchDirectory = null;
+				if (_osuProcess is not null && !_osuProcess.HasExitedSafe())
+					searchDirectory = _prevMapsetDirectory;
+
+				// Note: cast to string[] needed for older netframework
+				var selectedFileNames = (string[])Invoke(() => UX.GetFilenamesFromDialog(searchDirectory)); 
 				Mapset set = MapsetManager.BuildSet(selectedFileNames);
 				if (set is null || set.Count == 0) {
 					set?.Dispose();
@@ -1163,6 +1170,7 @@
 
 		private void AutoWindowUpdaterThreadTick(CancellationToken cancelToken, int timeoutMs) {
 			//Console.Write("auto window  ");
+			_findActiveBeatmapStopwatch.Restart();
 			bool couldReadState = false;
 			string windowTitle = null;
 			try {
@@ -1398,6 +1406,7 @@
 		}
 
 		private async Task StopAutoBeatmapAnalyzer() {
+			_findActiveBeatmapStopwatch.Stop();
 			if (_autoBeatmapAnalyzer is not null) {
 				try { _autoBeatmapCancellation.Cancel(true); } catch { }
 				try { await _autoBeatmapAnalyzer; } catch { }
@@ -1433,6 +1442,8 @@
 			catch { }
 		}
 
+		private readonly Stopwatch _findActiveBeatmapStopwatch = new Stopwatch();
+
 		private void AutoBeatmapAnalyzerThreadTick(CancellationToken cancelToken, int timeoutMs) {
 			try {
 				if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
@@ -1440,7 +1451,6 @@
 
 				// fallbacks in case memory reader didn't work
 				// these fallbacks can be slow
-				var sw = Stopwatch.StartNew();
 				if (_osuProcess is not null && !_osuProcess.HasExitedSafe()) {
 					if (!Directory.Exists(_currentMapsetDirectory))
 						_currentMapsetDirectory = Finder.GetActiveBeatmapDirectory(_osuProcess.IdSafe()); // true HOT PATH
@@ -1449,9 +1459,9 @@
 					_currentMapsetDirectory = MapsetManager.GetCurrentMapsetDirectory(_osuProcess, _inGameWindowTitle, _prevMapsetDirectory);
 				if (_currentMapsetDirectory is null && !string.IsNullOrEmpty(_currentOsuState.MapString))
 					_currentMapsetDirectory = MapsetManager.GetCurrentMapsetDirectory(_osuProcess, $"osu! - {_currentOsuState.MapString}", _prevMapsetDirectory);
-				
-				sw.Stop();
-				SetFindActiveBeatmapTime($"{sw.ElapsedMilliseconds} ms");
+
+				_findActiveBeatmapStopwatch.Stop();
+				SetFindActiveBeatmapTime($"{_findActiveBeatmapStopwatch.ElapsedMilliseconds} ms");
 				cancelToken.ThrowIfCancellationRequested();
 
 				bool needsReanalyze = 
@@ -1494,7 +1504,7 @@
 
 				if (needsReanalyze) {
 					// analyze the mapset
-					sw.Restart();
+					var sw = Stopwatch.StartNew();
 					Mapset set = MapsetManager.AnalyzeMapset(_currentMapsetDirectory, this, true, EnableXmlCache);
 					sw.Stop();
 					SetParseAndAnalyzeTime($"{sw.ElapsedMilliseconds} ms");
