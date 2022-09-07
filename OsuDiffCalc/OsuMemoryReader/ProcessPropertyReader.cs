@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -72,7 +72,11 @@ partial class ProcessPropertyReader : IDisposable {
 	/// <param name="result"></param>
 	/// <param name="defaultValue"> Default value for <paramref name="result"/> when the property read wasn't successful </param>
 	/// <returns> <see langword="true"/> when a read was successful and <paramref name="result"/> was populated, otherwise <see langword="false"/> </returns>
-	public bool TryReadProperty<TClass, TProperty>(string propertyName, out TProperty result, TProperty defaultValue = default) {
+	// Note: ugly annotation is for Trimming compatibility in .net6+
+	public bool TryReadProperty<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
+	                            TClass,
+		                          TProperty>
+		                         (string propertyName, out TProperty result, TProperty defaultValue = default) {
 		result = defaultValue;
 		try {
 			IntPtr classAddress, propAddress;
@@ -134,20 +138,27 @@ partial class ProcessPropertyReader : IDisposable {
 	}
 
 	/// <inheritdoc cref="TryReadProperty{TClass, TProperty}(string, out TProperty, TProperty)"/>
-	public bool TryReadProperty<TClass>(string propertyName, out object result, object defaultValue = null) {
-		return TryReadProperty<TClass, object>(propertyName, out result, defaultValue);
-	}
+	// Note: ugly annotation is for Trimming compatibility in .net6+
+	public bool TryReadProperty<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
+	                            TClass>
+		                         (string propertyName, out object result, object defaultValue = null)
+		=> TryReadProperty<TClass, object>(propertyName, out result, defaultValue);
 
 	/// <returns> the value of the property <paramref name="propertyName"/>, or <paramref name="defaultValue"/> if the read failed </returns>
 	/// <inheritdoc cref="TryReadProperty{TClass, TProperty}(string, out TProperty, TProperty)"/>
-	public TProperty ReadProperty<TClass, TProperty>(string propertyName, TProperty defaultValue = default) {
-		return TryReadProperty<TClass, TProperty>(propertyName, out var result, defaultValue) ? result : defaultValue;
-	}
+	// Note: ugly annotation is for Trimming compatibility in .net6+
+	public TProperty ReadProperty<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
+	                              TClass,
+		                            TProperty>
+		                           (string propertyName, TProperty defaultValue = default)
+		=> TryReadProperty<TClass, TProperty>(propertyName, out var result, defaultValue) ? result : defaultValue;
 
 	/// <inheritdoc cref="ReadProperty{TClass, TProperty}(string, TProperty)"/>
-	public object ReadProperty<TClass>(string propertyName, object defaultValue = default) {
-		return TryReadProperty<TClass, object>(propertyName, out var result, defaultValue) ? result : defaultValue;
-	}
+	// Note: ugly annotation is for Trimming compatibility in .net6+
+	public object ReadProperty<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
+	                           TClass>
+		                        (string propertyName, object defaultValue = default)
+		=> ReadProperty<TClass, object>(propertyName, defaultValue);
 
 	private bool TryReadValue<T>(IntPtr address, int bytesPerChar, Encoding enc, out T result) {
 		// note: this sucks to read but roslyn will evaulate all the typeof(T) checks ahead of time

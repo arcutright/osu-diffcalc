@@ -14,8 +14,9 @@
 		<!-- 
 		TODO: form size (width/height) is larger with net6+, not sure why yet
 		-->
-    <UseWindowsForms>true</UseWindowsForms>
-    <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
+		<UseWindowsForms>true</UseWindowsForms>
+		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+		<ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
 		<ApplicationHighDpiMode>true</ApplicationHighDpiMode>
 		<!--<ApplicationDefaultFont></ApplicationDefaultFont>-->
 		
@@ -61,38 +62,31 @@
 		</Otherwise>
 	</Choose>
 
+	<!-- trimming for .NET 5+ -->
+	<!-- see https://docs.microsoft.com/en-us/dotnet/core/deploying/trimming/trimming-options?pivots=dotnet-6-0 -->
 	<PropertyGroup Condition=" '$(IsNetFramework)' != 'true' ">
 		<IsTrimmable>true</IsTrimmable>
 		<PublishTrimmed>true</PublishTrimmed>
 		<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
 		<_SuppressWinFormsTrimError>true</_SuppressWinFormsTrimError>
 		<TrimmerRemoveSymbols>true</TrimmerRemoveSymbols>
-		<!-- 
-		using 'link' will break WinForms charting ...
-		if no BuiltInComInteropSupport
-			'System.MissingMethodException: Constructor on type 'System.Windows.Forms.DataVisualization.Charting.ChartTypes.ColumnChart' not found.
-		if BuiltInComInteropSupport
-			'System.MissingMethodException: Attempted to access a missing method.
-				 at System.Windows.Forms.ComboBox.SetAutoComplete(Boolean reset, Boolean recreate)
-				 at System.Windows.Forms.ComboBox.OnHandleCreated(EventArgs e)
-				 at System.Windows.Forms.Control.WmCreate(Message& m)
-				 at System.Windows.Forms.Control.WndProc(Message& m)
-				 at System.Windows.Forms.ComboBox.WndProc(Message& m)
-				 at System.Windows.Forms.Control.ControlNativeWindow.WndProc(Message& m)
-				 at System.Windows.Forms.NativeWindow.Callback(IntPtr hWnd, WM msg, IntPtr wparam, IntPtr lparam)'
-		-->
-		<TrimMode>copyused</TrimMode>
-		<TrimmerDefaultAction>copyused</TrimmerDefaultAction>
+		<TrimMode>link</TrimMode>
+		<TrimmerDefaultAction>link</TrimmerDefaultAction>
 	</PropertyGroup>
 	<Choose>
 		<When Condition=" '$(PublishTrimmed)' == 'true' And '$(IsTrimmable)' == 'true' And '$(Configuration)' == 'Release' And '$(IsNetFramework)' != 'true' ">
 			<ItemGroup>
 				<!-- exclude assemblies from trimming (poorly named) -->
+				<!-- definitely required to support TrimMode=link, otherwise you get System.MissingMethodException on WinForms charts -->
 				<TrimmerRootAssembly Include="System.Windows.Forms.DataVisualization" />
+				<!-- may be required to support TrimMode=link, otherwise you get System.MissingMethodException -->
+				<TrimmerRootAssembly Include="System.Configuration.ConfigurationManager" />
+				<!--<TrimmerRootAssembly Include="System.Windows.Forms" />
+				<TrimmerRootAssembly Include="System.Windows.Forms.Design" />
+				<TrimmerRootAssembly Include="System.Windows.Forms.Primitives" />
+				<TrimmerRootAssembly Include="System.Data.SqlClient" />-->
 			</ItemGroup>
 			<PropertyGroup>
-				<!-- see https://docs.microsoft.com/en-us/dotnet/core/deploying/trimming/trimming-options?pivots=dotnet-6-0 -->
-				<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
 				<DebuggerSupport>false</DebuggerSupport>
 				<!--
 				<MetadataUpdaterSupport>false</MetadataUpdaterSupport>
@@ -157,12 +151,8 @@
 		</None>
 	</ItemGroup>
 
-	<!-- remove shim to add many C#9 features to dotnet framework, it is not useful in modern dotnet -->
-	<ItemGroup Condition=" '$(IsNetFramework)' != 'true' ">
-		<Compile Remove="CSharp9Features.cs" />
-	</ItemGroup>
+	<!-- These libs are to add other modern features to dotnet framework, it is not useful in modern dotnet -->
 	<ItemGroup Condition=" '$(IsNetFramework)' == 'true' ">
-		<!-- These libs are to add other modern features to dotnet framework, it is not useful in modern dotnet -->
 		<PackageReference Include="IndexRange" Version="1.0.2" />
 		<PackageReference Include="System.Memory" Version="4.5.5" />
 	</ItemGroup>
@@ -174,7 +164,7 @@
 	<Choose>
 		<When Condition=" '$(PublishTrimmed)' == 'true' And '$(IsNetFramework)' != 'true' ">
 			<ItemGroup>
-				<PackageReference Include="WinFormsComInterop" Version="0.2.9" />
+				<PackageReference Include="WinFormsComInterop" Version="0.3.0" />
 			</ItemGroup>
 		</When>
 	</Choose>
@@ -295,5 +285,8 @@
 			</Dirs>
 		</ItemGroup>
 		<RemoveDir Directories="@(Dirs)" Condition="%(DirFiles)=='0'" />
+
+		<Message Text="=============================" Importance="High" />
+		<Message Text="Finished building publish assembly: $(PublishDir)$(AssemblyName).exe" Importance="High" />
 	</Target>
 </Project>

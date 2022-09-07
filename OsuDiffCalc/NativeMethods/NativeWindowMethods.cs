@@ -803,9 +803,11 @@ namespace OsuDiffCalc {
 		///   An application must register this callback function by passing its address to EnumWindows or EnumDesktopWindows.
 		///   <br/>https://docs.microsoft.com/en-us/previous-versions/windows/desktop/legacy/ms633498(v=vs.85)
 		/// </remarks>
+		[UnmanagedFunctionPointer(CallingConvention.StdCall, CharSet = CharSet.Auto)]
 		delegate bool EnumWindowsProc(IntPtr hWnd, ref EnumWindowsData lParam);
 
 		/// <inheritdoc cref="EnumWindowsProc"/>
+		[UnmanagedFunctionPointer(CallingConvention.StdCall, CharSet = CharSet.Auto)]
 		delegate bool EnumWindowsProcMany(IntPtr hWnd, ref EnumWindowsDataMany lParam);
 
 		/// <summary>

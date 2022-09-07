@@ -9,6 +9,15 @@ using System.Threading.Tasks;
 
 namespace OsuDiffCalc.OsuMemoryReader;
 
+/*
+ * Some background reading to understand the layout of types in .NET
+ * 
+ * https://github.com/dotnet/runtime/blob/main/src/coreclr/vm/object.h
+ * strings are a special case:
+ * https://referencesource.microsoft.com/#mscorlib/system/string.cs
+ * https://github.com/dotnet/runtime/blob/75e65e99af5b3c8a2fd0abd5e887f8b14bd45362/src/coreclr/vm/object.h#L863
+ */
+
 partial class ProcessPropertyReader {
 	/// <summary>
 	/// Memory reader for reading objects from a process (strings, arrays, etc)
@@ -59,7 +68,8 @@ partial class ProcessPropertyReader {
 
 		/// <summary>
 		/// Get the runtime memory size of a type. <br/>
-		/// Note that when looking in another process, for pointers/nint you should use <see cref="MemoryReader.IntPtrSize"/>
+		/// WARNING: for nullables, this returns the underlying type size, not including the `hasValue` or padding due to the Nullable wrapper. <br/>
+		/// For pointers/nint this will return <see cref="MemoryReader.IntPtrSize"/> (from the target process)
 		/// </summary>
 		/// <returns>
 		/// The number of bytes the type will take up in dotnet runtime memory,
@@ -89,18 +99,20 @@ partial class ProcessPropertyReader {
 				return UnknownSizeOf<T>();
 		}
 
-		private int UnknownSizeOf<T>() {
+		private static int UnknownSizeOf<T>() {
 			lock (_typeSizeCache) {
 				if (_typeSizeCache.TryGetValue(typeof(T), out var size))
 					return size;
 
 				int sizeT;
 				if (typeof(T).IsEnum)
-					sizeT = SizeOf(Enum.GetUnderlyingType(typeof(T)));
+					sizeT = Unsafe.SizeOf<T>();
 				else if (typeof(T).IsValueType) {
 					var underlyingType = Nullable.GetUnderlyingType(typeof(T));
-					if (underlyingType is not null)
+					if (underlyingType is not null) {
+						// TODO: using SizeOf(Type) is not safe for AOT in net7+ since it requires reflection
 						sizeT = SizeOf(underlyingType);
+					}
 					else
 						sizeT = Unsafe.SizeOf<T>();
 				}
@@ -113,10 +125,11 @@ partial class ProcessPropertyReader {
 
 		/// <summary>
 		/// Sketchy way to get the runtime memory size of a type. <br/>
+		/// WARNING: for nullables, this returns the underlying type size, not including the `hasValue` or padding due to the Nullable wrapper. <br/>
 		/// Prefer using <see cref="SizeOf{T}"/> whenever possible, it is faster and more likely to be correct.
 		/// </summary>
 		/// <inheritdoc cref="SizeOf{T}"/>
-		public int SizeOf(Type type) {
+		public static int SizeOf(Type type) {
 			if (type is null)
 				return 0;
 			lock (_typeSizeCache) {
@@ -124,8 +137,19 @@ partial class ProcessPropertyReader {
 					return size;
 
 				int sizeT;
-				if (type.IsEnum)
-					sizeT = SizeOf(Enum.GetUnderlyingType(type));
+				if (type.IsEnum) {
+					var tc = Type.GetTypeCode(type);
+					sizeT = tc switch {
+						TypeCode.Boolean => sizeof(bool),
+						TypeCode.Char => sizeof(char),
+						TypeCode.Byte or TypeCode.SByte => sizeof(byte),
+						TypeCode.Int16 or TypeCode.UInt16 => sizeof(short),
+						TypeCode.Int32 or TypeCode.UInt32 => sizeof(int),
+						TypeCode.Int64 or TypeCode.UInt64 => sizeof(long),
+						// TODO: using SizeOf(Type) is not safe for AOT in net7+ since it requires reflection
+						_ => SizeOf(Enum.GetUnderlyingType(type)),
+					};
+				}
 				else if (type.IsValueType) {
 					var underlyingType = Nullable.GetUnderlyingType(type);
 					if (underlyingType is not null)

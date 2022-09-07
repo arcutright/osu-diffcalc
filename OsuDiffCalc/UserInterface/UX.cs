@@ -21,6 +21,7 @@
 		/// </summary>
 		/// <returns> The list of selected file paths </returns>
 		/// <remarks> Warning: this needs to be run from an STAThread. </remarks>
+		[STAThread]
 		public static string[] GetFilenamesFromDialog(string title = "Open osu! Beatmap File", string filter = "osu! files|*.osu") {
 			if (!Directory.Exists(_searchDirectory))
 				_searchDirectory = FileFinder.Finder.GetOsuSongsDirectory();
@@ -29,9 +30,7 @@
 				Title = title,
 				Filter = filter,
 				InitialDirectory = _searchDirectory,
-#if !(NET5_0_OR_GREATER && PUBLISH_TRIMMED)
-				Multiselect = true, // disabled due to bug in ComWrappers, see https://github.com/kant2002/WinFormsComInterop/issues/40
-#endif
+				Multiselect = true,
 				DereferenceLinks = true,
 			};
 			try {
