@@ -7,6 +7,21 @@ using System.Threading.Tasks;
 
 namespace OsuDiffCalc.OsuMemoryReader;
 
+/// <summary>
+/// Attribute describing the location in process memory where this class/property can be found <br/>
+/// Some examples of usage:
+/// <code>
+/// // the base of properties in MyClass will be at *[ProcessBase-0xC] instead of simply ProcessBase
+/// [MemoryAddressInfo(Offset = -0xC)]
+/// public class MyClass {
+///   [MemoryAddressInfo(Offset = 0xCC)] 
+///   public int Id { get; set; } // Id is at *[ProcessBase-0xC]+0xCC
+///   
+///   // Base for HardToFindStruct is wherever this needle is, instead of the class base
+///   [MemoryAddressInfo(PathNeedle = "C8FF??????????810D????????00080000", Offset = +0x9)] 
+///   public MyStruct HardToFindStruct { get; set; } // struct starts at *[needleLocation]+0x9
+/// </code>
+/// </summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Property, AllowMultiple = false)]
 [DebuggerDisplay("Path: '{Path}', Offset: {Offset}, Encoding: {Encoding?.BodyName}")]
 class MemoryAddressInfoAttribute : Attribute {
@@ -68,7 +83,8 @@ class MemoryAddressInfoAttribute : Attribute {
 
 	/// <summary>
 	/// String encoding (if this is attached to a string property, otherwise this is ignored). <br/>
-	/// Note that dotnet processes always store strings in UTF16 (aka Unicode) 2-byte-per-char.
+	/// Note that dotnet processes always store strings in UTF16 (aka Unicode) 2-byte-per-char. <br/>
+	/// This only applies to strings, not to chars. Chars are currently always read as UTF16
 	/// </summary>
 	public Encoding Encoding {
 		get => _encoding ??= GetEncoding(EncodingName);
@@ -85,9 +101,13 @@ class MemoryAddressInfoAttribute : Attribute {
 			"ascii" => Encoding.ASCII,
 			"utf7" or "utf-7" => Encoding.UTF7,
 			"utf8" or "utf-8" => Encoding.UTF8,
-			"utf32" or "utf-32" => Encoding.UTF32,
-			"utf16" or "utf-16" or "unicode" or "unicode-little" or "little-unicode" or "littleendianunicode" => Encoding.Unicode,
-			"bigendianunicode" or "unicode-big" or "big-unicode" => Encoding.BigEndianUnicode,
+			"utf32" or "utf-32"	=> Encoding.UTF32,
+			"utf16" or "utf-16" or "unicode"
+			or "utf16le" or "utf-16le"
+			or "unicode-little" or "little-unicode" or "littleendianunicode"
+				=> Encoding.Unicode,
+			"utf16be" or "utf-16be" or "bigendianunicode" or "unicode-big" or "big-unicode"
+				=> Encoding.BigEndianUnicode,
 			_ => Encoding.GetEncoding(name),
 		};
 	}

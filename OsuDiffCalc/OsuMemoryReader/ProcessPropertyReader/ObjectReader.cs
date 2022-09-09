@@ -32,7 +32,7 @@ partial class ProcessPropertyReader {
 			add2(typeof(byte),    typeof(byte?),    sizeof(byte));
 			add2(typeof(sbyte),   typeof(sbyte?),   sizeof(sbyte));
 			add2(typeof(bool),    typeof(bool?),    sizeof(bool));
-			add2(typeof(char),    typeof(char?),    sizeof(char));
+			add2(typeof(char),    typeof(char?),    sizeof(char)); // for other processes, this is hard to define since we allow different encoding per-property...
 			add2(typeof(short),   typeof(short?),   sizeof(short));
 			add2(typeof(ushort),  typeof(ushort?),  sizeof(ushort));
 			add2(typeof(int),     typeof(int?),     sizeof(int));

@@ -12,7 +12,7 @@ namespace OsuDiffCalc.OsuMemoryReader;
 
 partial class ProcessPropertyReader {
 	/// <summary>
-	/// Memory reader for reading memory chunks and locating them in a process
+	/// Tool for reading memory chunks and locating them in a process
 	/// </summary>
 	class MemoryReader : IDisposable {
 		static readonly nuint _memInfoSize = (nuint)Marshal.SizeOf<NativeMethods.MEMORY_BASIC_INFORMATION>();

@@ -1230,6 +1230,8 @@
 					couldReadState = OsuStateReader.TryReadCurrentOsuState(_osuProcess, out _currentOsuState);
 					if (!couldReadState) {
 						// fallback is sometimes needed to "force a refresh" to fix issues with the process handle
+						// TODO: if memory state read fails, this path becomes super slow since it re-fetches the osu process constantly
+						// may need a less aggressive fallback...
 						_osuProcess.Dispose();
 						_osuProcess = Finder.GetOsuProcess(_guiPid);
 						OsuStateReader.ClearCache();
