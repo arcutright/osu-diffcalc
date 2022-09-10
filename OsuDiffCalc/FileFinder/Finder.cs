@@ -35,30 +35,35 @@
 
 			// find the path to the main osu! directory (where osu!.exe lives)
 			string osuDir = null;
-			if (osuProcess is not null)
-				osuDir = Path.GetDirectoryName(osuProcess.MainModule.FileName);
+			try {
+				if (osuProcess is not null)
+					osuDir = Path.GetDirectoryName(osuProcess.MainModule.FileName);
+			}
+			catch { }
 
 			if (!Directory.Exists(osuDir)) {
 				// try the most common paths first
 				osuDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "osu!");
-				if (!Directory.Exists(osuDir)) {
+				if (!Directory.Exists(osuDir))
 					osuDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "osu!");
 
-					// fallback: look for handlers for osu file types
-					if (!Directory.Exists(osuDir)) {
-						var osuExePath = AssociatedApplicationHelper.FindAssociatedApplication(".osz") ?? AssociatedApplicationHelper.FindAssociatedApplication(".osk");
-						osuDir = Path.GetDirectoryName(osuExePath);
+				// fallback: look for handlers for osu file types
+				if (!Directory.Exists(osuDir)) {
+					var osuExePath = AssociatedApplicationHelper.FindAssociatedApplication(".osz") ?? AssociatedApplicationHelper.FindAssociatedApplication(".osk");
+					osuDir = Path.GetDirectoryName(osuExePath);
+				}
 
-						// fallback: look for osu! shortcut entry in start menu
-						if (!Directory.Exists(osuDir)) {
-							string startMenuPath = Environment.GetFolderPath(Environment.SpecialFolder.StartMenu);
-							string shortcut = Directory.GetFiles(startMenuPath, "*osu*.lnk", SearchOption.AllDirectories)
-																.OrderBy(s => s.Length + (s.ToLower().Contains("osu!") ? 0 : 1)) // poor man's edit distance
-							                  .FirstOrDefault();
-							if (shortcut is not null)
-								osuDir = Path.Combine(Path.GetDirectoryName(ShortcutHelper.ResolveShortcut(shortcut)));
-						}
+				// fallback: look for osu! shortcut entry in start menu
+				if (!Directory.Exists(osuDir)) {
+					try {
+						string startMenuPath = Environment.GetFolderPath(Environment.SpecialFolder.StartMenu);
+						string shortcut = Directory.GetFiles(startMenuPath, "*osu*.lnk", SearchOption.AllDirectories)
+													.OrderBy(s => s.Length + (s.ToLower().Contains("osu!") ? 0 : 1)) // poor man's edit distance
+							            .FirstOrDefault();
+						if (shortcut is not null)
+							osuDir = Path.Combine(Path.GetDirectoryName(Lnk.Lnk.LoadFile(shortcut).LocalPath));
 					}
+					catch { }
 				}
 			}
 
