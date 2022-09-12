@@ -478,14 +478,15 @@
 
 				int guessIndex = -1; // used to cache the point index that we are "nearest". will only be calculated for the first series
 				foreach (var series in chart.Series) {
-					if (series is null || !series.Enabled) continue;
-					int n = series.Points?.Count ?? 0;
+					if (series is null || series.Points is null || !series.Enabled) continue;
+					int n = series.Points.Count;
 					if (n == 0) continue;
 					if (guessIndex == -1) {
 						double bestDelta = double.MaxValue;
 						// TODO: could probably make a better starting guess than 0, but x-spacing of points is not guaranteed
 						for (int i = 0; i < n; ++i) {
 							var point = series.Points[i];
+							if (point is null) continue;
 							double delta = Math.Abs(pointX - point.XValue);
 							if (point.XValue < pointX || delta < bestDelta) {
 								if (delta < bestDelta) {
@@ -663,8 +664,7 @@
 
 		private bool _isTextChanging = false;
 		private void SetText(Control control, string text) {
-			string currentText = control?.Text;
-			if (currentText == text)
+			if (control is null || control.Text == text)
 				return;
 			Invoke(() => {
 				bool prevIsTextChanging = _isTextChanging;
@@ -776,8 +776,10 @@
 					bool anyChanged = false;
 					for (int i = 0; i < n; i++) {
 						var series = Chart.Series[i];
-						var colorPanel = ChartLegendPanel.Controls[2 * i] as Panel;
-						var label = ChartLegendPanel.Controls[(2 * i) + 1] as Label;
+						if (ChartLegendPanel.Controls[(2 * i)] is not Panel colorPanel)
+							continue;
+						if (ChartLegendPanel.Controls[(2 * i) + 1] is not Label label)
+							continue;
 						var colorPanelStrikeThrough = colorPanel.Controls[0];
 						bool isEnabledInLegend = colorPanelStrikeThrough.Visible;
 						if (colorPanel.BackColor != series.Color) {
@@ -919,19 +921,20 @@
 			int nColumns = table.ColumnCount;
 			var seriesIndex = _legendIndexToSeriesIndex[legendRowIndex];
 			var series = Chart.Series[seriesIndex];
+			bool shouldEnable = !series.Enabled;
 
 			//var colorPanel = table.Controls[legendRowIndex * nColumns] as Panel;
 			//var label = table.Controls[legendRowIndex * nColumns + 1] as Label;
 			//var colorPanelStrikeThrough = colorPanel.Controls[0];
-			var colorPanel = table.Controls[seriesIndex * nColumns] as Panel;
-			var label = table.Controls[seriesIndex * nColumns + 1] as Label;
-			var colorPanelStrikeThrough = colorPanel.Controls[0];
-
-			bool shouldEnable = !series.Enabled;
 
 			// make the series appear enabled / disabled
-			label.Font = new Font(label.Font, shouldEnable ? FontStyle.Regular : FontStyle.Strikeout);
-			colorPanelStrikeThrough.Visible = !shouldEnable;
+			if (table.Controls[seriesIndex * nColumns] is Panel colorPanel && colorPanel.Controls.Count >= 1) {
+				var colorPanelStrikeThrough = colorPanel.Controls[0];
+				colorPanelStrikeThrough.Visible = !shouldEnable;
+			}
+			if (table.Controls[seriesIndex * nColumns + 1] is Label label) {
+				label.Font = new Font(label.Font, shouldEnable ? FontStyle.Regular : FontStyle.Strikeout);
+			}
 			series.Enabled = shouldEnable;
 
 			// save enabled state so it's preserved between maps
@@ -1257,10 +1260,15 @@
 					if (!couldReadState) {
 						// crappy way to check if osu is in-game/in-editor
 						// title looks like `osu! - Artist - song [difficulty] (mapper)`
-						int indexOfMapDiff = windowTitle.IndexOf('['); 
-						_isInGame = indexOfMapDiff != -1;
-						_isInEditor = _isInGame && windowTitle.IndexOf(')', indexOfMapDiff - 3) != -1;
-						_isInGame &= !_isInEditor;
+						if (string.IsNullOrEmpty(windowTitle)) {
+							_isInGame = _isInEditor = false;
+						}
+						else {
+							int indexOfMapDiff = windowTitle.IndexOf('[');
+							_isInGame = indexOfMapDiff != -1;
+							_isInEditor = _isInGame && windowTitle.IndexOf(')', indexOfMapDiff - 3) != -1;
+							_isInGame &= !_isInEditor;
+						}
 
 						_currentOsuState = OsuMemoryState.Invalid;
 					}
@@ -1438,7 +1446,6 @@
 					Thread.CurrentThread.Name = "AutoBeatmapAnalyzerThread";
 
 				var sw = new Stopwatch();
-
 				while (!cancelToken.IsCancellationRequested) {
 					_windowStateAnalyzedEvent.Wait(cancelToken);
 					cancelToken.ThrowIfCancellationRequested();
@@ -1455,7 +1462,7 @@
 				}
 				cancelToken.ThrowIfCancellationRequested();
 			}
-			catch (OperationCanceledException) { throw; }
+			catch (OperationCanceledException) { }
 			catch { }
 		}
 
@@ -1502,7 +1509,8 @@
 								Console.WriteLine($"Map was modified: {_currentOsuState.MapString}");
 								storedMap.IsParsed = false;
 								storedMap.IsAnalyzed = false;
-								_displayedMapset.IsAnalyzed = false;
+								if (_displayedMapset is not null)
+									_displayedMapset.IsAnalyzed = false;
 								needsReanalyze = true;
 							}
 						}
@@ -1548,12 +1556,14 @@
 			catch (OperationCanceledException) { throw; }
 			catch { }
 			finally {
+				//if (_currentOsuState.Status != _prevOsuState.Status)
+				//	_didUserChangeTab = false;
 				_prevOsuState = _currentOsuState;
 				_prevMapsetDirectory = _currentMapsetDirectory;
 			}
 		}
 
-		#endregion
+#endregion
 
 
 		private bool _isDisposed = false;

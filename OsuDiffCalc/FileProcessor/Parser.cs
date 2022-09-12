@@ -161,7 +161,7 @@
 							remainingSectionHeaders.Remove(sectionHeader);
 					}
 					// process lines in expected section
-					else if (foundSectionHeader) {
+					else if (foundSectionHeader && tryProcessLine is not null) {
 						if (!tryProcessLine(lineNumber, line, beatmap, out failureMessage)) {
 							if (string.IsNullOrEmpty(failureMessage))
 								failureMessage = $"Failed to process line {lineNumber}: '{line}' in section '{sectionHeader}'";

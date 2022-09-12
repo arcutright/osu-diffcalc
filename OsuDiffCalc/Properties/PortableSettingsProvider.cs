@@ -22,12 +22,10 @@
 		private const string _className = "PortableSettingsProvider";
 		private XmlDocument _xmlDocument;
 
-		private string _filePath {
-			get {
-				return Path.Combine(Path.GetDirectoryName(Application.ExecutablePath),
-					 string.Format("{0}.settings", ApplicationName));
-			}
-		}
+		private string _filePath => Path.Combine(
+			Path.GetDirectoryName(Application.ExecutablePath),
+			$"{ApplicationName}.settings"
+		);
 
 		private XmlNode _localSettingsNode {
 			get {
@@ -54,16 +52,14 @@
 
 		private XmlDocument _rootDocument {
 			get {
-				if (_xmlDocument == null) {
+				if (_xmlDocument is null) {
 					try {
 						_xmlDocument = new XmlDocument();
 						_xmlDocument.Load(_filePath);
 					}
-					catch (Exception) {
+					catch { }
 
-					}
-
-					if (_xmlDocument.SelectSingleNode(_rootNodeName) != null)
+					if (_xmlDocument?.SelectSingleNode(_rootNodeName) is not null)
 						return _xmlDocument;
 
 					_xmlDocument = GetBlankXmlDocument();
@@ -116,14 +112,18 @@
 		}
 
 		private void SetValue(SettingsPropertyValue propertyValue) {
+			if (propertyValue is null)
+				return;
 			XmlNode targetNode = IsGlobal(propertyValue.Property)
 						? _globalSettingsNode
 						: _localSettingsNode;
+			if (targetNode is null)
+				return;
 
-			XmlNode settingNode = targetNode.SelectSingleNode(string.Format("setting[@name='{0}']", propertyValue.Name));
+			XmlNode settingNode = targetNode.SelectSingleNode($"setting[@name='{propertyValue.Name}']");
 
-			if (settingNode != null)
-				settingNode.InnerText = propertyValue.SerializedValue.ToString();
+			if (settingNode is not null)
+				settingNode.InnerText = propertyValue.SerializedValue?.ToString();
 			else {
 				settingNode = _rootDocument.CreateElement("setting");
 
@@ -131,7 +131,7 @@
 				nameAttribute.Value = propertyValue.Name;
 
 				settingNode.Attributes.Append(nameAttribute);
-				settingNode.InnerText = propertyValue.SerializedValue.ToString();
+				settingNode.InnerText = propertyValue.SerializedValue?.ToString();
 
 				targetNode.AppendChild(settingNode);
 			}
@@ -139,7 +139,7 @@
 
 		private string GetValue(SettingsProperty property) {
 			XmlNode targetNode = IsGlobal(property) ? _globalSettingsNode : _localSettingsNode;
-			XmlNode settingNode = targetNode.SelectSingleNode(string.Format("setting[@name='{0}']", property.Name));
+			XmlNode settingNode = targetNode.SelectSingleNode($"setting[@name='{property.Name}']");
 
 			if (settingNode == null)
 				return property.DefaultValue != null ? property.DefaultValue.ToString() : string.Empty;

@@ -69,6 +69,7 @@
 		}
 
 		public static bool SaveMapset(Mapset set) {
+			if (_document is null) return false;
 			Console.Write("saving to xml...");
 			try {
 				LoadXML();
@@ -198,17 +199,19 @@
 		}
 
 		static IEnumerable<XElement> GetValidMapsets(Mapset set) {
-			return _document.Root.Elements("mapset").Where(el =>
+			return _document?.Root?.Elements("mapset").Where(el =>
 				(string)el.Attribute("title") == set.Title &&
 				(string)el.Attribute("artist") == set.Artist &&
-				(string)el.Attribute("creator") == set.Creator);
+				(string)el.Attribute("creator") == set.Creator)
+				?? Enumerable.Empty<XElement>();
 		}
 
 		static IEnumerable<XElement> GetValidMapsets(Beatmap map) {
-			return _document.Root.Elements("mapset").Where(el =>
+			return _document?.Root?.Elements("mapset").Where(el =>
 				(string)el.Attribute("title") == map.Title && 
 				(string)el.Attribute("artist") == map.Artist &&
-				(string)el.Attribute("creator") == map.Creator);
+				(string)el.Attribute("creator") == map.Creator)
+				?? Enumerable.Empty<XElement>();
 		}
 
 		#endregion

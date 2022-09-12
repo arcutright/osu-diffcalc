@@ -114,7 +114,7 @@ partial class ProcessPropertyReader : IDisposable {
 					// lookup address for property to see whether it is a constant
 					isValid = _addressFinder.TryFindPropertyAddress(classAttr, propAttr, out classAddress, out propAddress);
 					isValid |= propAddress == IntPtr.Zero;
-					isConstantAddress = (classAddress == IntPtr.Zero || !classAttr.ShouldFollowClassPointer) && propAttr.IsConstantPath;
+					isConstantAddress = (classAddress == IntPtr.Zero || classAttr?.ShouldFollowClassPointer == false) && propAttr.IsConstantPath;
 				}
 				else {
 					propAttr = null;

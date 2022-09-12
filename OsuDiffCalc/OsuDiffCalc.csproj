@@ -4,10 +4,10 @@
 		Tested on net46;net47;net48;net6.0-windows
 		<TargetFrameworks>net46;net47;net48;net6.0-windows</TargetFrameworks>
 		-->
-    <TargetFrameworks>net48;net6.0-windows</TargetFrameworks>
-    <OutputType>Exe</OutputType>
-    <LangVersion>10.0</LangVersion>
-		<Nullable>annotations</Nullable>
+		<TargetFrameworks>net48;net6.0-windows</TargetFrameworks>
+		<OutputType>Exe</OutputType>
+		<LangVersion>10.0</LangVersion>
+		<Nullable>warnings</Nullable>
 		<DisableImplicitNamespaceImports>true</DisableImplicitNamespaceImports>
 		<ImplicitUsings>disable</ImplicitUsings>
 		
@@ -171,7 +171,7 @@
 
 	<!-- assembly merging for dotnet framework builds -->
 	<ItemGroup Condition=" '$(IsNetFramework)' == 'true' ">
-		<PackageReference Include="ILRepack" Version="2.0.18" />
+		<PackageReference Include="ILRepack" Version="2.0.18" PrivateAssets="all" />
 	</ItemGroup>
 
 	<!-- helpers for compatibility -->

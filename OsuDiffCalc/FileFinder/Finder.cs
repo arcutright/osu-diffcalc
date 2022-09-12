@@ -49,7 +49,8 @@
 
 				// fallback: look for handlers for osu file types
 				if (!Directory.Exists(osuDir)) {
-					var osuExePath = AssociatedApplicationHelper.FindAssociatedApplication(".osz") ?? AssociatedApplicationHelper.FindAssociatedApplication(".osk");
+					var osuExePath = AssociatedApplicationHelper.FindAssociatedApplication(".osz")
+					                 ?? AssociatedApplicationHelper.FindAssociatedApplication(".osk");
 					osuDir = Path.GetDirectoryName(osuExePath);
 				}
 
@@ -57,11 +58,12 @@
 				if (!Directory.Exists(osuDir)) {
 					try {
 						string startMenuPath = Environment.GetFolderPath(Environment.SpecialFolder.StartMenu);
-						string shortcut = Directory.GetFiles(startMenuPath, "*osu*.lnk", SearchOption.AllDirectories)
-													.OrderBy(s => s.Length + (s.ToLower().Contains("osu!") ? 0 : 1)) // poor man's edit distance
-							            .FirstOrDefault();
+						string shortcut =
+							Directory.GetFiles(startMenuPath, "*osu*.lnk", SearchOption.AllDirectories)
+							         .OrderBy(s => s.Length + (s.ToLower().Contains("osu!") ? 0 : 1)) // poor man's edit distance
+							         .FirstOrDefault();
 						if (shortcut is not null)
-							osuDir = Path.Combine(Path.GetDirectoryName(Lnk.Lnk.LoadFile(shortcut).LocalPath));
+							osuDir = Path.GetDirectoryName(Lnk.Lnk.LoadFile(shortcut)?.LocalPath);
 					}
 					catch { }
 				}
@@ -124,7 +126,11 @@
 				// filter to processes with open audio files
 				int pid = osuPid.Value;
 				foreach (var file in OpenFilesDetector.GetOpenFilesEnumerator(pid, _osuOpenFileTypes)) { // HOT PATH
+					if (string.IsNullOrEmpty(file))
+						continue;
 					var dirPath = Path.GetDirectoryName(file);
+					if (string.IsNullOrEmpty(dirPath))
+						continue;
 					// filter to processes whose directory contains .osu files
 					var beatmapFiles = Directory.EnumerateFiles(dirPath, "*.osu", SearchOption.TopDirectoryOnly);
 					if (beatmapFiles.Any())

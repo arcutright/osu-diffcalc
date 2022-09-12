@@ -68,6 +68,10 @@
 				}
 
 				bool tryFindMap(string mapsetTitle, out string foundDir) {
+					if (string.IsNullOrEmpty(songsDir)) {
+						foundDir = null;
+						return false;
+					}
 					var possibleMapsetDirectories = Directory.EnumerateDirectories(songsDir, $"*{mapsetTitle}*", SearchOption.TopDirectoryOnly);
 					foreach (string directory in possibleMapsetDirectories) {
 						// name match for the .osu map file
@@ -161,7 +165,7 @@
 		/// Save map into xml. This is meant to save maps that are manually chosen
 		/// </summary>
 		public static void SaveMapToXML(Beatmap map) {
-			if (string.IsNullOrEmpty(map?.Title)) return;
+			if (map is null || string.IsNullOrEmpty(map.Title)) return;
 			var set = new Mapset(map);
 			if (map.IsAnalyzed)
 				set.IsAnalyzed = true;
