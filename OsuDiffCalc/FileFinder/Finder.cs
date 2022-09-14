@@ -63,13 +63,13 @@
 							         .OrderBy(s => s.Length + (s.ToLower().Contains("osu!") ? 0 : 1)) // poor man's edit distance
 							         .FirstOrDefault();
 						if (shortcut is not null)
-							osuDir = Path.GetDirectoryName(Lnk.Lnk.LoadFile(shortcut)?.LocalPath);
+							osuDir = Path.GetDirectoryName(ShellLink.Shortcut.ReadFromFile(shortcut).LinkTargetIDList.Path);
 					}
 					catch { }
 				}
 			}
 
-			if (Directory.Exists(osuDir)) {
+			if (osuDir is not null && Directory.Exists(osuDir)) {
 				_osuDirectory = osuDir;
 				return osuDir;
 			}

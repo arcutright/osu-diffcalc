@@ -175,16 +175,8 @@
 	</ItemGroup>
 
 	<!-- helpers for compatibility -->
-	<ItemGroup Condition=" '$(IsNetFramework)' != 'true' ">
-		<!-- adds ~10MB to the output, but at least some parts of it are required -->
-		<!--<PackageReference Include="Microsoft.Windows.Compatibility" Version="6.0.0" />-->
-		
-		<!-- required for WinForms Charts -->
-		<PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
-		
-		<PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.4.336902">
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.4.346201" PrivateAssets="all" />
 	</ItemGroup>
 	<ItemGroup Condition=" '$(IsNetFramework)' == 'true' ">
 		<Reference Include="System" />
@@ -199,12 +191,19 @@
 	
 	<!-- helper to parse Windows shortcut files (.lnk) -->
 	<ItemGroup>
-		<PackageReference Include="Lnk" Version="1.3.1" />
+	  <PackageReference Include="securifybv.ShellLink" Version="0.1.0" />
 	</ItemGroup>
 	
+	<!-- nuget defaults to the oldest, buggiest version of any given transitive dependency if it is supported
+	     here we specify more recent versions to avoid this. -->
 	<ItemGroup>
 		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-		<PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
+		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.1" />
+		<PackageReference Include="System.Memory" Version="4.5.5" />
+		<PackageReference Include="System.Memory.Data" Version="6.0.0" />
+		<PackageReference Include="System.Runtime" Version="4.3.1" />
+		<PackageReference Include="System.Text.Json" Version="6.0.6" />
 	</ItemGroup>
 
 	<!-- WinForms charting -->
@@ -213,7 +212,13 @@
 		<Reference Include="System.Windows.Forms.DataVisualization.Design" />
 	</ItemGroup>
 	<ItemGroup Condition=" '$(IsNetFramework)' != 'true' ">
-		<PackageReference Include="System.Windows.Forms.DataVisualization" Version="1.0.0-prerelease.20110.1" />
+		<!-- one of the following blocks is required for WinForms Charts -->
+		
+		<!--<PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
+		<PackageReference Include="System.Windows.Forms.DataVisualization" Version="1.0.0-prerelease.20110.1" />-->
+
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.0.0" />
+		<PackageReference Include="HIC.System.Windows.Forms.DataVisualization" Version="1.0.1" />
 	</ItemGroup>
 
 	<!-- build / publish events -->
