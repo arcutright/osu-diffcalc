@@ -79,7 +79,7 @@ class MemoryAddressInfoAttribute : Attribute {
 	public int BytesPerChar { get; init; } = 2;
 
 	/// <inheritdoc cref="Encoding"/>
-	public string EncodingName { get; init; } = "Unicode";
+	public string EncodingName { get; init; } = "utf-16";
 
 	/// <summary>
 	/// String encoding (if this is attached to a string property, otherwise this is ignored). <br/>
@@ -91,24 +91,24 @@ class MemoryAddressInfoAttribute : Attribute {
 		set => _encoding = value;
 	}
 
-#if NET5_0_OR_GREATER
-#pragma warning disable SYSLIB0001 // Type or member is obsolete
-#endif
-
 	private Encoding GetEncoding(string name) {
 		return name?.ToLower() switch {
-			null or "" => null,
-			"ascii" => Encoding.ASCII,
-			"utf7" or "utf-7" => Encoding.UTF7,
-			"utf8" or "utf-8" => Encoding.UTF8,
-			"utf32" or "utf-32"	=> Encoding.UTF32,
-			"utf16" or "utf-16" or "unicode"
-			or "utf16le" or "utf-16le"
-			or "unicode-little" or "little-unicode" or "littleendianunicode"
+			null or ""
+				=> null,
+			"ascii"
+				=> Encoding.ASCII,
+			"utf7" or "utf-7" or "utf8" or "utf-8"
+				=> Encoding.UTF8,
+			"utf16" or "utf-16" or "unicode" or "utf16le" or "utf-16le"
 				=> Encoding.Unicode,
-			"utf16be" or "utf-16be" or "bigendianunicode" or "unicode-big" or "big-unicode"
+			"utf16be" or "utf-16be"
 				=> Encoding.BigEndianUnicode,
-			_ => Encoding.GetEncoding(name),
+			"utf32" or "utf-32"
+				=> Encoding.UTF32,
+			"utf32be" or "utf-32be"
+				=> new UTF32Encoding(true, true),
+			_
+				=> Encoding.GetEncoding(name),
 		};
 	}
 
@@ -122,18 +122,21 @@ class MemoryAddressInfoAttribute : Attribute {
 	}
 
 	private int GetBytesPerChar(Encoding encoding) {
-		if (encoding is null) return 0;
-		else if (encoding.BodyName == "ascii")          return 1;
-		else if (encoding.BodyName == "utf-7")          return 1;
-		else if (encoding.BodyName == "utf-8")          return 1;
-		else if (encoding.BodyName == "utf-16")         return 2;
-		else if (encoding.BodyName == "utf-32")         return 4;
-		else if (encoding == Encoding.ASCII)            return 1;
-		else if (encoding == Encoding.UTF7)             return 1;
-		else if (encoding == Encoding.UTF8)             return 1;
-		else if (encoding == Encoding.Unicode)          return 2;
-		else if (encoding == Encoding.BigEndianUnicode) return 2;
-		else if (encoding.IsSingleByte)                 return 1;
-		else return Encoding.GetMaxByteCount(1);
+		// Encoding.GetEncodings().Select(e => e.GetEncoding()).Select(e2 => (e2.BodyName, e2.CodePage)).ToList()
+		// see https://docs.microsoft.com/en-us/windows/win32/intl/code-page-identifiers?redirectedfrom=MSDN
+		if (encoding is null)
+			return 0;
+		else if (encoding.BodyName is "ascii")                return 1;
+		else if (encoding.BodyName is "utf-7"  or "utf-8")    return 1;
+		else if (encoding.BodyName is "utf-16" or "utf-16BE") return 2;
+		else if (encoding.BodyName is "utf-32" or "utf-32BE") return 4;
+		else if (encoding.CodePage is 20127)          return 1; // ascii
+		else if (encoding.CodePage is 65000 or 65001) return 1; // utf-7,  utf-8
+		else if (encoding.CodePage is 1200  or 1201)  return 2; // utf-16, utf-16be
+		else if (encoding.CodePage is 12000 or 12001) return 4; // utf-32, utf-32be
+		else if (encoding.IsSingleByte)
+			return 1;
+		else 
+			return Encoding.GetMaxByteCount(1);
 	}
 }

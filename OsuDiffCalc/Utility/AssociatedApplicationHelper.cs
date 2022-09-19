@@ -22,10 +22,10 @@
 		/// </summary>
 		/// <param name="extension">file extension. ex '.pdf'</param>
 		public static string FindAssociatedApplication(string extension) {
-			// ensure extension has leading '.'
 			extension = extension?.Trim();
 			if (string.IsNullOrEmpty(extension))
 				return null;
+			// ensure extension has leading '.'
 			if (extension[0] != '.')
 				extension = $".{extension}";
 
