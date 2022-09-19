@@ -384,6 +384,9 @@
 				_prevOsuState = OsuMemoryState.Invalid;
 				_osuProcess = null;
 				_pauseAllTasks = prevPauseAllTasks;
+				_osuStateReaderRetryCount = 0;
+				_osuStateReaderRetryDelayMs = _osuStateReaderRetryInitialDelayMs;
+				_osuStateReaderRetrySw.Stop();
 				StartTasksIfNeeded();
 			}
 		}
@@ -1184,6 +1187,14 @@
 			catch { }
 		}
 
+		// cooldown for re-fetching the process + trying to find memory addresses
+		// the retry operation is slow and there's no point in doing it if the memory approach will never work
+		// eg. if there's an update to osu which moves the memory locations or something
+		private int _osuStateReaderRetryCount = 0;
+		private int _osuStateReaderRetryInitialDelayMs = 2000;
+		private int _osuStateReaderRetryDelayMs = 2000;
+		private readonly Stopwatch _osuStateReaderRetrySw = new Stopwatch();
+
 		private void AutoWindowUpdaterThreadTick(CancellationToken cancelToken, int timeoutMs) {
 			//Console.Write("auto window  ");
 			_findActiveBeatmapStopwatch.Restart();
@@ -1224,6 +1235,9 @@
 					_isInGame = false;
 					_isInEditor = false;
 					_didMinimize = false;
+					_osuStateReaderRetryCount = 0;
+					_osuStateReaderRetryDelayMs = _osuStateReaderRetryInitialDelayMs;
+					_osuStateReaderRetrySw.Stop();
 				}
 				else {
 					// osu found and we may be in-game
@@ -1233,13 +1247,24 @@
 					couldReadState = OsuStateReader.TryReadCurrentOsuState(_osuProcess, out _currentOsuState);
 					if (!couldReadState) {
 						// fallback is sometimes needed to "force a refresh" to fix issues with the process handle
-						// TODO: if memory state read fails, this path becomes super slow since it re-fetches the osu process constantly
-						// may need a less aggressive fallback...
-						_osuProcess.Dispose();
-						_osuProcess = Finder.GetOsuProcess(_guiPid);
-						OsuStateReader.ClearCache();
-						couldReadState = OsuStateReader.TryReadCurrentOsuState(_osuProcess, out _currentOsuState);
+						// if memory state read fails, this path becomes slow since it re-fetches the osu process constantly
+						// so we have a cooldown period to try a few times before assuming it will never work
+						if (_osuStateReaderRetryCount < 3 && (!_osuStateReaderRetrySw.IsRunning || _osuStateReaderRetrySw.ElapsedMilliseconds > _osuStateReaderRetryDelayMs)) {
+							_osuProcess.Dispose();
+							_osuProcess = Finder.GetOsuProcess(_guiPid);
+							OsuStateReader.ClearCache();
+							couldReadState = OsuStateReader.TryReadCurrentOsuState(_osuProcess, out _currentOsuState);
+							_osuStateReaderRetryCount++;
+							_osuStateReaderRetryDelayMs *= 2;
+							_osuStateReaderRetrySw.Restart();
+						}
 					}
+					else {
+						_osuStateReaderRetryCount = 0;
+						_osuStateReaderRetryDelayMs = _osuStateReaderRetryInitialDelayMs;
+						_osuStateReaderRetrySw.Stop();
+					}
+
 					// try-catch in case of invalid path characters
 					try {
 						if (couldReadState) {
