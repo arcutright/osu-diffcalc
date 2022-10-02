@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using OsuDiffCalc.Utility;
@@ -14,8 +15,8 @@ partial class ProcessPropertyReader {
 	/// <summary>
 	/// Tool for reading memory chunks and locating them in a process
 	/// </summary>
-	class MemoryReader : IDisposable {
-		static readonly nuint _memInfoSize = (nuint)Marshal.SizeOf<NativeMethods.MEMORY_BASIC_INFORMATION>();
+	internal class MemoryReader : IDisposable {
+		static readonly nuint _memInfoSize = (nuint)Unsafe.SizeOf<NativeMethods.MEMORY_BASIC_INFORMATION>();
 		private readonly CancellationTokenSource cts = new();
 		private SafeProcessHandle _hProcess = new();
 		private Process _currentProcess = null;

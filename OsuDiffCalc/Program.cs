@@ -1,19 +1,33 @@
 ﻿namespace OsuDiffCalc {
 	using System;
-	using System.Windows.Forms;
+	using System.IO;
+	using System.Diagnostics;
 	using System.Threading;
+	using System.Windows.Forms;
 	using UserInterface;
 
-	class Program {
+	static class Program {
 		/// <summary> System-wide pid for the console window thread </summary>
 		internal static int ConsolePid { get; private set; }
 
 		/// <summary> Win32 window HANDLE for the console thread which called Main() </summary>
 		internal static IntPtr ConsoleWindowHandle { get; private set; }
 
+		internal static string ExecutableName { get; private set; } = nameof(OsuDiffCalc);
+		internal static string ExecutablePath { get; private set; } = string.Empty;
+
 		//the STAThread is needed to call Ux.getFileFromDialog()->.openFileDialog()
 		[STAThread]
 		static void Main(string[] args) {
+			// grab the name of, and the path to, the main executable for this program
+			// several fallbacks since this can behave differently under .net48, .net6, .net6+ with AOT, etc.
+			string[] envArgs = Environment.GetCommandLineArgs();
+			envArgs = envArgs?.Length >= 1 ? envArgs : args;
+			ExecutablePath = envArgs?.Length >= 1 ? envArgs[0] : Process.GetCurrentProcess()?.MainModule?.FileName ?? string.Empty;
+			if (string.IsNullOrEmpty(ExecutablePath))
+				ExecutablePath = Path.Combine(Directory.GetCurrentDirectory(), $"{nameof(OsuDiffCalc)}.exe");
+			ExecutableName = Path.GetFileNameWithoutExtension(ExecutablePath);
+
 #if NET5_0_OR_GREATER && PUBLISH_TRIMMED
 			// support trimming for WinForms apps using nuget package WinFormsComInterop
 			System.Runtime.InteropServices.ComWrappers.RegisterForMarshalling(WinFormsComInterop.WinFormsComWrappers.Instance);
@@ -28,6 +42,7 @@
 			if (Environment.OSVersion.Version.Major >= 6)
 				NativeMethods.SetProcessDPIAware();
 
+			// TODO: these settings don't want to load when using net6+ with AOT compilation -- maybe switch to json + custom settings class
 			// configure settings
 			var settings = Properties.Settings.Default;
 #if DEBUG

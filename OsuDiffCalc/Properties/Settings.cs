@@ -1,5 +1,6 @@
 ﻿namespace OsuDiffCalc.Properties {
 	using System.Configuration;
+	using System.Reflection;
 
 
 	// This class allows you to handle specific events on the settings class:
@@ -23,7 +24,7 @@
 
 			// Change default provider.
 			foreach (SettingsProperty property in Properties) {
-				if (property.PropertyType.GetCustomAttributes(typeof(SettingsProviderAttribute), false).Length == 0) {
+				if (property.PropertyType.GetCustomAttribute<SettingsProviderAttribute>(false) is null) {
 					property.Provider = Provider;
 				}
 			}

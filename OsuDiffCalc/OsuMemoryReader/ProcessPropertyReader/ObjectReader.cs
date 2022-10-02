@@ -22,7 +22,7 @@ partial class ProcessPropertyReader {
 	/// <summary>
 	/// Memory reader for reading objects from a process (strings, arrays, etc)
 	/// </summary>
-	class ObjectReader : IDisposable {
+	internal class ObjectReader : IDisposable {
 		private static readonly Dictionary<Type, int> _typeSizeCache = new();
 		static ObjectReader() {
 			static void add(Type t1, int size) => _typeSizeCache[t1] = size;

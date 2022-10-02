@@ -23,7 +23,7 @@
 		private XmlDocument _xmlDocument;
 
 		private string _filePath => Path.Combine(
-			Path.GetDirectoryName(Application.ExecutablePath),
+			Path.GetDirectoryName(Program.ExecutablePath),
 			$"{ApplicationName}.settings"
 		);
 
@@ -42,13 +42,9 @@
 			}
 		}
 
-		private XmlNode _globalSettingsNode {
-			get { return GetSettingsNode(_globalSettingsNodeName); }
-		}
+		private XmlNode _globalSettingsNode => GetSettingsNode(_globalSettingsNodeName);
 
-		private XmlNode _rootNode {
-			get { return _rootDocument.SelectSingleNode(_rootNodeName); }
-		}
+		private XmlNode _rootNode => _rootDocument.SelectSingleNode(_rootNodeName);
 
 		private XmlDocument _rootDocument {
 			get {
@@ -70,13 +66,11 @@
 		}
 
 		public override string ApplicationName {
-			get { return Path.GetFileNameWithoutExtension(Application.ExecutablePath); }
+			get => Program.ExecutableName;
 			set { }
 		}
-
-		public override string Name {
-			get { return _className; }
-		}
+		
+		public override string Name => _className;
 
 		public override void Initialize(string name, NameValueCollection config) {
 			base.Initialize(Name, config);

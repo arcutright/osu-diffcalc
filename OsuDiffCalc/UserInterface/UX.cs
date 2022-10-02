@@ -5,16 +5,17 @@
 	using System.Windows.Forms;
 
 	class UX {
-		private static string _searchDirectory
-#if DEBUG
-			= Path.Combine(
-					Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)))), // .sln directory
-					"OsuDiffCalc.Tests",
-					"Resources"
-				);
-#else
-			= null;
+		private static string _searchDirectory = null;
+
+		static UX() {
+#if DEBUG || RELEASE_TESTING
+			var slnDir = Path.GetDirectoryName(Program.ExecutablePath);
+			while (!string.IsNullOrEmpty(slnDir) && !Directory.EnumerateFiles(slnDir, "*.sln").Any()) {
+				slnDir = Path.GetDirectoryName(slnDir);
+			}
+			_searchDirectory = Path.Combine(slnDir, "OsuDiffCalc.Tests", "Resources");
 #endif
+		}
 
 		/// <summary>
 		/// Launch an OpenFileDialog for the user to pick some osu! files.
