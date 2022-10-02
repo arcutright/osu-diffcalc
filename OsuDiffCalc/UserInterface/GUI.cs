@@ -192,6 +192,7 @@
 
 		public int AutoBeatmapAnalyzerTimeoutMs { get; set; } = INITIAL_TIMEOUT_MS;
 		public int AutoWindowUpdaterTimeoutMs { get; set; } = INITIAL_TIMEOUT_MS;
+		public int MinimumUpdateIntervalMs { get; set; } = 300;
 
 		#region Results page checkbox backing properties
 
@@ -1179,7 +1180,7 @@
 						updateInterval = UpdateIntervalMinimizedMs;
 					else
 						updateInterval = UpdateIntervalNormalMs;
-					await Task.Delay(Math.Max(updateInterval, timeoutMs - (int)sw.ElapsedMilliseconds), cancelToken);
+					await Task.Delay(Math.Max(MinimumUpdateIntervalMs, updateInterval - (int)sw.ElapsedMilliseconds), cancelToken);
 				}
 				cancelToken.ThrowIfCancellationRequested();
 			}
@@ -1491,7 +1492,7 @@
 			catch { }
 		}
 
-		private readonly Stopwatch _findActiveBeatmapStopwatch = new Stopwatch();
+		private readonly Stopwatch _findActiveBeatmapStopwatch = new();
 
 		private void AutoBeatmapAnalyzerThreadTick(CancellationToken cancelToken, int timeoutMs) {
 			try {

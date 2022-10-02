@@ -25,7 +25,7 @@ namespace OsuDiffCalc.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("400")]
+        [global::System.Configuration.DefaultSettingValueAttribute("600")]
         public int UpdateIntervalNormalMs {
             get {
                 return ((int)(this["UpdateIntervalNormalMs"]));
@@ -37,7 +37,7 @@ namespace OsuDiffCalc.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("600")]
+        [global::System.Configuration.DefaultSettingValueAttribute("1000")]
         public int UpdateIntervalMinimizedMs {
             get {
                 return ((int)(this["UpdateIntervalMinimizedMs"]));

@@ -3,10 +3,10 @@
   <Profiles />
   <Settings>
     <Setting Name="UpdateIntervalNormalMs" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">400</Value>
+      <Value Profile="(Default)">600</Value>
     </Setting>
     <Setting Name="UpdateIntervalMinimizedMs" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">600</Value>
+      <Value Profile="(Default)">1000</Value>
     </Setting>
     <Setting Name="FamiliarStarTargetMinimum" Type="System.Double" Scope="User">
       <Value Profile="(Default)">4</Value>
