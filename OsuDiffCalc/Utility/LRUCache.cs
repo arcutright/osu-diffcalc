@@ -14,7 +14,8 @@ namespace OsuDiffCalc.Utility;
 /// <typeparam name="TKey"></typeparam>
 /// <typeparam name="TValue"></typeparam>
 internal class LRUCache<TKey, TValue> : IDictionary<TKey, TValue> {
-	private readonly Dictionary<TKey, (TValue Value, int Priority)> _cache;
+	private readonly record struct CacheEntry(TValue Value, int Priority);
+	private readonly Dictionary<TKey, CacheEntry> _cache;
 	private readonly SortedList<int, TKey> _priorityList;
 	private int _capacity;
 
@@ -77,12 +78,19 @@ internal class LRUCache<TKey, TValue> : IDictionary<TKey, TValue> {
 	/// </summary>
 	/// <param name="autoDispose"><inheritdoc cref="Clear(bool?)"/></param>
 	public void Add(KeyValuePair<TKey, TValue> item, bool? autoDispose) {
-		if (_cache.TryGetValue(item.Key, out var storedPair) && !EqualityComparer<TValue>.Default.Equals(storedPair.Value, item.Value))
-			Remove(item.Key, autoDispose);
+		if (TryGetCacheEntry(item.Key, out var cacheEntry)) {
+			if (!EqualityComparer<TValue>.Default.Equals(cacheEntry.Value, item.Value))
+				Remove(item.Key, autoDispose);
+			else
+				return;
+		}
 
-		--_currentHighestPriority;
+		if (_priorityList.Count == 0)
+			_currentHighestPriority = int.MaxValue;
+		else
+			--_currentHighestPriority;
 		_priorityList.Add(_currentHighestPriority, item.Key);
-		_cache[item.Key] = (item.Value, _currentHighestPriority);
+		_cache[item.Key] = new(item.Value, _currentHighestPriority);
 		EvictAsNeeded(autoDispose);
 	}
 
@@ -162,7 +170,7 @@ internal class LRUCache<TKey, TValue> : IDictionary<TKey, TValue> {
 
 			for (int i = 0; i < n; ++i) {
 				var (key, value) = exceptionPairs[i];
-				_cache[key] = (value, _currentHighestPriority);
+				_cache[key] = new(value, _currentHighestPriority);
 				_priorityList.Add(_currentHighestPriority, key);
 				--_currentHighestPriority;
 			}
@@ -209,17 +217,34 @@ internal class LRUCache<TKey, TValue> : IDictionary<TKey, TValue> {
 	/// <param name="value"></param>
 	/// <returns></returns>
 	public bool TryGetValue(TKey key, out TValue value) {
-		if (_cache.TryGetValue(key, out var pair)) {
-			int idx = _priorityList.IndexOfKey(pair.Priority);
-			if (idx != -1)
-				_priorityList.RemoveAt(idx);
-			value = pair.Value;
-			--_currentHighestPriority;
-			_priorityList[_currentHighestPriority] = key; // causes a binary search
+		if (TryGetCacheEntry(key, out var entry)) {
+			value = entry.Value;
 			return true;
 		}
 		else {
 			value = default;
+			return false;
+		}
+	}
+
+	/// <summary>
+	/// Try to get the cache entry associated with the given key and update its priority
+	/// </summary>
+	private bool TryGetCacheEntry(TKey key, out CacheEntry entry) {
+		if (_cache.TryGetValue(key, out entry)) {
+			int idx = _priorityList.IndexOfKey(entry.Priority);
+			if (idx != -1)
+				_priorityList.RemoveAt(idx);
+
+			if (_priorityList.Count == 0)
+				_currentHighestPriority = int.MaxValue;
+			else
+				--_currentHighestPriority;
+			_priorityList[_currentHighestPriority] = key; // causes a binary search
+			return true;
+		}
+		else {
+			entry = default;
 			return false;
 		}
 	}

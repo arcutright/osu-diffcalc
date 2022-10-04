@@ -106,11 +106,43 @@
 			lock (_pointsLock) {
 				foreach (var points in _allSeriesPoints) {
 					if (points.Series is not null) {
-						points.Series.Points.Clear();
+						try {
+							if (points.Series.Points.Count > 0)
+								points.Series.Points.Clear();
+						}
+						catch { 
+							// catch to suppress cross-thread operation
+							// it's not important that we clear the points collection, it's just an ideal
+						}
 						points.Series = null;
 					}
 				}
 				_areSeriesPrepared = false;
+			}
+		}
+
+		public void Clear() {
+			lock (_pointsLock) {
+				ClearCachedSeries();
+				foreach (var points in _allSeriesPoints) {
+					points.Clear();
+				}
+				_allSeriesXValues.Clear();
+				StreamsMaxBPM
+					= StreamsAverageBPM
+					= BurstsAverageBPM
+					= BurstsMaxBPM
+					= 0;
+				JumpsDifficulty
+					= StreamsDifficulty
+					= BurstsDifficulty
+					= DoublesDifficulty
+					= SlidersDifficulty
+					= TotalDifficulty
+					= 0;
+
+				_areSeriesPrepared = false;
+				_arePointsPrepared = false;
 			}
 		}
 

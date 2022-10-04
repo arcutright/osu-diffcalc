@@ -43,6 +43,8 @@
 
 				if (_isParsed && File.Exists(Filepath))
 					LastModifiedTimeUtc = File.GetLastWriteTimeUtc(Filepath);
+				else if (!_isParsed)
+					Reset();
 			}
 		}
 
@@ -67,6 +69,28 @@
 			Artist = set?.Artist;
 			Creator = set?.Creator;
 			Version = version;
+		}
+
+		public void Reset() {
+			ApproachRate = CircleSize = HpDrain = OverallDifficulty = -1;
+			SliderMultiplier = SliderTickRate = -1;
+			CircleSizePx = 0;
+			Format = Mode = -1;
+			MarginOfErrorMs300 = MarginOfErrorMs50 = 0;
+
+			BeatmapObjects.Clear();
+			NumHitObjects = NumCircles = NumSliders = NumSpinners = 0;
+
+			TimingPoints.Clear();
+			NumTimingPoints = 0;
+
+			BreakSections.Clear();
+			NumBreakSections = 0;
+
+			DiffRating.Clear();
+
+			IsAnalyzed = false;
+			IsParsed = false;
 		}
 
 		public bool Add(BeatmapObject obj) {

@@ -1526,13 +1526,16 @@
 					if (storedMap is not null) {
 						// re-analyze on map updated (saved in editor, downloaded an update, etc.)
 						try {
-							bool mapModified = _currentOsuState.MD5FileHash != _prevOsuState.MD5FileHash;
+							bool mapModified = _currentOsuState.OsuFileName == _prevOsuState.OsuFileName && _currentOsuState.MD5FileHash != _prevOsuState.MD5FileHash;
 							if (!mapModified) {
 								DateTime lastModified = File.GetLastWriteTimeUtc(storedMap.Filepath);
 								mapModified = lastModified != storedMap.LastModifiedTimeUtc;
 							}
 							if (mapModified) {
 								Console.WriteLine($"Map was modified: {_currentOsuState.MapString}");
+								Invoke(() => {
+									storedMap.DiffRating.Clear();
+								});
 								storedMap.IsParsed = false;
 								storedMap.IsAnalyzed = false;
 								if (_displayedMapset is not null)

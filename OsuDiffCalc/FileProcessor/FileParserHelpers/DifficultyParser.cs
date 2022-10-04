@@ -8,18 +8,18 @@
 		/// <returns> <see langword="true"/> if this was an 'osu!standard' file, otherwise <see langword="false"/> </returns>
 		public static bool TryProcessLine(int lineNumber, string line, Beatmap beatmap, out string failureMessage) {
 			failureMessage = "";
-			if (beatmap.HpDrain < 0 && TryAssignDoubleFromLine(line, "HPDrain", out var hp))
+			if (beatmap.HpDrain <= 0 && TryAssignDoubleFromLine(line, "HPDrain", out var hp))
 				beatmap.HpDrain = hp;
-			else if (beatmap.CircleSize < 0 && TryAssignDoubleFromLine(line, "CircleSize", out var cs)) {
+			else if (beatmap.CircleSize <= 0 && TryAssignDoubleFromLine(line, "CircleSize", out var cs)) {
 				beatmap.CircleSize = cs;
 				beatmap.CircleSizePx = 100.597 - 8.28127 * cs; // TODO: empirically determined, try to validate
 			}
-			else if (beatmap.OverallDifficulty < 0 && TryAssignDoubleFromLine(line, "OverallDiff", out var od)) {
+			else if (beatmap.OverallDifficulty <= 0 && TryAssignDoubleFromLine(line, "OverallDiff", out var od)) {
 				beatmap.OverallDifficulty = od;
 				beatmap.MarginOfErrorMs300 = -6 * od + 79.5; // TODO: empirically determined, try to validate
 				beatmap.MarginOfErrorMs50 = -10 * od + 199.5; // TODO: empirically determined, try to validate
 			}
-			else if (beatmap.ApproachRate < 0 && TryAssignDoubleFromLine(line, "Approach", out var ar))
+			else if (beatmap.ApproachRate <= 0 && TryAssignDoubleFromLine(line, "Approach", out var ar))
 				beatmap.ApproachRate = ar;
 			else if (TryAssignDoubleFromLine(line, "SliderMult", out var sliderMultiplier))
 				beatmap.SliderMultiplier = sliderMultiplier;

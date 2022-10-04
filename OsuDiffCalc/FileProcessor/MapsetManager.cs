@@ -223,7 +223,9 @@
 				else {
 					Console.WriteLine("found cached result, no maps are missing");
 				}
-				onUIThread(() => set.Dispose());
+				if (!ReferenceEquals(storedSet, set)) {
+					onUIThread(() => set.Dispose());
+				}
 				return storedSet;
 			}
 			else {
@@ -259,7 +261,6 @@
 					// add to cache
 					if (!string.IsNullOrEmpty(set.FolderPath))
 						_allMapsets[set.FolderPath] = set;
-
 				});
 
 				if (saveToXml) {
