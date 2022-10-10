@@ -5,6 +5,7 @@
 	using System.Drawing;
 	using System.Linq;
 	using System.Text;
+	using System.Threading;
 	using System.Threading.Tasks;
 	using System.Windows.Forms;
 	using System.Windows.Forms.DataVisualization.Charting;
@@ -23,7 +24,7 @@
 			SizeChanged -= OnInitialSize;
 		}
 
-		private const string _autoSizeDescription = 
+		private const string _autoSizeDescription =
 			"Offset to apply to size when using auto-sizing (Dock = Fill, for example). " +
 			"Use negative values for 'left' or 'up' from default auto position. " +
 			"These will be auto-rescaled as the chart size changes to try to maintiain the designer-shown proportions.";
@@ -96,6 +97,10 @@
 			base.OnClientSizeChanged(e); // called by GUI.OnResize()
 		}
 
+		protected override void OnPaint(PaintEventArgs e)	=> CallAndTrapException(() => base.OnPaint(e));
+		protected override void OnPrePaint(ChartPaintEventArgs e) => CallAndTrapException(() => base.OnPrePaint(e));
+		protected override void OnPostPaint(ChartPaintEventArgs e) => CallAndTrapException(() => base.OnPostPaint(e));
+
 		private bool Set<T>(ref T field, T value) {
 			if (EqualityComparer<T>.Default.Equals(field, value)) return false;
 			field = value;
@@ -103,8 +108,24 @@
 			return true;
 		}
 
-		private static int Round(double value) {
-			return (int)Math.Round(value, MidpointRounding.ToEven);
+		private static int Round(double value) => (int)Math.Round(value, MidpointRounding.AwayFromZero);
+
+		private void CallAndTrapException(Action action) {
+			try {
+				action();
+			}
+			catch (Exception ex) {
+				HandleException(this, ex);
+			}
+		}
+
+		private static void HandleException(object sender, Exception ex) {
+			Console.WriteLine($"Unhandled chart exception!");
+			Console.WriteLine($"  Sender [{sender?.GetType()}]: '{sender}'");
+			Console.WriteLine($"  ex [{ex?.GetType()}]: '{ex}'");
+#if DEBUG
+			System.Diagnostics.Debugger.Break();
+#endif
 		}
 	}
 }

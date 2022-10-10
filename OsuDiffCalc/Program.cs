@@ -75,19 +75,15 @@
 			test.printDebug();
 			*/
 			//MapsetManager.analyzeCurrentMapset();
-#if DEBUG
-			try {
-				Console.WriteLine("-----------program finished-----------");
-				Console.ReadKey();
-			}
-			catch { }
-#endif
 		}
 
 		private static void Application_ThreadException(object sender, ThreadExceptionEventArgs e) {
 			Console.WriteLine($"Unhandled exception!");
 			Console.WriteLine($"  Sender [{sender?.GetType()}]: '{sender}', e: '{e}'");
 			Console.WriteLine($"  ex: '{e?.Exception}'");
+#if DEBUG
+			System.Diagnostics.Debugger.Break();
+#endif
 		}
 	}
 }
