@@ -155,9 +155,9 @@
 		}
 
 		public Series GetSeriesByName(string name) {
-			var points = _allSeriesPoints.Where(points =>
+			var points = _allSeriesPoints.FirstOrDefault(points =>
 				string.Compare(points.Name, name, StringComparison.OrdinalIgnoreCase) == 0
-			).FirstOrDefault();
+			);
 			return GetNormalizedSeries(points);
 		}
 

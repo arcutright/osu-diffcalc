@@ -3,6 +3,7 @@
 #pragma warning disable IDE1006 // Naming Styles
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -181,25 +182,25 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		private void calculatePath() {
 			calculatedPath.Clear();
 
-			int n = ControlPoints.Count;
+			int n = controlPoints.Count;
 			if (n == 0)
 				return;
 
-			// TODO: candidate for ArrayPool
-			var vertices = new Vector2[n];
+			// Note: For large n (512+), consider using ArrayPool. Doubt it happens much in practice though
+			Span<Vector2> vertices = n <= 128 ? stackalloc Vector2[n] : new Vector2[n];
 			for (int i = 0; i < n; i++) {
-				vertices[i] = ControlPoints[i].Position;
+				vertices[i] = controlPoints[i].Position;
 			}
 
 			int start = 0;
 
 			for (int i = 0; i < n; i++) {
-				if (ControlPoints[i].Type == null && i < n - 1)
+				if (controlPoints[i].Type == null && i < n - 1)
 					continue;
 
 				// The current vertex ends the segment
-				var segmentVertices = vertices.AsSpan().Slice(start, i - start + 1);
-				var segmentType = ControlPoints[start].Type ?? PathType.Linear;
+				var segmentVertices = vertices.Slice(start, i - start + 1);
+				var segmentType = controlPoints[start].Type ?? PathType.Linear;
 
 				var subPath = calculateSubPath(segmentVertices, segmentType);
 				for (int s = 0; s < subPath.Count; s++) {
@@ -284,9 +285,7 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 
 		private int indexOfDistance(double d) {
 			int i = cumulativeLength.BinarySearch(d);
-			if (i < 0) i = ~i;
-
-			return i;
+			return i >= 0 ? i : ~i;
 		}
 
 		private double progressToDistance(double progress) {

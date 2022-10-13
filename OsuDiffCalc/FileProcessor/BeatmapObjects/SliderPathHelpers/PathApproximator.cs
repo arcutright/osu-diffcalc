@@ -12,7 +12,8 @@ using System.Threading.Tasks;
 
 namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 	/// <summary>
-	/// Helper methods to approximate a path by interpolating a sequence of control points.
+	/// Helper methods to approximate a path by interpolating a sequence of control points. <br/>
+	/// See https://github.com/ppy/osu-framework/blob/7d094cf3718cfc58a85bbbe852727912ecf5735d/osu.Framework/Utils/PathApproximator.cs
 	/// </summary>
 	public static class PathApproximator {
 		private const float bezier_tolerance = 0.25f;
@@ -92,10 +93,10 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 			// <a href="https://en.wikipedia.org/wiki/Depth-first_search">Depth-first search</a>
 			// over the tree resulting from the subdivisions we make.)
 
-			var subdivisionBuffer1 = new Vector2[p + 1];
-			var subdivisionBuffer2 = new Vector2[p * 2 + 1];
+			Span<Vector2> subdivisionBuffer1 = p <= 128 ? stackalloc Vector2[p + 1] : new Vector2[p + 1];
+			Span<Vector2> subdivisionBuffer2 = p <= 128 ? stackalloc Vector2[p*2 + 1] : new Vector2[p*2 + 1];
 
-			Vector2[] leftChild = subdivisionBuffer2;
+			Span<Vector2> leftChild = subdivisionBuffer2;
 
 			while (toFlatten.Count > 0) {
 				Vector2[] parent = toFlatten.Pop();
@@ -136,18 +137,21 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		/// </summary>
 		/// <returns>A list of vectors representing the piecewise-linear approximation.</returns>
 		public static IList<Vector2> ApproximateCatmull(ReadOnlySpan<Vector2> controlPoints) {
-			var result = new Vector2[(controlPoints.Length - 1) * catmull_detail * 2];
+			const float catmull_detail_inv = 1f / catmull_detail;
+			int n = controlPoints.Length;
 
-			for (int i = 0; i < controlPoints.Length - 1; i++) {
+			var result = new Vector2[(n - 1) * catmull_detail * 2];
+
+			for (int i = 0; i < n - 1; i++) {
 				var v1 = i > 0 ? controlPoints[i - 1] : controlPoints[i];
 				var v2 = controlPoints[i];
-				var v3 = i < controlPoints.Length - 1 ? controlPoints[i + 1] : v2 + v2 - v1;
-				var v4 = i < controlPoints.Length - 2 ? controlPoints[i + 2] : v3 + v3 - v2;
+				var v3 = i < n - 1 ? controlPoints[i + 1] : v2 + v2 - v1;
+				var v4 = i < n - 2 ? controlPoints[i + 2] : v3 + v3 - v2;
 
 				for (int c = 0; c < catmull_detail; c++) {
 					int r = (i * catmull_detail) + c; // calculated like this to be friendly towards loop unrolls
-					result[r]   = catmullFindPoint(in v1, in v2, in v3, in v4, (float)c / catmull_detail);
-					result[r+1] = catmullFindPoint(in v1, in v2, in v3, in v4, (float)(c + 1) / catmull_detail);
+					result[r]   = catmullFindPoint(in v1, in v2, in v3, in v4, c * catmull_detail_inv);
+					result[r+1] = catmullFindPoint(in v1, in v2, in v3, in v4, (c + 1) * catmull_detail_inv);
 				}
 			}
 
@@ -297,21 +301,25 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 			Vector2 a = controlPoints[0];
 			Vector2 b = controlPoints[1];
 			Vector2 c = controlPoints[2];
+			Vector2 cMinusA = c - a;
+			Vector2 bMinusA = b - a;
 
 			// If we have a degenerate triangle where a side-length is almost zero, then give up and fallback to a more numerically stable method.
-			if (Precision.AlmostEquals(0, (b.Y - a.Y) * (c.X - a.X) - (b.X - a.X) * (c.Y - a.Y)))
+			if (Precision.AlmostEquals(0, (bMinusA.Y) * (cMinusA.X) - (bMinusA.X) * (cMinusA.Y)))
 				return default; // Implicitly sets `IsValid` to false
 
 			// See: https://en.wikipedia.org/wiki/Circumscribed_circle#Cartesian_coordinates_2
-			float d = 2 * (a.X * (b - c).Y + b.X * (c - a).Y + c.X * (a - b).Y);
+			Vector2 bMinusC = b - c;
+			float aYMinusBY = a.Y - b.Y;
+			float d = 2 * (a.X * (bMinusC.Y) + b.X * (cMinusA.Y) + c.X * (aYMinusBY));
 			float aSq = a.LengthSquared();
 			float bSq = b.LengthSquared();
 			float cSq = c.LengthSquared();
 
 			Vector2 centre = new Vector2(
-							aSq * (b - c).Y + bSq * (c - a).Y + cSq * (a - b).Y,
-							aSq * (c - b).X + bSq * (a - c).X + cSq * (b - a).X
-							) / d;
+				aSq * (bMinusC.Y)  + bSq * (cMinusA.Y)  + cSq * (aYMinusBY),
+				aSq * (-bMinusC.X) + bSq * (-cMinusA.X) + cSq * (bMinusA.X)
+			) / d;
 
 			Vector2 dA = a - centre;
 			Vector2 dC = c - centre;
@@ -321,20 +329,20 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 			double thetaStart = Math.Atan2(dA.Y, dA.X);
 			double thetaEnd = Math.Atan2(dC.Y, dC.X);
 
+			const double pi2 = Math.PI * 2;
 			while (thetaEnd < thetaStart)
-				thetaEnd += 2 * Math.PI;
+				thetaEnd += pi2;
 
 			double dir = 1;
 			double thetaRange = thetaEnd - thetaStart;
 
 			// Decide in which direction to draw the circle, depending on which side of
 			// AC B lies.
-			Vector2 orthoAtoC = c - a;
-			orthoAtoC = new Vector2(orthoAtoC.Y, -orthoAtoC.X);
+			var orthoAtoC = new Vector2(cMinusA.Y, -cMinusA.X);
 
-			if (Vector2.Dot(orthoAtoC, b - a) < 0) {
+			if (Vector2.Dot(orthoAtoC, bMinusA) < 0) {
 				dir = -dir;
-				thetaRange = 2 * Math.PI - thetaRange;
+				thetaRange = pi2 - thetaRange;
 			}
 
 			return new CircularArcProperties(thetaStart, thetaRange, dir, r, centre);
@@ -348,9 +356,10 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		/// </summary>
 		/// <param name="controlPoints">The control points to check for flatness.</param>
 		/// <returns>Whether the control points are flat enough.</returns>
-		private static bool bezierIsFlatEnough(Vector2[] controlPoints) {
+		private static bool bezierIsFlatEnough(ReadOnlySpan<Vector2> controlPoints) {
+			const float tolerance = bezier_tolerance * bezier_tolerance * 4;
 			for (int i = 1; i < controlPoints.Length - 1; i++) {
-				if ((controlPoints[i - 1] - 2 * controlPoints[i] + controlPoints[i + 1]).LengthSquared() > bezier_tolerance * bezier_tolerance * 4)
+				if ((controlPoints[i - 1] - 2 * controlPoints[i] + controlPoints[i + 1]).LengthSquared() > tolerance)
 					return false;
 			}
 
@@ -367,8 +376,8 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		/// <param name="r">Output: The control points corresponding to the right half of the curve.</param>
 		/// <param name="subdivisionBuffer">The first buffer containing the current subdivision state.</param>
 		/// <param name="count">The number of control points in the original list.</param>
-		private static void bezierSubdivide(Vector2[] controlPoints, Vector2[] l, Vector2[] r, Vector2[] subdivisionBuffer, int count) {
-			Vector2[] midpoints = subdivisionBuffer;
+		private static void bezierSubdivide(ReadOnlySpan<Vector2> controlPoints, Span<Vector2> l, Span<Vector2> r, Span<Vector2> subdivisionBuffer, int count) {
+			Span<Vector2> midpoints = subdivisionBuffer;
 
 			for (int i = 0; i < count; ++i)
 				midpoints[i] = controlPoints[i];
@@ -391,9 +400,9 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		/// <param name="count">The number of control points in the original list.</param>
 		/// <param name="subdivisionBuffer1">The first buffer containing the current subdivision state.</param>
 		/// <param name="subdivisionBuffer2">The second buffer containing the current subdivision state.</param>
-		private static void bezierApproximate(Vector2[] controlPoints, List<Vector2> output, Vector2[] subdivisionBuffer1, Vector2[] subdivisionBuffer2, int count) {
-			Vector2[] l = subdivisionBuffer2;
-			Vector2[] r = subdivisionBuffer1;
+		private static void bezierApproximate(ReadOnlySpan<Vector2> controlPoints, List<Vector2> output, Span<Vector2> subdivisionBuffer1, Span<Vector2> subdivisionBuffer2, int count) {
+			Span<Vector2> l = subdivisionBuffer2;
+			Span<Vector2> r = subdivisionBuffer1;
 
 			bezierSubdivide(controlPoints, l, r, subdivisionBuffer1, count);
 

@@ -12,7 +12,7 @@
 	using Utility;
 
 	class MapsetManager {
-		private static readonly LRUCache<string, Mapset> _allMapsets = new(30, autoDispose: true);
+		private static readonly LRUCache<string, Mapset> _allMapsets = new(20, autoDispose: true);
 		private static readonly Regex _titleRegex = new(@"(.*)\s*\[\s*(.*)\s*\]");
 
 		/// <inheritdoc cref="LRUCache{TKey, TValue}.Clear(bool?, IList{TValue})"/>
