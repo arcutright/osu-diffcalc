@@ -28,8 +28,9 @@
 				ExecutablePath = Path.Combine(Directory.GetCurrentDirectory(), $"{nameof(OsuDiffCalc)}.exe");
 			ExecutableName = Path.GetFileNameWithoutExtension(ExecutablePath);
 
-#if NET5_0_OR_GREATER && PUBLISH_TRIMMED
+#if NET5_0_OR_GREATER && PUBLISH_TRIMMED && !NET7_0_OR_GREATER
 			// support trimming for WinForms apps using nuget package WinFormsComInterop
+			// currently does not support net7
 			System.Runtime.InteropServices.ComWrappers.RegisterForMarshalling(WinFormsComInterop.WinFormsComWrappers.Instance);
 #endif
 			if (string.IsNullOrEmpty(Thread.CurrentThread.Name))

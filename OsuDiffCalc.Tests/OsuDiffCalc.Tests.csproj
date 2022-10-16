@@ -1,112 +1,56 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{43956320-A055-44E9-ADB9-2671C8541804}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <RootNamespace>OsuDiffCalc.Tests</RootNamespace>
     <AssemblyName>OsuDiffCalc.Tests</AssemblyName>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Deterministic>true</Deterministic>
+    <RootNamespace>OsuDiffCalc.Tests</RootNamespace>
+
+    <TargetFrameworks>net48;net6.0-windows</TargetFrameworks>
     <LangVersion>10.0</LangVersion>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
-    <TargetFrameworkProfile />
-  </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <Deterministic>true</Deterministic>
+    <OutputType>Library</OutputType>
+    
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+    <Platforms>AnyCPU;x64;x86</Platforms>
+    <Configurations>Debug;Release;Release_testing</Configurations>
+    <Prefer32Bit>false</Prefer32Bit>
+
+    <IsPackable>false</IsPackable>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release_testing' ">
+    <DefineConstants>$(DefineConstants);RELEASE_TESTING</DefineConstants>
+    <Optimize>true</Optimize>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x64\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>bin\x64\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>false</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x86\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
-    <OutputPath>bin\x86\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>false</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release - testing|AnyCPU'">
-    <OutputPath>bin\Release - testing\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release - testing|x64'">
-    <OutputPath>bin\x64\Release - testing\</OutputPath>
-    <PlatformTarget>x64</PlatformTarget>
-    <DefineConstants>TRACE</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release - testing|x86'">
-    <OutputPath>bin\x86\Release - testing\</OutputPath>
-    <PlatformTarget>x86</PlatformTarget>
-    <DefineConstants>TRACE</DefineConstants>
-  </PropertyGroup>
+
+  <Choose>
+    <When Condition=" '$(TargetFramework)'=='net481' Or '$(TargetFramework)'=='net48'
+          Or '$(TargetFramework)'=='net472' Or '$(TargetFramework)'=='net471' Or '$(TargetFramework)'=='net470' Or '$(TargetFramework)'=='net47' 
+          Or '$(TargetFramework)'=='net462' Or '$(TargetFramework)'=='net461' Or '$(TargetFramework)'=='net460' Or '$(TargetFramework)'=='net46'
+          Or '$(TargetFramework)'=='net452' Or '$(TargetFramework)'=='net451' Or '$(TargetFramework)'=='net450' Or '$(TargetFramework)'=='net45'
+          Or '$(TargetFramework)'=='net403' Or '$(TargetFramework)'=='net40' ">
+      <PropertyGroup>
+        <IsNetFramework>true</IsNetFramework>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <IsNetFramework>false</IsNetFramework>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+  
   <ItemGroup>
-    <None Include="App.config" />
+    <ProjectReference Include="..\OsuDiffCalc\OsuDiffCalc.csproj" />
   </ItemGroup>
+
   <ItemGroup>
-    <ProjectReference Include="..\OsuDiffCalc\OsuDiffCalc.csproj">
-      <Project>{615bcb15-b9d0-49fc-8bd0-a91ea763f0e9}</Project>
-      <Name>OsuDiffCalc</Name>
-    </ProjectReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.3.0-alpha-net7.4" />
+    <PackageReference Include="System.Memory" Version="4.5.5" />
+    <PackageReference Include="System.Memory.Data" Version="6.0.0" />
+    <PackageReference Include="NUnit" Version="3.13.3" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="FileProcessor\ParserTests.cs" />
+  <ItemGroup Condition=" '$(IsNetFramework)' == 'true' ">
+    <PackageReference Include="IndexRange" Version="1.0.2" />
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="IndexRange">
-      <Version>1.0.2</Version>
-    </PackageReference>
-    <PackageReference Include="NUnit">
-      <Version>3.13.3</Version>
-    </PackageReference>
-    <PackageReference Include="NUnit3TestAdapter">
-      <Version>4.2.1</Version>
-    </PackageReference>
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

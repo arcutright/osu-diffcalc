@@ -1,7 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
+		<RootNamespace>OsuDiffCalc</RootNamespace>
+		<AssemblyName>OsuDiffCalc</AssemblyName>
+		<ProductName>OsuDiffCalc</ProductName>
+		<Description>Alternate difficulty calculator for osu!</Description>
+		<Title>$(ProductName)</Title>
+		<Copyright>Copyright $([System.DateTime]::Now.ToString('yyyy')) github.com/arcutright</Copyright>
+		<Company></Company>
+
+		<Version>1.2.0</Version>
+		<AssemblyVersion>$(Version)</AssemblyVersion>
+		<FileVersion>$(Version)</FileVersion>
+
 		<!--
-		Tested on net46;net47;net48;net6.0-windows
+		Tested on net46;net47;net48;net6.0-windows; net7.0-windows (with WinFormsComInterop and trimming disabled)
 		<TargetFrameworks>net46;net47;net48;net6.0-windows</TargetFrameworks>
 		-->
 		<TargetFrameworks>net48;net6.0-windows</TargetFrameworks>
@@ -22,24 +34,13 @@
 
 		<PlatformTarget>x64</PlatformTarget>
 		<Platforms>AnyCPU;x64;x86</Platforms>
-		<Configurations>Debug;Release;Release - testing</Configurations>
+		<Configurations>Debug;Release;Release_testing</Configurations>
 		<Prefer32Bit>false</Prefer32Bit>
 
 		<Deterministic>true</Deterministic>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<DisableWinExeOutputInference>true</DisableWinExeOutputInference>
 		<IsPackable>false</IsPackable>
-
-		<AssemblyName>OsuDiffCalc</AssemblyName>
-		<ProductName>OsuDiffCalc</ProductName>
-		<Description>Alternate difficulty calculator for osu!</Description>
-		<Title>$(ProductName)</Title>
-		<Copyright>Copyright 2022</Copyright>
-		<Company></Company>
-
-		<Version>1.2.0</Version>
-		<AssemblyVersion>$(Version)</AssemblyVersion>
-		<FileVersion>$(Version)</FileVersion>
 
 		<StartupObject>OsuDiffCalc.Program</StartupObject>
 		<ApplicationManifest>Properties\app.manifest</ApplicationManifest>
@@ -98,35 +99,38 @@
 				<EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
 				<HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
 				<UseSystemResourceKeys>false</UseSystemResourceKeys>
+				
+				<IlcOptimizationPreference>Size</IlcOptimizationPreference>
+				<IlcFoldIdenticalMethodBodies>true</IlcFoldIdenticalMethodBodies>
 				-->
 			</PropertyGroup>
 		</When>
 	</Choose>
 
 	<PropertyGroup>
-		<DefineConstants>TRACE</DefineConstants>
+		<DefineConstants>$(DefineConstants);TRACE</DefineConstants>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-		<DefineConstants>DEBUG</DefineConstants>
+		<DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
 		<Optimize>false</Optimize>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-		<DefineConstants>RELEASE</DefineConstants>
+		<DefineConstants>$(DefineConstants);RELEASE</DefineConstants>
 		<Optimize>true</Optimize>
 	</PropertyGroup>
-	<PropertyGroup Condition=" '$(Configuration)' == 'Release - testing' ">
-		<DefineConstants>RELEASE_TESTING</DefineConstants>
+	<PropertyGroup Condition=" '$(Configuration)' == 'Release_testing' ">
+		<DefineConstants>$(DefineConstants);RELEASE_TESTING</DefineConstants>
 		<Optimize>true</Optimize>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Platform)' == 'AnyCPU' ">
-		<DefineConstants>AnyCPU</DefineConstants>
+		<DefineConstants>$(DefineConstants);AnyCPU</DefineConstants>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Platform)' == 'x86' ">
-		<DefineConstants>X86</DefineConstants>
+		<DefineConstants>$(DefineConstants);X86</DefineConstants>
 		<PlatformTarget>x86</PlatformTarget>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Platform)' == 'x64' ">
-		<DefineConstants>X64</DefineConstants>
+		<DefineConstants>$(DefineConstants);X64</DefineConstants>
 		<PlatformTarget>x64</PlatformTarget>
 	</PropertyGroup>
 
@@ -154,16 +158,20 @@
 	<!-- These libs are to add other modern features to dotnet framework, it is not useful in modern dotnet -->
 	<ItemGroup Condition=" '$(IsNetFramework)' == 'true' ">
 		<PackageReference Include="IndexRange" Version="1.0.2" />
+		<!--<PackageReference Include="System.Memory" Version="4.5.5" />-->
 	</ItemGroup>
 
 	<!-- shim to enable trimming for WinForms apps -->
 	<PropertyGroup Condition=" '$(PublishTrimmed)' == 'true' ">
-		<DefineConstants>PUBLISH_TRIMMED</DefineConstants>
+		<DefineConstants>$(DefineConstants);PUBLISH_TRIMMED</DefineConstants>
 	</PropertyGroup>
 	<Choose>
 		<When Condition=" '$(PublishTrimmed)' == 'true' And '$(IsNetFramework)' != 'true' ">
 			<ItemGroup>
 				<PackageReference Include="WinFormsComInterop" Version="0.3.0" />
+				<!-- hack to support AOT in .net6 (but turn off single-file in publish) -->
+				<!--<PackageReference Include="Microsoft.DotNet.ILCompiler" Version="7.0.0-preview.6.22324.4" />--> 
+				<!--<PackageReference Include="Microsoft.DotNet.ILCompiler" Version="7.0.0-rc.1.22426.10" />--> 
 			</ItemGroup>
 		</When>
 	</Choose>
@@ -175,7 +183,7 @@
 
 	<!-- helpers for compatibility -->
 	<ItemGroup>
-		<PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.4.346201" PrivateAssets="all" />
+		<PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.4.346202" PrivateAssets="all" />
 	</ItemGroup>
 	<ItemGroup Condition=" '$(IsNetFramework)' == 'true' ">
 		<Reference Include="System" />
@@ -216,7 +224,7 @@
 		<!--<PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
 		<PackageReference Include="System.Windows.Forms.DataVisualization" Version="1.0.0-prerelease.20110.1" />-->
 
-		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.0.0" />
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.0.1" />
 		<PackageReference Include="HIC.System.Windows.Forms.DataVisualization" Version="1.0.1" />
 	</ItemGroup>
 
