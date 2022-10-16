@@ -13,6 +13,7 @@ using System.Runtime.InteropServices;
 #if DEBUG || RELEASE_TESTING
 
 [assembly: InternalsVisibleTo("OsuDiffCalc.Tests")]
+[assembly: InternalsVisibleTo("OsuDiffCalc.Benchmarks")]
 
 #endif
 

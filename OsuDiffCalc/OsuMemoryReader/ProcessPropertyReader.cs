@@ -73,7 +73,8 @@ partial class ProcessPropertyReader : IDisposable {
 	/// eg. if you need to read a UTF8 char, use <typeparamref name="TProperty"/>=<see cref="byte"/> and <typeparamref name="TReturnType"/>=<see cref="char"/>
 	/// </para><para>
 	/// If you want to return a different type here, you can, using the <typeparamref name="TReturnType"/>. <br/>
-	/// For example, <typeparamref name="TProperty"/>=<see cref="int"/> and <typeparamref name="TReturnType"/>=<see cref="int"/>? is perfectly valid.
+	/// For example, <typeparamref name="TProperty"/>=`<see cref="int"/>` and <typeparamref name="TReturnType"/>=`<see cref="int"/>?` is perfectly valid,
+	/// as long as an explicit cast succeeds (<c>(<typeparamref name="TReturnType"/>)(object)value</c>)
 	/// </para>
 	/// </summary>
 	/// <typeparam name="TClass">
@@ -96,6 +97,10 @@ partial class ProcessPropertyReader : IDisposable {
 		                          TProperty,
 															TReturnType>
 		                         (string propertyName, out TReturnType result, TReturnType defaultValue = default) {
+		if (!CanRead) {
+			result = defaultValue;
+			return false;
+		}
 		try {
 			IntPtr classAddress, propAddress;
 			var cacheKey = (typeof(TClass), propertyName);
@@ -168,10 +173,10 @@ partial class ProcessPropertyReader : IDisposable {
 	/// Currently works for <typeparamref name="TProperty"/>: <see langword="string"/>s,
 	/// base <see langword="struct"/>s (<see langword="int"/>, <see langword="double"/>, <see langword="enum"/>, etc + nullable variants),
 	/// simple <see langword="struct"/>s (non-nullable).
-	///  </para><para>
-	/// WARNING: if you want to return a different type than the underlying property, 
-	/// eg. if you want to return MyEnum? and the actual type is MyEnum, you must use <see cref="TryReadProperty{TClass, TProperty, TReturnType}(string, out TReturnType, TReturnType)"/> instead. <br/>
-	/// It will read <typeparamref name="TProperty"/> exactly, and in-memory, <see cref="System.Nullable{T}"/> is larger than T.
+	/// </para><para>
+	/// WARNING: if you want to return a different type than the underlying property,
+	/// eg. if you want to return T? and the actual type T is MyEnum, you must use <see cref="TryReadProperty{TClass, TProperty, TReturnType}"/> instead. <br/>
+	/// Otherwise it will read T bytes from the memory, and in-memory, <see cref="System.Nullable{T}"/> is larger than T.
 	/// </para><para>
 	/// WARNING: encoding options only applies to strings, not to chars. Chars are currently always read as UTF16. <br/>
 	/// If you need to read a different encoding, either cast the result yourself or use the overload.

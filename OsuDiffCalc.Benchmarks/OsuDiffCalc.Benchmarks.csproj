@@ -1,0 +1,57 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>OsuDiffCalc.Benchmarks</AssemblyName>
+    <RootNamespace>OsuDiffCalc.Benchmarks</RootNamespace>
+
+		<!-- net48, net6.0, net7.0 (rc1) -->
+    <TargetFrameworks>net48;net6.0</TargetFrameworks>
+		<LangVersion>10.0</LangVersion>
+		<Deterministic>true</Deterministic>
+    <OutputType>Exe</OutputType>
+
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Platforms>AnyCPU;x64;x86</Platforms>
+    <Configurations>Debug;Release;Release_testing</Configurations>
+    <Prefer32Bit>false</Prefer32Bit>
+
+    <IsPackable>false</IsPackable>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+
+    <StartupObject>OsuDiffCalc.Benchmarks.Program</StartupObject>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release_testing' ">
+    <DefineConstants>$(DefineConstants);RELEASE;RELEASE_TESTING</DefineConstants>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <Choose>
+    <When Condition=" '$(TargetFramework)'=='net481' Or '$(TargetFramework)'=='net48'
+					Or '$(TargetFramework)'=='net472' Or '$(TargetFramework)'=='net471' Or '$(TargetFramework)'=='net470' Or '$(TargetFramework)'=='net47'
+					Or '$(TargetFramework)'=='net462' Or '$(TargetFramework)'=='net461' Or '$(TargetFramework)'=='net460' Or '$(TargetFramework)'=='net46'
+					Or '$(TargetFramework)'=='net452' Or '$(TargetFramework)'=='net451' Or '$(TargetFramework)'=='net450' Or '$(TargetFramework)'=='net45'
+					Or '$(TargetFramework)'=='net403' Or '$(TargetFramework)'=='net40' ">
+      <PropertyGroup>
+        <IsNetFramework>true</IsNetFramework>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <IsNetFramework>false</IsNetFramework>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OsuDiffCalc\OsuDiffCalc.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.13.2" />
+    <PackageReference Include="System.Memory" Version="4.5.5" />
+    <PackageReference Include="System.Memory.Data" Version="6.0.0" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(IsNetFramework)' == 'true' ">
+    <PackageReference Include="IndexRange" Version="1.0.2" />
+  </ItemGroup>
+</Project>

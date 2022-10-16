@@ -10,7 +10,7 @@
 	using OsuDiffCalc.FileProcessor.BeatmapObjects;
 
 	[TestFixture]
-	class ParserTests {
+	class ParserTests : TestBase {
 		[Test]
 		public void MapWithNoTimingPoints() {
 
@@ -96,26 +96,6 @@
 				}
 				++idx;
 			}
-		}
-
-		private static string _resourcesDir = null;
-
-		private Beatmap LoadMap(string filePath) {
-			if (!Directory.Exists(_resourcesDir)) {
-				// get parent dir of this project
-				var assembly = System.Reflection.Assembly.GetAssembly(typeof(ParserTests));
-				string dirPath = Path.GetDirectoryName(assembly.Location);
-				string baseName = Path.GetFileName(dirPath);
-				while (baseName != "bin") {
-					dirPath = Path.GetDirectoryName(dirPath);
-					baseName = Path.GetFileName(dirPath);
-				}
-				dirPath = Path.GetDirectoryName(dirPath);
-				_resourcesDir = Path.Combine(dirPath, "Resources");
-			}
-			filePath = !Path.IsPathRooted(filePath) ? Path.Combine(_resourcesDir, filePath) : filePath;
-			Assert.IsTrue(Parser.TryParse(filePath, out var beatmap, out string failureMsg), $"Could not parse beatmap at '{filePath}': \nmsg: '{failureMsg}'");
-			return beatmap;
 		}
 
 		private void AssertMapContains(Beatmap map, int numCircles, int numSliders, int numSpinners, int? numBreaks = null, int? numTimingPoints = null) {
