@@ -1192,7 +1192,8 @@
 		// the retry operation is slow and there's no point in doing it if the memory approach will never work
 		// eg. if there's an update to osu which moves the memory locations or something
 		private int _osuStateReaderRetryCount = 0;
-		private int _osuStateReaderRetryInitialDelayMs = 2000;
+		private const int _osuStateReaderRetryInitialDelayMs = 2000;
+		private const int _osuStateReaderRetryMaxDelayMs = 60000;
 		private int _osuStateReaderRetryDelayMs = 2000;
 		private readonly Stopwatch _osuStateReaderRetrySw = new Stopwatch();
 
@@ -1250,7 +1251,8 @@
 						// fallback is sometimes needed to "force a refresh" to fix issues with the process handle
 						// if memory state read fails, this path becomes slow since it re-fetches the osu process constantly
 						// so we have a cooldown period to try a few times before assuming it will never work
-						if (_osuStateReaderRetryCount < 3 && (!_osuStateReaderRetrySw.IsRunning || _osuStateReaderRetrySw.ElapsedMilliseconds > _osuStateReaderRetryDelayMs)) {
+						if ((_osuStateReaderRetryCount < 3 && (!_osuStateReaderRetrySw.IsRunning || _osuStateReaderRetrySw.ElapsedMilliseconds > _osuStateReaderRetryDelayMs))
+							  || (!_isInGame && _osuStateReaderRetrySw.ElapsedMilliseconds > _osuStateReaderRetryMaxDelayMs)) {
 							_osuProcess.Dispose();
 							_osuProcess = Finder.GetOsuProcess(_guiPid);
 							OsuStateReader.ClearCache();
