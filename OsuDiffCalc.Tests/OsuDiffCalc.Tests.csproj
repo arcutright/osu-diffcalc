@@ -4,7 +4,7 @@
     <RootNamespace>OsuDiffCalc.Tests</RootNamespace>
 
     <TargetFrameworks>net48;net6.0-windows</TargetFrameworks>
-    <LangVersion>10.0</LangVersion>
+    <LangVersion>11.0</LangVersion>
     <Deterministic>true</Deterministic>
     <OutputType>Library</OutputType>
     
@@ -44,10 +44,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.3.0-alpha-net7.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.3.0" />
     <PackageReference Include="System.Memory" Version="4.5.5" />
-    <PackageReference Include="System.Memory.Data" Version="6.0.0" />
+    <PackageReference Include="System.Memory.Data" Version="7.0.0" />
     <PackageReference Include="NUnit" Version="3.13.3" />
   </ItemGroup>
   <ItemGroup Condition=" '$(IsNetFramework)' == 'true' ">

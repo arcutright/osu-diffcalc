@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<linker>
+	<!--
+	this excludes some types/methods from IL trimming for publish builds
+	otherwise anything that is only referenced via reflection will break
+	
+	see
+	https://learn.microsoft.com/en-us/dotnet/core/deploying/trimming/trimming-options?pivots=dotnet-6-0#root-descriptors
+	https://github.com/dotnet/linker/blob/main/docs/data-formats.md#descriptor-format
+	-->
+	<assembly fullname="OsuDiffCalc">
+		<!-- needed to ensure settings metadata isn't trimmed in net7 aot -->
+		<type fullname="OsuDiffCalc.Properties.*" preserve="all" />
+		<!--<type fullname="OsuDiffCalc.*" preserve="all" />-->
+	</assembly>
+	<!-- needed to ensure WinForms dynamically accessed types aren't trimmed -->
+	<assembly fullname="System.Windows.Forms.DataVisualization">
+		<type fullname="System.Windows.Forms.DataVisualization.Charting.*" preserve="all" /> 
+	</assembly>
+	<assembly fullname="System.Windows.Forms">
+		<type fullname="System.Windows.Forms.Primitives.*" preserve="all" />
+	</assembly>
+	<!-- needed to ensure settings metadata isn't trimmed in net7 aot -->
+	<assembly fullname="System.Configuration">
+		<type fullname="System.Configuration.SettingsProviderAttribute" preserve="all" />
+		<type fullname="System.Configuration.DefaultSettingValueAttribute" preserve="all" />
+		<type fullname="System.Configuration.SettingsBase" preserve="all" />
+		<type fullname="System.Configuration.ApplicationSettingsBase" preserve="all" />
+	</assembly>
+	<assembly fullname="System.Configuration.ConfigurationManager">
+		<type fullname="System.Configuration.SettingsBase" preserve="all" />
+		<type fullname="System.Configuration.ApplicationSettingsBase" preserve="all" />
+	</assembly>
+	<assembly fullname="Azure.Core" preserve="nothing" />
+	<assembly fullname="Azure.Identity" preserve="nothing" />
+	<!-- for some reason these are required to publish in net7 with AOT -->
+	<!--<assembly fullname="Microsoft.Data.SqlClient" preserve="nothing" />-->
+	<!--<assembly fullname="Microsoft.Data.SqlClient.SNI" preserve="nothing" />-->
+</linker>

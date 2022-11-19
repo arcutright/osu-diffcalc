@@ -15,17 +15,17 @@
 	/// Portable settings provider instead of using the default appdata paths
 	/// </summary>
 	/// <remarks> Derived from https://github.com/crdx/PortableSettingsProvider/, see license at bottom of file </remarks>
-	public sealed class PortableSettingsProvider : SettingsProvider, IApplicationSettingsProvider {
+	public class PortableSettingsProvider : SettingsProvider, IApplicationSettingsProvider {
 		private const string _rootNodeName = "settings";
 		private const string _localSettingsNodeName = "localSettings";
 		private const string _globalSettingsNodeName = "globalSettings";
 		private const string _className = "PortableSettingsProvider";
 		private XmlDocument _xmlDocument;
 
-		private string _filePath => Path.Combine(
-			Path.GetDirectoryName(Program.ExecutablePath),
-			$"{ApplicationName}.settings"
-		);
+		public PortableSettingsProvider() : base() {
+		}
+
+		private string _filePath => Path.Combine(Program.ExecutableDir, $"{ApplicationName}.settings");
 
 		private XmlNode _localSettingsNode {
 			get {
@@ -94,7 +94,7 @@
 		}
 
 		public override SettingsPropertyValueCollection GetPropertyValues(SettingsContext context, SettingsPropertyCollection collection) {
-			SettingsPropertyValueCollection values = new SettingsPropertyValueCollection();
+			var values = new SettingsPropertyValueCollection();
 
 			foreach (SettingsProperty property in collection) {
 				values.Add(new SettingsPropertyValue(property) {
@@ -117,7 +117,7 @@
 			XmlNode settingNode = targetNode.SelectSingleNode($"setting[@name='{propertyValue.Name}']");
 
 			if (settingNode is not null)
-				settingNode.InnerText = propertyValue.SerializedValue?.ToString();
+				settingNode.InnerText = propertyValue.SerializedValue?.ToString() ?? string.Empty;
 			else {
 				settingNode = _rootDocument.CreateElement("setting");
 
@@ -125,13 +125,15 @@
 				nameAttribute.Value = propertyValue.Name;
 
 				settingNode.Attributes.Append(nameAttribute);
-				settingNode.InnerText = propertyValue.SerializedValue?.ToString();
+				settingNode.InnerText = propertyValue.SerializedValue?.ToString() ?? string.Empty;
 
 				targetNode.AppendChild(settingNode);
 			}
 		}
 
 		private string GetValue(SettingsProperty property) {
+			if (property is null)
+				return string.Empty;
 			XmlNode targetNode = IsGlobal(property) ? _globalSettingsNode : _localSettingsNode;
 			XmlNode settingNode = targetNode.SelectSingleNode($"setting[@name='{property.Name}']");
 
@@ -162,10 +164,9 @@
 		}
 
 		public XmlDocument GetBlankXmlDocument() {
-			XmlDocument blankXmlDocument = new XmlDocument();
+			var blankXmlDocument = new XmlDocument();
 			blankXmlDocument.AppendChild(blankXmlDocument.CreateXmlDeclaration("1.0", "utf-8", string.Empty));
 			blankXmlDocument.AppendChild(blankXmlDocument.CreateElement(_rootNodeName));
-
 			return blankXmlDocument;
 		}
 
@@ -173,7 +174,7 @@
 			_localSettingsNode.RemoveAll();
 			_globalSettingsNode.RemoveAll();
 
-			_xmlDocument.Save(_filePath);
+			_rootDocument.Save(_filePath);
 		}
 
 		public SettingsPropertyValue GetPreviousVersion(SettingsContext context, SettingsProperty property) {

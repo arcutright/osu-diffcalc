@@ -10,7 +10,7 @@ using OsuDiffCalc.FileProcessor;
 
 namespace OsuDiffCalc.Tests;
 
-public class TestBase {
+class TestBase {
 	public static string ResourcesDir { get; }
 
 	static TestBase() {

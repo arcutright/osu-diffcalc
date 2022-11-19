@@ -15,6 +15,7 @@
 
 		internal static string ExecutableName { get; private set; } = nameof(OsuDiffCalc);
 		internal static string ExecutablePath { get; private set; } = string.Empty;
+		internal static string ExecutableDir { get; private set; } = string.Empty;
 
 		//the STAThread is needed to call Ux.getFileFromDialog()->.openFileDialog()
 		[STAThread]
@@ -23,12 +24,22 @@
 			// several fallbacks since this can behave differently under .net48, .net6, .net6+ with AOT, etc.
 			string[] envArgs = Environment.GetCommandLineArgs();
 			envArgs = envArgs?.Length >= 1 ? envArgs : args;
-			ExecutablePath = envArgs?.Length >= 1 ? envArgs[0] : Process.GetCurrentProcess()?.MainModule?.FileName ?? string.Empty;
+#if NET6_0_OR_GREATER
+			ExecutablePath = Environment.ProcessPath;
+#endif
 			if (string.IsNullOrEmpty(ExecutablePath))
-				ExecutablePath = Path.Combine(Directory.GetCurrentDirectory(), $"{nameof(OsuDiffCalc)}.exe");
+				ExecutablePath = envArgs?.Length >= 1 ? envArgs[0] : Process.GetCurrentProcess()?.MainModule?.FileName ?? string.Empty;
+			if (!string.IsNullOrEmpty(ExecutablePath))
+				ExecutableDir = Path.GetDirectoryName(ExecutablePath);
+			if (string.IsNullOrEmpty(ExecutableDir))
+				ExecutableDir = AppContext.BaseDirectory;
+			if (string.IsNullOrEmpty(ExecutableDir))
+				ExecutableDir = Directory.GetCurrentDirectory();
+			if (string.IsNullOrEmpty(ExecutablePath))
+				ExecutablePath = Path.Combine(ExecutableDir, Path.GetFileName(Process.GetCurrentProcess()?.MainModule?.FileName) ?? $"{nameof(OsuDiffCalc)}.exe");
 			ExecutableName = Path.GetFileNameWithoutExtension(ExecutablePath);
 
-#if NET5_0_OR_GREATER && PUBLISH_TRIMMED && !NET7_0_OR_GREATER
+#if NET5_0_OR_GREATER && PUBLISH_TRIMMED
 			// support trimming for WinForms apps using nuget package WinFormsComInterop
 			// currently does not support net7
 			System.Runtime.InteropServices.ComWrappers.RegisterForMarshalling(WinFormsComInterop.WinFormsComWrappers.Instance);

@@ -1,4 +1,5 @@
 ﻿namespace OsuDiffCalc.Properties {
+	using System;
 	using System.Configuration;
 	using System.Reflection;
 
@@ -9,23 +10,25 @@
 	//  The SettingsLoaded event is raised after the setting values are loaded.
 	//  The SettingsSaving event is raised before the setting values are saved.
 	[SettingsProvider(typeof(PortableSettingsProvider))]
-	public sealed partial class Settings {
-		private readonly SettingsProvider Provider = new PortableSettingsProvider();
+	public partial class Settings {
+		private readonly PortableSettingsProvider _provider;
 
 		public Settings() {
 			// Try to re-use an existing provider, since we cannot have multiple providers
 			// with same name.
-			if (Providers[Provider.Name] is null) {
-				Providers.Clear();
-				Providers.Add(Provider);
+			_provider = new PortableSettingsProvider();
+			if (Providers[_provider.Name] is PortableSettingsProvider prov) {
+				_provider = prov;
 			}
-			else
-				Provider = Providers[Provider.Name];
+			else {
+				Providers.Clear();
+				Providers.Add(_provider);
+			}
 
 			// Change default provider.
 			foreach (SettingsProperty property in Properties) {
 				if (property.PropertyType.GetCustomAttribute<SettingsProviderAttribute>(false) is null) {
-					property.Provider = Provider;
+					property.Provider = _provider;
 				}
 			}
 
