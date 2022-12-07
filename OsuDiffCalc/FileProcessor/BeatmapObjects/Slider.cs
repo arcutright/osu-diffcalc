@@ -1,5 +1,6 @@
 ﻿namespace OsuDiffCalc.FileProcessor.BeatmapObjects {
 	using System;
+	using System.Buffers;
 	using System.Collections.Generic;
 	using System.Linq;
 	using OsuDiffCalc.Utility;
@@ -15,19 +16,21 @@
 			TotalLength = pixelLength * numSlides;
 
 			// slider type
-			sliderType = sliderType?.Trim().ToUpper() ?? " ";
-			char sliderChar = sliderType.Length != 0 ? sliderType[0] : ' ';
-			PathType = sliderChar switch {
-				'B' => PathType.Bezier,
-				'C' => PathType.Catmull,
-				'L' => PathType.Linear,
-				'P' => PathType.PerfectCircle,
-				_ => PathType.Bezier, // TODO: is this the default for old osu maps?
-			};
 			if (controlPoints.Count == 2) // 2 points can only define a line
 				PathType = PathType.Linear;
-			else if (PathType == PathType.PerfectCircle && controlPoints.Count != 3) // perfect circle must be 3 points
-				PathType = PathType.Bezier;
+			else {
+				sliderType = sliderType?.Trim().ToUpper() ?? string.Empty;
+				char sliderChar = sliderType.Length != 0 ? sliderType[0] : ' ';
+				PathType = sliderChar switch {
+					'B' => PathType.Bezier,
+					'C' => PathType.Catmull,
+					'L' => PathType.Linear,
+					'P' => PathType.PerfectCircle,
+					_ => PathType.Bezier, // TODO: is this the default for old osu maps?
+				};
+				if (PathType == PathType.PerfectCircle && controlPoints.Count != 3) // perfect circle must be 3 points
+					PathType = PathType.Bezier;
+			}
 		}
 
 		/// <summary>
@@ -79,20 +82,19 @@
 			
 			int n = ControlPoints.Count;
 			SliderPath path = null;
-			var pathPoints = new PathControlPoint[n];
 			if (n > 0) {
-				pathPoints[0] = new PathControlPoint(ControlPoints[0], PathType);
+				scoped Span<PathType> pathTypes = n < 512 ? stackalloc PathType[n] : new PathType[n];
+				pathTypes[0] = PathType;
 				for (int i = 1; i < n; i++) {
-					PathType? pathType = ControlPoints[i-1] == ControlPoints[i] ? PathType : null;
-					pathPoints[i] = new PathControlPoint(ControlPoints[i], pathType);
+					pathTypes[i] = ControlPoints[i-1] == ControlPoints[i] ? PathType : PathType.None;
 				}
-			}
-			try {
-				path = new SliderPath(pathPoints, TotalLength / NumSlides);
-			}
-			catch (Exception ex) {
-				Console.WriteLine("Exception in SliderPath calculation:");
-				Console.WriteLine(ex.ToString());
+				try {
+					path = new SliderPath(ControlPoints, pathTypes, n, TotalLength / NumSlides);
+				}
+				catch (Exception ex) {
+					Console.WriteLine("Exception in SliderPath calculation:");
+					Console.WriteLine(ex.ToString());
+				}
 			}
 
 			// calculate end time of slider
@@ -104,12 +106,12 @@
 			var time = Math.Max(EndTime - StartTime, 1);
 			PxPerSecond = TotalLength * 1000.0 / time;
 			// get x2, y2
-			if (NumSlides % 2 == 0) {
-				var lastPoint = path?.CalculatedPath.LastOrDefaultS() ?? ControlPoints[^1];
+			if (n > 0 && NumSlides % 2 == 0) {
+				var lastPoint = path?.StartPoint ?? ControlPoints[n - 1];
 				(X2, Y2) = (lastPoint.X, lastPoint.Y);
 			}
 			else {
-				var firstPoint = path?.CalculatedPath.FirstOrDefaultS() ?? ControlPoints[0];
+				var firstPoint = path?.EndPoint ?? ControlPoints[0];
 				(X2, Y2) = (firstPoint.X, firstPoint.Y);
 			}
 		}

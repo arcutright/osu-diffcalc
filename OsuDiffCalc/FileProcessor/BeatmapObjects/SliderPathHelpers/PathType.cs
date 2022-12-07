@@ -4,9 +4,10 @@
 
 namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 	public enum PathType {
+		None = -1,
+		Bezier = 0,
 		/// <summary> Centripetal catmull-rom spline </summary>
 		Catmull,
-		Bezier,
 		Linear,
 		/// <summary> A circle (made from 3 points) </summary>
 		PerfectCircle,
