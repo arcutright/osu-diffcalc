@@ -1480,7 +1480,7 @@
 
 					bool needsAnalyze =
 						_isOsuPresent && !_isMinimized
-						&& ((Visible && !_isInGame) || (_isInGame && _prevMapsetDirectory is null));
+						&& ((Visible && !_isInGame) || (_isInGame && (_prevMapsetDirectory is null || _prevMapsetDirectory != _currentMapsetDirectory)));
 					if (needsAnalyze && !_pauseAllTasks) {
 						sw.Restart();
 						AutoBeatmapAnalyzerThreadTick(cancelToken, timeoutMs);
