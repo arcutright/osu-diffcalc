@@ -5,6 +5,7 @@
 	using System.Runtime.CompilerServices;
 	using System.Text;
 	using System.Threading.Tasks;
+	using CSharpPolyfills;
 
 	/// <summary>
 	/// A readonly vector with 2 floats (X, Y) and a Length
@@ -24,12 +25,7 @@
 		public Vector2(float x, float y) {
 			X = x;
 			Y = y;
-
-#if NET5_0_OR_GREATER
 			Length = MathF.Sqrt((x * x) + (y * y));
-#else
-			Length = (float)Math.Sqrt((x * x) + (y * y));
-#endif
 		}
 
 		public float X { get; }

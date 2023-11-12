@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OsuDiffCalc.Tests", "OsuDif
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OsuDiffCalc.Benchmarks", "OsuDiffCalc.Benchmarks\OsuDiffCalc.Benchmarks.csproj", "{3D2E3047-343D-42B2-B704-0EE11B7A5F00}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharpPolyfills", "CSharpPolyfills\CSharpPolyfills.csproj", "{4F9F3030-BB00-429E-B2E1-E93C4543B593}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -67,6 +69,24 @@ Global
 		{3D2E3047-343D-42B2-B704-0EE11B7A5F00}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3D2E3047-343D-42B2-B704-0EE11B7A5F00}.Release|x64.ActiveCfg = Release|x64
 		{3D2E3047-343D-42B2-B704-0EE11B7A5F00}.Release|x86.ActiveCfg = Release|x86
+		{4F9F3030-BB00-429E-B2E1-E93C4543B593}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4F9F3030-BB00-429E-B2E1-E93C4543B593}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4F9F3030-BB00-429E-B2E1-E93C4543B593}.Debug|x64.ActiveCfg = Debug|x64
+		{4F9F3030-BB00-429E-B2E1-E93C4543B593}.Debug|x64.Build.0 = Debug|x64
+		{4F9F3030-BB00-429E-B2E1-E93C4543B593}.Debug|x86.ActiveCfg = Debug|x86
+		{4F9F3030-BB00-429E-B2E1-E93C4543B593}.Debug|x86.Build.0 = Debug|x86
+		{4F9F3030-BB00-429E-B2E1-E93C4543B593}.Release_testing|Any CPU.ActiveCfg = Release|Any CPU
+		{4F9F3030-BB00-429E-B2E1-E93C4543B593}.Release_testing|Any CPU.Build.0 = Release|Any CPU
+		{4F9F3030-BB00-429E-B2E1-E93C4543B593}.Release_testing|x64.ActiveCfg = Release|x64
+		{4F9F3030-BB00-429E-B2E1-E93C4543B593}.Release_testing|x64.Build.0 = Release|x64
+		{4F9F3030-BB00-429E-B2E1-E93C4543B593}.Release_testing|x86.ActiveCfg = Release|x86
+		{4F9F3030-BB00-429E-B2E1-E93C4543B593}.Release_testing|x86.Build.0 = Release|x86
+		{4F9F3030-BB00-429E-B2E1-E93C4543B593}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4F9F3030-BB00-429E-B2E1-E93C4543B593}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4F9F3030-BB00-429E-B2E1-E93C4543B593}.Release|x64.ActiveCfg = Release|x64
+		{4F9F3030-BB00-429E-B2E1-E93C4543B593}.Release|x64.Build.0 = Release|x64
+		{4F9F3030-BB00-429E-B2E1-E93C4543B593}.Release|x86.ActiveCfg = Release|x86
+		{4F9F3030-BB00-429E-B2E1-E93C4543B593}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

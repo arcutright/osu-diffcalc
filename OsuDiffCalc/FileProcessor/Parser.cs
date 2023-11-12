@@ -5,6 +5,7 @@
 	using System.Linq;
 	using System.Threading;
 	using FileParserHelpers;
+	using static CSharpPolyfills.MissingExtensionMethods;
 
 	class Parser {
 		/// <summary>

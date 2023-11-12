@@ -18,11 +18,12 @@ public class Program {
 			// see https://benchmarkdotnet.org/articles/configs/toolchains.html
 			// override from Release so that InternalsVisibleTo is injected in main project
 			ManualConfig config = DefaultConfig.Instance
-				.WithOptions(ConfigOptions.DisableOptimizationsValidator | ConfigOptions.JoinSummary | ConfigOptions.Default)
+				.WithOptions(ConfigOptions.DisableOptimizationsValidator | ConfigOptions.JoinSummary | ConfigOptions.StopOnFirstError)
 				.AddJob(Job.Default.WithCustomBuildConfiguration("Release_testing"))
 				// use this approach if you want to benchmark across net versions
 				//.AddJob(Job.Default.WithCustomBuildConfiguration("Release_testing").WithRuntime(ClrRuntime.Net48).WithId("net48"))
-				//.AddJob(Job.Default.WithCustomBuildConfiguration("Release_testing").WithRuntime(CoreRuntime.Core60).WithId("net6"))
+				.AddJob(Job.Default.WithCustomBuildConfiguration("Release_testing").WithRuntime(CoreRuntime.Core60).WithId("net6"))
+				//.AddJob(Job.Default.WithCustomBuildConfiguration("Release_testing").WithRuntime(CoreRuntime.Core70).WithId("net7"))
 			;
 			BenchmarkRunner.Run<LoadMapBenchmarks>(config, args);
 			Console.WriteLine("-----------benchmarks success-----------");

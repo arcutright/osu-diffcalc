@@ -10,6 +10,7 @@
 	using System.Threading.Tasks;
 	using FileFinder;
 	using Utility;
+	using static CSharpPolyfills.MissingExtensionMethods;
 
 	class MapsetManager {
 		private static readonly LRUCache<string, Mapset> _allMapsets = new(20, autoDispose: true);

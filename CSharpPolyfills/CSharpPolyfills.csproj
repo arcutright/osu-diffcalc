@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+		<TargetFrameworks>netstandard2.0;net462;net472;net48;net6.0;net7.0</TargetFrameworks>
+		<LangVersion>11.0</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+		<DisableImplicitNamespaceImports>true</DisableImplicitNamespaceImports>
+    <Nullable>enable</Nullable>
+
+		<OutputType>Library</OutputType>
+		<PlatformTarget>x64</PlatformTarget>
+		<Platforms>AnyCPU;x64;x86</Platforms>
+		<Configurations>Debug;Release</Configurations>
+		<Prefer32Bit>false</Prefer32Bit>
+		
+		<Deterministic>true</Deterministic>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<IsPackable>false</IsPackable>
+  </PropertyGroup>
+	
+	<!-- nuget defaults to the oldest, buggiest version of any given transitive dependency if it is supported
+	     here we specify more recent versions to avoid this. -->
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+		<PackageReference Include="System.Memory" Version="4.5.5" />
+		<PackageReference Include="System.Memory.Data" Version="7.0.0" />
+		<PackageReference Include="System.Runtime" Version="4.3.1" />
+		<PackageReference Include="System.ValueTuple" Version="4.5.0"
+											Condition="$(TargetFramework.StartsWith('net46'))" />
+		<PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4"
+											Condition="$(TargetFramework.StartsWith('netstandard2')) or $(TargetFramework.StartsWith('netcoreapp2')) or $(TargetFrameworkIdentifier) == '.NETFramework'" />
+	</ItemGroup>
+
+	<!-- polyfill modern features to dotnet framework -->
+	<ItemGroup>
+		<PackageReference Include="PolySharp" Version="1.13.2">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+	<PropertyGroup>
+		<PolySharpUsePublicAccessibilityForGeneratedTypes>true</PolySharpUsePublicAccessibilityForGeneratedTypes>
+		<PolySharpIncludeRuntimeSupportedAttributes>true</PolySharpIncludeRuntimeSupportedAttributes>
+		<PolySharpUseInteropServices2NamespaceForUnmanagedCallersOnlyAttribute>true</PolySharpUseInteropServices2NamespaceForUnmanagedCallersOnlyAttribute>
+	</PropertyGroup>
+</Project>
