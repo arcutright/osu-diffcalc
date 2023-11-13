@@ -67,6 +67,7 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 				return;
 
 			int start = 0;
+			int m = calculatedPath.Count;
 			for (int i = 0; i < n; i++) {
 				if (pathTypes[i] == PathType.None && i < n - 1)
 					continue;
@@ -76,17 +77,21 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 				var segmentType = pathTypes[start];
 
 				// calculate sub path from vertices
-				if (segmentType is PathType.None or PathType.Linear) {
+				if (segmentType is PathType.None or PathType.Linear || segmentVertices.Length <= 2) {
 					for (int s = 0; s < segmentVertices.Length; s++) {
-						if (calculatedPath.Count == 0 || calculatedPath[^1] != segmentVertices[s])
+						if (m == 0 || calculatedPath[m - 1] != segmentVertices[s]) {
 							calculatedPath.Add(segmentVertices[s]);
+							++m;
+						}
 					}
 				}
 				else if (segmentType == PathType.Catmull) {
 					var subPath = PathApproximator.ApproximateCatmull(segmentVertices);
-					for (int s = 0; s < subPath.Count; s++) {
-						if (calculatedPath.Count == 0 || calculatedPath[^1] != subPath[s])
+					for (int s = 0; s < subPath.Length; s++) {
+						if (m == 0 || calculatedPath[m - 1] != subPath[s]) {
 							calculatedPath.Add(subPath[s]);
+							++m;
+						}
 					}
 				}
 				else {
@@ -96,17 +101,32 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 						var subPath = PathApproximator.ApproximateCircularArc(segmentVertices);
 						if (subPath is not null && subPath.Count != 0) {
 							for (int s = 0; s < subPath.Count; s++) {
-								if (calculatedPath.Count == 0 || calculatedPath[^1] != subPath[s])
+								if (m == 0 || calculatedPath[m - 1] != subPath[s]) {
 									calculatedPath.Add(subPath[s]);
+									++m;
+								}
 							}
 							isBezier = false;
 						}
 					}
 					if (isBezier) {
-						var subPath = PathApproximator.ApproximateBezier(segmentVertices);
-						for (int s = 0; s < subPath.Count; s++) {
-							if (calculatedPath.Count == 0 || calculatedPath[^1] != subPath[s])
-								calculatedPath.Add(subPath[s]);
+						if (PathApproximator.BezierIsFlatEnough(segmentVertices)) {
+							for (int s = 0; s < segmentVertices.Length; s++) {
+								if (m == 0 || calculatedPath[m - 1] != segmentVertices[s]) {
+									calculatedPath.Add(segmentVertices[s]);
+									++m;
+								}
+							}
+						}
+						else {
+							var subPath = new List<Vector2>(segmentVertices.Length * 4);
+							PathApproximator.ApproximateBSpline2(segmentVertices, subPath, 0);
+							for (int s = 0; s < subPath.Count; s++) {
+								if (m == 0 || calculatedPath[m - 1] != subPath[s]) {
+									calculatedPath.Add(subPath[s]);
+									++m;
+								}
+							}
 						}
 					}
 				}

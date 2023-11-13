@@ -65,34 +65,44 @@
 
 		public override string ToString() => $"X: {X:g5}, Y: {Y:g5}";
 
-		#region Static methods
+#region Static methods
+
+		public static Vector2 From(float x, float y) => new(x, y);
+		public static Vector2 From((float X, float Y) tup) => new(tup.X, tup.Y);
+		public static Vector2 From(System.Numerics.Vector2 vector) => new(vector.X, vector.Y);
 
 		/// <inheritdoc cref="System.Numerics.Vector2.Dot(System.Numerics.Vector2, System.Numerics.Vector2)"/>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static float Dot(Vector2 value1, Vector2 value2) => (value1.X * value2.X) + (value1.Y * value2.Y);
 
-		/// <inheritdoc cref="System.Numerics.Vector2.DistanceSquared(System.Numerics.Vector2, System.Numerics.Vector2)"/>
-		public static float DistanceSquared(Vector2 value1, Vector2 value2) {
-#if NET47_OR_GREATER
-			if (System.Numerics.Vector.IsHardwareAccelerated) {
-				Vector2 vector = value1 - value2;
-				return Dot(vector, vector);
-			}
-			else {
-				float dx = value1.X - value2.X;
-				float dy = value1.Y - value2.Y;
-				return dx * dx + dy * dy;
-			}
-#else
-			float dx = value1.X - value2.X;
-			float dy = value1.Y - value2.Y;
-			return dx * dx + dy * dy;
-#endif
+		/// <summary>
+		/// Fast approximation of sqrt(x^2 + y^2) using alpha max estimate (within ~2%)
+		/// </summary>
+		/// <remarks> see https://en.wikipedia.org/wiki/Alpha_max_plus_beta_min_algorithm </remarks>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static double EstimateLength(double x, double y) {
+			const double alpha1 = 0.898204193266868;
+			const double beta1 = 0.485968200201465;
+			(x, y) = (Math.Abs(x), Math.Abs(y));
+			var (min, max) = x < y ? (x, y) : (y, x);
+			var z1 = alpha1 * max + beta1 * min;
+			return max > z1 ? max : z1;
 		}
 
-		#endregion
+		/// <inheritdoc cref="EstimateLength(double, double)"/>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static float EstimateLength(float x, float y) {
+			const float alpha1 = 0.898204193266868f;
+			const float beta1 = 0.485968200201465f;
+			(x, y) = (Math.Abs(x), Math.Abs(y));
+			var (min, max) = x < y ? (x, y) : (y, x);
+			var z1 = alpha1 * max + beta1 * min;
+			return max > z1 ? max : z1;
+		}
 
-		#region Operators
+#endregion
+
+#region Operators
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Vector2 operator +(Vector2 left, Vector2 right) => new(left.X + right.X, left.Y + right.Y);
@@ -107,10 +117,7 @@
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Vector2 operator /(Vector2 left, Vector2 right) => new(left.X / right.X, left.Y / right.Y);
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Vector2 operator /(Vector2 vector, float scalar) {
-			float x = 1f / scalar;
-			return new Vector2(vector.X * x, vector.Y * x);
-		}
+		public static Vector2 operator /(Vector2 vector, float scalar) => new(vector.X / scalar, vector.Y / scalar);
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Vector2 operator -(Vector2 value) => new(-value.X, -value.Y);

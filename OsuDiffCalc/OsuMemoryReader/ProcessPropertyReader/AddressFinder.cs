@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using CSharpPolyfills; // needed for netframework
 
 namespace OsuDiffCalc.OsuMemoryReader;
 
@@ -35,7 +37,7 @@ partial class ProcessPropertyReader {
 		public AddressFinder(MemoryReader memoryReader, ObjectReader objectReader, ReadOnlySpan<byte?> baseAddressNeedle) {
 			_memoryReader = memoryReader;
 			_objectReader = objectReader;
-			_baseAddressBytes = baseAddressNeedle.ToArray().Cast<byte?>().ToArray();
+			_baseAddressBytes = baseAddressNeedle.ToArray();
 		}
 
 		/// <summary>
@@ -102,36 +104,42 @@ partial class ProcessPropertyReader {
 					return (baseAddr, attr.Offset);
 				else if (!string.IsNullOrEmpty(attr.Path)) {
 					// assume Path is a valid constant address in the process' memory space
-					string path = attr.Path.Trim();
-					var buffer = HexStringToByteArrayConstant(path);
-					if (buffer.Length > 4) {
-						var addr = new IntPtr(BitConverter.ToInt64(buffer, 0));
+					var path = attr.Path.AsSpan().Trim();
+					if (path.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+						path = path[2..];
+
+					int halfLen = path.Length / 2;
+					Span<byte> buffer = halfLen < 1024 ? stackalloc byte[halfLen] : new byte[halfLen];
+					HexStringToByteArray(path, buffer);
+
+					if (halfLen >= 8) {
+						//var addr = new IntPtr(BitConverter.ToInt64(buffer));
+						var addr = new IntPtr(Unsafe.ReadUnaligned<Int64>(ref buffer[0])); // for netframework
 						return (addr, attr.Offset);
 					}
 					else {
-						var addr = new IntPtr(BitConverter.ToInt32(buffer, 0));
+						//var addr = new IntPtr(BitConverter.ToInt32(buffer));
+						var addr = new IntPtr(Unsafe.ReadUnaligned<Int32>(ref buffer[0])); // for netframework
 						return (addr, attr.Offset);
 					}
 				}
 				else if (!string.IsNullOrEmpty(attr.PathNeedle)) {
 					// TODO: support for things besides needles
-					string needle = attr.PathNeedle;
-
-					var hexSpan = needle.AsSpan();
+					var needle = attr.PathNeedle.AsSpan().Trim();
 					if (needle.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
-						hexSpan = hexSpan[2..];
+						needle = needle[2..];
 
-					int halfLen = hexSpan.Length / 2;
+					int halfLen = needle.Length / 2;
 					IntPtr targetBaseAddress;
-					bool hasWildcard = needle.Contains("??");
+					bool hasWildcard = needle.Contains("??", StringComparison.OrdinalIgnoreCase);
 					if (hasWildcard) {
 						Span<byte?> buffer = halfLen < 1024 ? stackalloc byte?[halfLen] : new byte?[halfLen];
-						HexStringToByteArray(hexSpan, buffer);
+						HexStringToByteArray(needle, buffer);
 						targetBaseAddress = _memoryReader.FindNeedle(buffer);
 					}
 					else {
 						Span<byte> buffer = halfLen < 1024 ? stackalloc byte[halfLen] : new byte[halfLen];
-						HexStringToByteArray(hexSpan, buffer);
+						HexStringToByteArray(needle, buffer);
 						targetBaseAddress = _memoryReader.FindNeedle(buffer);
 					}
 					return (targetBaseAddress, attr.Offset);
@@ -144,8 +152,8 @@ partial class ProcessPropertyReader {
 
 		private static byte[] HexStringToByteArrayConstant(string hex) {
 			if (hex is null) return null;
-			var hexSpan = hex.AsSpan();
-			if (hex.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+			var hexSpan = hex.AsSpan().Trim();
+			if (hexSpan.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
 				hexSpan = hexSpan[2..];
 
 			int halfLen = hexSpan.Length / 2;
@@ -157,8 +165,8 @@ partial class ProcessPropertyReader {
 		/// <inheritdoc cref="HexStringToByteArray(ReadOnlySpan{char}, Span{byte?})"/>
 		private static byte?[] HexStringToByteArray(string hex) {
 			if (hex is null) return null;
-			var hexSpan = hex.AsSpan();
-			if (hex.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+			var hexSpan = hex.AsSpan().Trim();
+			if (hexSpan.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
 				hexSpan = hexSpan[2..];
 
 			int halfLen = hexSpan.Length / 2;

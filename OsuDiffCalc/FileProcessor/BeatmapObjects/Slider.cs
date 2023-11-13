@@ -8,7 +8,7 @@
 
 	record Slider : HitObject {
 		public Slider(float x, float y, double startTime, string sliderType, double pixelLength, int numSlides, 
-			            List<Vector2> controlPoints)
+		              List<Vector2> controlPoints)
 			     : base(x, y, startTime, startTime) {
 			ControlPoints = new(controlPoints);
 			NumSlides = numSlides;

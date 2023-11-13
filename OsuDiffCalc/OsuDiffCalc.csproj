@@ -72,7 +72,7 @@
 		<TrimmerDefaultAction>link</TrimmerDefaultAction>
 	</PropertyGroup>
 	
-	<PropertyGroup Condition=" '$(TargetFramework)' == 'net7.0-windows' Or '$(TargetFramework)' == 'net7-windows' Or '$(TargetFramework)' == 'net7.0' Or '$(TargetFramework)' == 'net7' ">
+	<PropertyGroup Condition=" $(TargetFramework.StartsWith('net7')) ">
 		<!-- uncomment me for publishing AOT, but need to set the targetFramework to _only_ net7. Otherwise throws parse exceptions from msbuild -->
 		<!--<PublishAot>true</PublishAot>-->
 	</PropertyGroup>

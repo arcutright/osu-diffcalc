@@ -3,10 +3,12 @@
 #pragma warning disable IDE1006 // Naming Styles
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -31,8 +33,8 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		/// </summary>
 		/// <param name="controlPoints">The control points.</param>
 		/// <returns>A list of vectors representing the piecewise-linear approximation.</returns>
-		public static IList<Vector2> ApproximateBezier(ReadOnlySpan<Vector2> controlPoints) {
-			return ApproximateBSpline(controlPoints);
+		public static IList<Vector2> ApproximateBezier(scoped ReadOnlySpan<Vector2> controlPoints) {
+			return ApproximateBSpline(controlPoints, 0);
 		}
 
 		/// <summary>
@@ -45,14 +47,25 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		/// <param name="controlPoints">The control points.</param>
 		/// <param name="p">The polynomial order.</param>
 		/// <returns>A list of vectors representing the piecewise-linear approximation.</returns>
-		public static IList<Vector2> ApproximateBSpline(ReadOnlySpan<Vector2> controlPoints, int p = 0) {
+		public static IList<Vector2> ApproximateBSpline(scoped ReadOnlySpan<Vector2> controlPoints, int p = 0) {
 			int n = controlPoints.Length - 1;
 			if (n < 0)
 				return Array.Empty<Vector2>();
 
 			// TODO: much of this can be rewritten with ArrayPools if we pass indices around
-			
-			var output = new List<Vector2>();
+			if (BezierIsFlatEnough(controlPoints))
+				return controlPoints.ToArray();
+
+			var output = new List<Vector2>(4 * controlPoints.Length);
+			ApproximateBSpline2(controlPoints, output, p);
+			return output;
+		}
+
+		public static void ApproximateBSpline2<TList>(scoped ReadOnlySpan<Vector2> controlPoints, TList output, int p = 0)
+		                                              where TList : IList<Vector2> {
+			int n = controlPoints.Length - 1;
+
+			// TODO: much of this can be rewritten with ArrayPools if we pass indices around
 			var toFlatten = new Stack<Vector2[]>();
 			var freeBuffers = new Stack<Vector2[]>();
 
@@ -78,7 +91,7 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 					toFlatten.Push(subBezier);
 				}
 
-				toFlatten.Push(points[(n - p)..]);
+				toFlatten.Push(points.AsSpan()[(n - p)..].ToArray());
 				// Reverse the stack so elements can be accessed in order.
 				toFlatten = new(toFlatten);
 			}
@@ -101,7 +114,7 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 			while (toFlatten.Count > 0) {
 				Vector2[] parent = toFlatten.Pop();
 
-				if (bezierIsFlatEnough(parent)) {
+				if (BezierIsFlatEnough(parent)) {
 					// If the control points we currently operate on are sufficiently "flat", we use
 					// an extension to De Casteljau's algorithm to obtain a piecewise-linear approximation
 					// of the bezier curve represented by our control points, consisting of the same amount
@@ -129,14 +142,13 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 			}
 
 			output.Add(controlPoints[n]);
-			return output;
 		}
 
 		/// <summary>
 		/// Creates a piecewise-linear approximation of a Catmull-Rom spline.
 		/// </summary>
 		/// <returns>A list of vectors representing the piecewise-linear approximation.</returns>
-		public static IList<Vector2> ApproximateCatmull(ReadOnlySpan<Vector2> controlPoints) {
+		public static Vector2[] ApproximateCatmull(scoped ReadOnlySpan<Vector2> controlPoints) {
 			const float catmull_detail_inv = 1f / catmull_detail;
 			int n = controlPoints.Length;
 
@@ -162,7 +174,7 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		/// Creates a piecewise-linear approximation of a circular arc curve.
 		/// </summary>
 		/// <returns>A list of vectors representing the piecewise-linear approximation.</returns>
-		public static IList<Vector2> ApproximateCircularArc(ReadOnlySpan<Vector2> controlPoints) {
+		public static IList<Vector2> ApproximateCircularArc(scoped ReadOnlySpan<Vector2> controlPoints) {
 			CircularArcProperties pr = circularArcProperties(controlPoints);
 			if (!pr.IsValid)
 				return ApproximateBezier(controlPoints);
@@ -172,14 +184,18 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 			// is: 2 * Math.Acos(1 - TOLERANCE / r)
 			// The special case is required for extremely short sliders where the radius is smaller than
 			// the tolerance. This is a pathological rather than a realistic case.
-			int amountPoints = 2 * pr.Radius <= circular_arc_tolerance ? 2 : Math.Max(2, (int)Math.Ceiling(pr.ThetaRange / (2 * Math.Acos(1 - circular_arc_tolerance / pr.Radius))));
+			int amountPoints =
+				2 * pr.Radius <= circular_arc_tolerance
+				? 2
+				: Math.Max(2, (int)MathF.Ceiling(pr.ThetaRange / (2 * MathF.Acos(1 - circular_arc_tolerance / pr.Radius))));
 
 			var output = new Vector2[amountPoints];
 
+			float invAmountPoints = 1f / (amountPoints - 1);
 			for (int i = 0; i < amountPoints; ++i) {
-				double fract = (double)i / (amountPoints - 1);
-				double theta = pr.ThetaStart + pr.Direction * fract * pr.ThetaRange;
-				Vector2 o = new Vector2((float)Math.Cos(theta), (float)Math.Sin(theta)) * pr.Radius;
+				float fract = i * invAmountPoints;
+				float theta = pr.ThetaStart + pr.Direction * fract * pr.ThetaRange;
+				Vector2 o = new Vector2(MathF.Cos(theta), MathF.Sin(theta)) * pr.Radius;
 				output[i] = pr.Centre + o;
 			}
 
@@ -238,7 +254,7 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		/// Basically, returns the input.
 		/// </summary>
 		/// <returns>A list of vectors representing the piecewise-linear approximation.</returns>
-		public static IList<Vector2> ApproximateLinear(ReadOnlySpan<Vector2> controlPoints) {
+		public static IList<Vector2> ApproximateLinear(scoped ReadOnlySpan<Vector2> controlPoints) {
 			return controlPoints.ToArray();
 		}
 
@@ -246,7 +262,7 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		/// Creates a piecewise-linear approximation of a lagrange polynomial.
 		/// </summary>
 		/// <returns>A list of vectors representing the piecewise-linear approximation.</returns>
-		public static List<Vector2> ApproximateLagrangePolynomial(ReadOnlySpan<Vector2> controlPoints) {
+		public static List<Vector2> ApproximateLagrangePolynomial(scoped ReadOnlySpan<Vector2> controlPoints) {
 			// TODO: add some smarter logic here, chebyshev nodes?
 			const int num_steps = 51;
 
@@ -273,17 +289,17 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 			return result;
 		}
 
-		private readonly struct CircularArcProperties {
+		private readonly ref struct CircularArcProperties {
 			public readonly bool IsValid;
-			public readonly double ThetaStart;
-			public readonly double ThetaRange;
-			public readonly double Direction;
+			public readonly float ThetaStart;
+			public readonly float ThetaRange;
+			public readonly float Direction;
 			public readonly float Radius;
 			public readonly Vector2 Centre;
 
-			public double ThetaEnd => ThetaStart + ThetaRange * Direction;
+			public float GetThetaEnd() => ThetaStart + ThetaRange * Direction;
 
-			public CircularArcProperties(double thetaStart, double thetaRange, double direction, float radius, Vector2 centre) {
+			public CircularArcProperties(float thetaStart, float thetaRange, float direction, float radius, Vector2 centre) {
 				IsValid = true;
 				ThetaStart = thetaStart;
 				ThetaRange = thetaRange;
@@ -297,7 +313,7 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		/// Computes various properties that can be used to approximate the circular arc.
 		/// </summary>
 		/// <param name="controlPoints">Three distinct points on the arc.</param>
-		private static CircularArcProperties circularArcProperties(ReadOnlySpan<Vector2> controlPoints) {
+		private static CircularArcProperties circularArcProperties(scoped ReadOnlySpan<Vector2> controlPoints) {
 			Vector2 a = controlPoints[0];
 			Vector2 b = controlPoints[1];
 			Vector2 c = controlPoints[2];
@@ -326,20 +342,19 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 
 			float r = dA.Length;
 
-			double thetaStart = Math.Atan2(dA.Y, dA.X);
-			double thetaEnd = Math.Atan2(dC.Y, dC.X);
+			float thetaStart = MathF.Atan2(dA.Y, dA.X);
+			float thetaEnd = MathF.Atan2(dC.Y, dC.X);
 
-			const double pi2 = Math.PI * 2;
+			const float pi2 = MathF.PI * 2;
 			while (thetaEnd < thetaStart)
 				thetaEnd += pi2;
 
-			double dir = 1;
-			double thetaRange = thetaEnd - thetaStart;
+			float dir = 1;
+			float thetaRange = thetaEnd - thetaStart;
 
 			// Decide in which direction to draw the circle, depending on which side of
 			// AC B lies.
 			var orthoAtoC = new Vector2(cMinusA.Y, -cMinusA.X);
-
 			if (Vector2.Dot(orthoAtoC, bMinusA) < 0) {
 				dir = -dir;
 				thetaRange = pi2 - thetaRange;
@@ -356,7 +371,7 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		/// </summary>
 		/// <param name="controlPoints">The control points to check for flatness.</param>
 		/// <returns>Whether the control points are flat enough.</returns>
-		private static bool bezierIsFlatEnough(ReadOnlySpan<Vector2> controlPoints) {
+		public static bool BezierIsFlatEnough(scoped ReadOnlySpan<Vector2> controlPoints) {
 			const float tolerance = bezier_tolerance * bezier_tolerance * 4;
 			for (int i = 1; i < controlPoints.Length - 1; i++) {
 				if ((controlPoints[i - 1] - 2 * controlPoints[i] + controlPoints[i + 1]).LengthSquared() > tolerance)
@@ -376,7 +391,11 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		/// <param name="r">Output: The control points corresponding to the right half of the curve.</param>
 		/// <param name="subdivisionBuffer">The first buffer containing the current subdivision state.</param>
 		/// <param name="count">The number of control points in the original list.</param>
-		private static void bezierSubdivide(ReadOnlySpan<Vector2> controlPoints, Span<Vector2> l, Span<Vector2> r, Span<Vector2> subdivisionBuffer, int count) {
+		private static void bezierSubdivide(scoped ReadOnlySpan<Vector2> controlPoints,
+			                                  scoped Span<Vector2> l,
+																				scoped Span<Vector2> r,
+																				scoped Span<Vector2> subdivisionBuffer,
+																				int count) {
 			Span<Vector2> midpoints = subdivisionBuffer;
 
 			for (int i = 0; i < count; ++i)
@@ -400,7 +419,12 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		/// <param name="count">The number of control points in the original list.</param>
 		/// <param name="subdivisionBuffer1">The first buffer containing the current subdivision state.</param>
 		/// <param name="subdivisionBuffer2">The second buffer containing the current subdivision state.</param>
-		private static void bezierApproximate(ReadOnlySpan<Vector2> controlPoints, List<Vector2> output, Span<Vector2> subdivisionBuffer1, Span<Vector2> subdivisionBuffer2, int count) {
+		private static void bezierApproximate<TList>(scoped ReadOnlySpan<Vector2> controlPoints,
+			                                           TList output,
+			                                           scoped Span<Vector2> subdivisionBuffer1,
+																						     scoped Span<Vector2> subdivisionBuffer2,
+																						     int count)
+			                                           where TList : IList<Vector2> {
 			Span<Vector2> l = subdivisionBuffer2;
 			Span<Vector2> r = subdivisionBuffer1;
 
@@ -414,7 +438,7 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 
 			for (int i = 1; i < count - 1; ++i) {
 				int index = 2 * i;
-				Vector2 p = 0.25f * (l[index - 1] + 2 * l[index] + l[index + 1]);
+				Vector2 p = 0.25f * (l[index - 1] + (2 * l[index]) + l[index + 1]);
 				output.Add(p);
 			}
 		}
@@ -428,6 +452,7 @@ namespace OsuDiffCalc.FileProcessor.BeatmapObjects.SliderPathHelpers {
 		/// <param name="vec4">The fourth vector.</param>
 		/// <param name="t">The parameter at which to find the point on the spline, in the range [0, 1].</param>
 		/// <returns>The point on the spline at <paramref name="t"/>.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private static Vector2 catmullFindPoint(in Vector2 vec1, in Vector2 vec2, in Vector2 vec3, in Vector2 vec4, float t) {
 			float t2 = t * t;
 			float t3 = t * t2;
