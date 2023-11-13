@@ -4,7 +4,7 @@
     <RootNamespace>OsuDiffCalc.Benchmarks</RootNamespace>
 
 		<!-- net48, net6.0, net7.0 -->
-    <TargetFrameworks>net48;net6.0;net7.0</TargetFrameworks>
+    <TargetFrameworks>net48;net6.0-windows</TargetFrameworks>
 		<LangVersion>11.0</LangVersion>
 		<Deterministic>true</Deterministic>
     <OutputType>Exe</OutputType>
