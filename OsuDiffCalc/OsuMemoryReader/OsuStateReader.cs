@@ -62,10 +62,10 @@ internal class OsuStateReader {
 					Mods = _memoryReader.ReadProperty<GeneralData, OsuMods>(nameof(GeneralData.Mods), OsuMods.Unknown),
 					MapId = _memoryReader.ReadProperty<GeneralData, int>(nameof(CurrentBeatmap.Id), -1),
 					SetId = _memoryReader.ReadProperty<GeneralData, int>(nameof(CurrentBeatmap.SetId), -1),
-					MapString = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.MapString))?.Trim(),
-					FolderName = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.FolderName))?.Trim(),
-					OsuFileName = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.OsuFileName))?.Trim(),
-					MD5FileHash = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.MD5FileHash))?.Trim(),
+					MapString = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.MapString))?.Trim() ?? "",
+					FolderName = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.FolderName))?.Trim() ?? "",
+					OsuFileName = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.OsuFileName))?.Trim() ?? "",
+					MD5FileHash = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.MD5FileHash))?.Trim() ?? "",
 				};
 
 				if (currentState.Status != _prevStatus) {
@@ -81,13 +81,21 @@ internal class OsuStateReader {
 					_prevMods = currentState.Mods;
 				}
 
+				// empty out file names if the strings are invalid
+				if (currentState.FolderName.IndexOfAny(_invalidPathChars) != -1) {
+					currentState = currentState with { FolderName = "" };
+				}
+				if (currentState.OsuFileName.IndexOfAny(_invalidFileNameChars) != -1) {
+					currentState = currentState with { OsuFileName = "" };
+				}
+
 				// under rare circumstances, can end up with broken strings if user is changing state while we are reading memory
 				// so we check for invalid path chars to try to hedge against this
-				return !string.IsNullOrEmpty(currentState.MapString) 
-						&& !string.IsNullOrEmpty(currentState.FolderName)
-						&& !string.IsNullOrEmpty(currentState.OsuFileName)
-						&& currentState.FolderName.IndexOfAny(_invalidPathChars) == -1
-						&& currentState.OsuFileName.IndexOfAny(_invalidFileNameChars) == -1;
+				return currentState.Status == OsuStatus.Unknown
+					|| currentState.GameMode == OsuGameMode.Unknown
+					|| !(string.IsNullOrEmpty(currentState.MapString)
+						&& string.IsNullOrEmpty(currentState.OsuFileName)
+						&& string.IsNullOrEmpty(currentState.FolderName));
 			}
 			catch (Exception ex) {
 				Console.WriteLine("Failed to find current beatmap for osu process");
