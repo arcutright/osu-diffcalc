@@ -319,10 +319,10 @@ partial class ProcessPropertyReader {
 		}
 
 		private bool CanReadBytes(IntPtr address) {
-			if (address == IntPtr.Zero)
-				return false;
-			else
-				return (_hProcess is not null) && !_hProcess.IsInvalid && !_hProcess.IsClosed;
+			return (address != IntPtr.Zero)
+				&& (_hProcess is not null)
+				&& !_hProcess.IsInvalid
+				&& !_hProcess.IsClosed;
 		}
 
 		private SafeProcessHandle OpenHandle() {

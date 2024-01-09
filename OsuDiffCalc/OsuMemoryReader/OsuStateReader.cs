@@ -17,10 +17,7 @@ internal readonly record struct OsuMemoryState(
 	string OsuFileName,
 	string MD5FileHash
 ) {
-	public OsuMemoryState()
-		: this(OsuStatus.Unknown, OsuGameMode.Unknown, OsuMods.Unknown, -1, -1, null, null, null, null) {
-	}
-	public static OsuMemoryState Invalid => new();
+	public static OsuMemoryState Invalid { get; } = new(OsuStatus.Unknown, OsuGameMode.Unknown, OsuMods.Unknown, -1, -1, null, null, null, null);
 
 	public bool IsInGame => Status is OsuStatus.Playing or OsuStatus.ResultsScreen or OsuStatus.MultiplayerResultsScreen;
 	public bool IsInEditor => Status is OsuStatus.EditingMap;
@@ -37,6 +34,7 @@ internal class OsuStateReader {
 	private static OsuStatus _prevStatus = OsuStatus.Unknown;
 	private static OsuGameMode _prevGameMode = OsuGameMode.Unknown;
 	private static OsuMods _prevMods = OsuMods.Unknown;
+	private static string _prevMapString = "", _prevOsuFileName = "";
 
 	/// <summary>
 	/// Throw away references to the previously cached process used when reading
@@ -49,6 +47,8 @@ internal class OsuStateReader {
 		_prevStatus = OsuStatus.Unknown;
 		_prevGameMode = OsuGameMode.Unknown;
 		_prevMods = OsuMods.Unknown;
+		_prevMapString = "";
+		_prevOsuFileName = "";
 	}
 
 	public static bool TryReadCurrentOsuState(Process osuProcess, out OsuMemoryState currentState) {
@@ -56,29 +56,48 @@ internal class OsuStateReader {
 			try {
 				_memoryReader.TargetProcess = osuProcess;
 
-				currentState = new OsuMemoryState {
-					Status = _memoryReader.ReadProperty<GeneralData, OsuStatus>(nameof(GeneralData.RawStatus), OsuStatus.Unknown),
-					GameMode = _memoryReader.ReadProperty<GeneralData, OsuGameMode>(nameof(GeneralData.GameMode), OsuGameMode.Unknown),
-					Mods = _memoryReader.ReadProperty<GeneralData, OsuMods>(nameof(GeneralData.Mods), OsuMods.Unknown),
-					MapId = _memoryReader.ReadProperty<GeneralData, int>(nameof(CurrentBeatmap.Id), -1),
-					SetId = _memoryReader.ReadProperty<GeneralData, int>(nameof(CurrentBeatmap.SetId), -1),
-					MapString = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.MapString))?.Trim() ?? "",
-					FolderName = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.FolderName))?.Trim() ?? "",
-					OsuFileName = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.OsuFileName))?.Trim() ?? "",
-					MD5FileHash = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.MD5FileHash))?.Trim() ?? "",
-				};
+				// read game state from memory
+				var status = _memoryReader.ReadProperty<GeneralData, OsuStatus>(nameof(GeneralData.RawStatus), OsuStatus.Unknown);
+				var gameMode = _memoryReader.ReadProperty<GeneralData, OsuGameMode>(nameof(GeneralData.GameMode), OsuGameMode.Unknown);
+				var mods = _memoryReader.ReadProperty<GeneralData, OsuMods>(nameof(GeneralData.Mods), OsuMods.Unknown);
+				var mapId = _memoryReader.ReadProperty<GeneralData, int>(nameof(CurrentBeatmap.Id), -1);
+				var setId = _memoryReader.ReadProperty<GeneralData, int>(nameof(CurrentBeatmap.SetId), -1);
+				var mapString = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.MapString), "")?.Trim() ?? "";
+				var folderName = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.FolderName), "")?.Trim() ?? "";
+				var osuFileName = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.OsuFileName), "")?.Trim() ?? "";
+				var md5FileHash = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.MD5FileHash), "")?.Trim() ?? "";
 
-				if (currentState.Status != _prevStatus) {
-					Console.WriteLine($"   memory current status: {currentState.Status}");
-					_prevStatus = currentState.Status;
+				// empty out file names if they are invalid
+				// this can happen when:
+				//   1. the game state was changing while we were reading its memory
+				//   2. the game was updated and the addresses are pointing at junk
+				if (folderName.IndexOfAny(_invalidPathChars) != -1)
+					folderName = "";
+				if (osuFileName.IndexOfAny(_invalidFileNameChars) != -1)
+					osuFileName = "";
+
+				currentState = new OsuMemoryState(status, gameMode, mods, mapId, setId, mapString, folderName, osuFileName, md5FileHash);
+
+				// debug info
+				if (status != _prevStatus) {
+					Console.WriteLine($"   memory current status: {status}");
+					_prevStatus = status;
 				}
-				if (currentState.GameMode != _prevGameMode) {
-					Console.WriteLine($"   memory current game mode: {currentState.GameMode}");
-					_prevGameMode = currentState.GameMode;
+				if (gameMode != _prevGameMode) {
+					Console.WriteLine($"   memory current game mode: {gameMode}");
+					_prevGameMode = gameMode;
 				}
-				if (currentState.Mods != _prevMods) {
-					Console.WriteLine($"   memory current mods: {currentState.Mods}");
-					_prevMods = currentState.Mods;
+				if (mods != _prevMods) {
+					Console.WriteLine($"   memory current mods: {mods}");
+					_prevMods = mods;
+				}
+				if (mapString != _prevMapString) {
+					Console.WriteLine($"   memory map string: {mapString}");
+					_prevMapString = mapString;
+				}
+				if (osuFileName != _prevOsuFileName) {
+					Console.WriteLine($"   memory osu file name: {osuFileName}");
+					_prevOsuFileName = osuFileName;
 				}
 
 				// empty out file names if the strings are invalid
@@ -89,13 +108,13 @@ internal class OsuStateReader {
 					currentState = currentState with { OsuFileName = "" };
 				}
 
-				// under rare circumstances, can end up with broken strings if user is changing state while we are reading memory
-				// so we check for invalid path chars to try to hedge against this
-				return currentState.Status == OsuStatus.Unknown
-					|| currentState.GameMode == OsuGameMode.Unknown
-					|| !(string.IsNullOrEmpty(currentState.MapString)
-						&& string.IsNullOrEmpty(currentState.OsuFileName)
-						&& string.IsNullOrEmpty(currentState.FolderName));
+				// return [if state looks usable]
+				return status != OsuStatus.Unknown
+					&& gameMode != OsuGameMode.Unknown
+					// sometimes 1 of 3 may be garbled, but usually the later fallbacks can handle this and still find the current map
+					&& !(string.IsNullOrEmpty(mapString)
+						&& string.IsNullOrEmpty(osuFileName)
+						&& string.IsNullOrEmpty(folderName));
 			}
 			catch (Exception ex) {
 				Console.WriteLine("Failed to find current beatmap for osu process");
