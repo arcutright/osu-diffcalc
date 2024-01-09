@@ -102,31 +102,41 @@ partial class ProcessPropertyReader : IDisposable {
 			return false;
 		}
 		try {
-			IntPtr classAddress, propAddress;
+			IntPtr classAddress = IntPtr.Zero;
+			IntPtr propAddress = IntPtr.Zero;
 			var cacheKey = (typeof(TClass), propertyName);
 			if (!_propertyCache.TryGetValue(cacheKey, out var entry)) {
 				// lookup memory layout info for property and store in cache
-				MemoryAddressInfoAttribute propAttr;
+				MemoryAddressInfoAttribute propAttr = null;
 
 				var classAttr = typeof(TClass).GetCustomAttribute<MemoryAddressInfoAttribute>();
 				var propInfo = typeof(TClass).GetProperty(propertyName);
-				bool isValid;
-				bool isConstantAddress;
+				bool isValid = false;
+				bool isConstantAddress = false;
 
 				if (propInfo is not null) {
 					propAttr = propInfo.GetCustomAttribute<MemoryAddressInfoAttribute>();
-
-					// lookup address for property to see whether it is a constant
-					isValid = _addressFinder.TryFindPropertyAddress(classAttr, propAttr, out classAddress, out propAddress);
-					isValid |= propAddress == IntPtr.Zero;
-					isConstantAddress = (classAddress == IntPtr.Zero || classAttr?.ShouldFollowClassPointer == false) && propAttr.IsConstantPath;
+					if (propAttr is not null) {
+						// lookup address for property to see whether it is a constant
+						isValid = _addressFinder.TryFindPropertyAddress(classAttr, propAttr, out classAddress, out propAddress);
+						isValid |= propAddress == IntPtr.Zero;
+						isConstantAddress =
+							isValid
+							&& (classAddress == IntPtr.Zero || classAttr?.ShouldFollowClassPointer == false)
+							&& propAttr.IsConstantPath;
+					}
+					else {
+#if DEBUG
+						Console.Error.WriteLine($"ERROR: Missing {nameof(MemoryAddressInfoAttribute)} on property '{propertyName}' in class {typeof(TClass).FullName}, cannot read prop without it");
+						System.Diagnostics.Debugger.Break();
+#endif
+					}
 				}
 				else {
-					propAttr = null;
-					classAddress = IntPtr.Zero;
-					propAddress = IntPtr.Zero;
-					isValid = false;
-					isConstantAddress = false;
+#if DEBUG
+					Console.Error.WriteLine($"ERROR: Cannot find property '{propertyName}' in class {typeof(TClass).FullName}. Did you mistype something?");
+					System.Diagnostics.Debugger.Break();
+#endif
 				}
 				entry = new(classAttr, propAttr, isValid, isConstantAddress, classAddress, propAddress);
 				_propertyCache[cacheKey] = entry;

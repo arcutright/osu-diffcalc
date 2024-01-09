@@ -34,7 +34,7 @@ internal class OsuStateReader {
 	private static OsuStatus _prevStatus = OsuStatus.Unknown;
 	private static OsuGameMode _prevGameMode = OsuGameMode.Unknown;
 	private static OsuMods _prevMods = OsuMods.Unknown;
-	private static string _prevMapString = "", _prevOsuFileName = "";
+	private static string _prevMapString = "", _prevMapStringUnicode = "", _prevShortMapString = "", _prevOsuFileName = "";
 
 	/// <summary>
 	/// Throw away references to the previously cached process used when reading
@@ -48,6 +48,8 @@ internal class OsuStateReader {
 		_prevGameMode = OsuGameMode.Unknown;
 		_prevMods = OsuMods.Unknown;
 		_prevMapString = "";
+		_prevMapStringUnicode = "";
+		_prevShortMapString = "";
 		_prevOsuFileName = "";
 	}
 
@@ -60,10 +62,12 @@ internal class OsuStateReader {
 				var status = _memoryReader.ReadProperty<GeneralData, OsuStatus>(nameof(GeneralData.RawStatus), OsuStatus.Unknown);
 				var gameMode = _memoryReader.ReadProperty<GeneralData, OsuGameMode>(nameof(GeneralData.GameMode), OsuGameMode.Unknown);
 				var mods = _memoryReader.ReadProperty<GeneralData, OsuMods>(nameof(GeneralData.Mods), OsuMods.Unknown);
-				var mapId = _memoryReader.ReadProperty<GeneralData, int>(nameof(CurrentBeatmap.Id), -1);
-				var setId = _memoryReader.ReadProperty<GeneralData, int>(nameof(CurrentBeatmap.SetId), -1);
-				var mapString = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.MapString), "")?.Trim() ?? "";
+				var mapId = _memoryReader.ReadProperty<CurrentBeatmap, int>(nameof(CurrentBeatmap.Id), -1);
+				var setId = _memoryReader.ReadProperty<CurrentBeatmap, int>(nameof(CurrentBeatmap.SetId), -1);
 				var folderName = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.FolderName), "")?.Trim() ?? "";
+				var mapString = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.MapString), "")?.Trim() ?? "";
+				var mapStringUnicode = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.MapStringUnicode), "")?.Trim() ?? "";
+				var shortMapString = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.ShortMapString), "")?.Trim() ?? "";
 				var osuFileName = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.OsuFileName), "")?.Trim() ?? "";
 				var md5FileHash = _memoryReader.ReadProperty<CurrentBeatmap, string>(nameof(CurrentBeatmap.MD5FileHash), "")?.Trim() ?? "";
 
@@ -75,6 +79,12 @@ internal class OsuStateReader {
 					folderName = "";
 				if (osuFileName.IndexOfAny(_invalidFileNameChars) != -1)
 					osuFileName = "";
+
+				// fallback properties
+				if (string.IsNullOrEmpty(mapString))
+					mapString = shortMapString;
+				if (string.IsNullOrEmpty(mapString))
+					mapString = mapStringUnicode;
 
 				currentState = new OsuMemoryState(status, gameMode, mods, mapId, setId, mapString, folderName, osuFileName, md5FileHash);
 
@@ -94,6 +104,14 @@ internal class OsuStateReader {
 				if (mapString != _prevMapString) {
 					Console.WriteLine($"   memory map string: {mapString}");
 					_prevMapString = mapString;
+				}
+				if (mapStringUnicode != _prevMapStringUnicode) {
+					Console.WriteLine($"   memory map string u: {mapStringUnicode}");
+					_prevMapStringUnicode = mapStringUnicode;
+				}
+				if (shortMapString != _prevShortMapString) {
+					Console.WriteLine($"   memory short map str: {shortMapString}");
+					_prevShortMapString = shortMapString;
 				}
 				if (osuFileName != _prevOsuFileName) {
 					Console.WriteLine($"   memory osu file name: {osuFileName}");

@@ -77,7 +77,19 @@
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
 			Application.ThreadException += Application_ThreadException;
-			Application.Run(new GUI());
+			try {
+				Application.Run(new GUI());
+			}
+			catch (Exception ex) {
+#if DEBUG
+				System.Diagnostics.Debugger.Break();
+#endif
+			}
+			finally {
+#if DEBUG
+				System.Diagnostics.Debugger.Break();
+#endif
+			}
 
 			//Finder.debugAllProcesses();
 
