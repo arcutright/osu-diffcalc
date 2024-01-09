@@ -1201,7 +1201,7 @@
 			//Console.Write("auto window  ");
 			_findActiveBeatmapStopwatch.Restart();
 			bool couldReadState = false;
-			string windowTitle = null;
+			string windowTitle = "";
 			try {
 				if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
 					Thread.CurrentThread.Name = "AutoWindowTickThread";
@@ -1209,7 +1209,7 @@
 				// ensure we have the correct process for osu (in case player restarted osu, etc)
 				_osuProcess = Finder.GetOsuProcess(_guiPid, _osuProcess);
 				cancelToken.ThrowIfCancellationRequested();
-				windowTitle = _osuProcess?.MainWindowTitle?.Trim();
+				windowTitle = _osuProcess?.MainWindowTitle?.Trim() ?? "";
 
 				// update visibility
 				if (_osuProcess is null || _osuProcess.HasExitedSafe()) {
@@ -1232,7 +1232,7 @@
 					_osuProcess?.Dispose();
 					_osuProcess = null;
 					_inGameBeatmap = null;
-					_inGameWindowTitle = null;
+					_inGameWindowTitle = "";
 					_isOsuPresent = false;
 					_isInGame = false;
 					_isInEditor = false;
@@ -1301,7 +1301,7 @@
 						_currentOsuState = OsuMemoryState.Invalid;
 					}
 					
-					_inGameWindowTitle = _isInGame ? windowTitle : null;
+					_inGameWindowTitle = _isInGame ? windowTitle : "";
 
 					cancelToken.ThrowIfCancellationRequested();
 
@@ -1388,10 +1388,10 @@
 							}
 
 							// try to figure out what map is being played. This work will only happen once
-							_inGameBeatmap = GetInGameBeatmap(_displayedMapset, windowTitle);
+							_inGameBeatmap = GetInGameBeatmap(_displayedMapset, _isInGame || _isInEditor ? windowTitle : "");
 
 							if (_chartedBeatmap != _inGameBeatmap || didChangeTab) {
-								Console.WriteLine($"In {(_isInGame ? "game" : "editor")}, window title: '{windowTitle}'");
+								Console.WriteLine($"In {(_isInGame ? "game" : _isInEditor ? "editor" : "song select")}, window title: '{windowTitle}'");
 								Console.WriteLine($"  => beatmap: {_inGameBeatmap}");
 
 								// switch charted beatmap to in-game map
@@ -1480,7 +1480,7 @@
 
 					bool needsAnalyze =
 						_isOsuPresent && !_isMinimized
-						&& ((Visible && !_isInGame) || (_isInGame && (_prevMapsetDirectory is null || _prevMapsetDirectory != _currentMapsetDirectory)));
+						&& ((Visible && !_isInGame) || (_isInGame && (string.IsNullOrEmpty(_prevMapsetDirectory) || _prevMapsetDirectory != _currentMapsetDirectory)));
 					if (needsAnalyze && !_pauseAllTasks) {
 						sw.Restart();
 						AutoBeatmapAnalyzerThreadTick(cancelToken, timeoutMs);
@@ -1547,7 +1547,7 @@
 						}
 						catch { }
 					}
-					else if (_currentOsuState.MapString != _prevOsuState.MapString) { // || _currentOsuState.Mods != _prevOsuState.Mods) {
+					else if (_currentOsuState.MapString != _prevOsuState.MapString || _currentOsuState.OsuFileName != _prevOsuState.OsuFileName) { // || _currentOsuState.Mods != _prevOsuState.Mods) {
 						// missing map added to present set
 						// TODO: re-parse when selected mods changed, if we support parsing maps with those mods added
 						needsReanalyze = true;
@@ -1580,7 +1580,7 @@
 						});
 					}
 				}
-				else if (!string.IsNullOrEmpty(_currentOsuState.MapString) && _currentOsuState != _prevOsuState) {
+				else if ((!string.IsNullOrEmpty(_currentOsuState.MapString) || !string.IsNullOrEmpty(_currentOsuState.OsuFileName)) && _currentOsuState != _prevOsuState) {
 					DisplayMapset(_displayedMapset);
 				}
 			}
