@@ -5,23 +5,29 @@
 
 [MemoryAddressInfo(Offset = -0xC)]
 public class CurrentBeatmap {
-	[MemoryAddressInfo(Offset = 0xC8)]
-	public int Id { get; set; }
+	[MemoryAddressInfo(Offset = 0x2C)]
+	public float Ar { get; set; }
 
-	[MemoryAddressInfo(Offset = 0xCC)]
-	public int SetId { get; set; }
+	[MemoryAddressInfo(Offset = 0x30)]
+	public float Cs { get; set; }
 
-	[MemoryAddressInfo(Offset = 0x80)]
-	public string MapString { get; set; }
+	[MemoryAddressInfo(Offset = 0x34)]
+	public float Hp { get; set; }
+
+	[MemoryAddressInfo(Offset = 0x38)]
+	public float Od { get; set; }
+
+	/// <summary>
+	/// MD5 hash of currently loaded .osu file (including extension)
+	/// </summary>
+	[MemoryAddressInfo(Offset = 0x6C)]
+	public string MD5FileHash { get; set; }
 
 	[MemoryAddressInfo(Offset = 0x78)]
 	public string FolderName { get; set; }
 
-	/// <summary>
-	/// File name of currently loaded .osu file (including extension)
-	/// </summary>
-	[MemoryAddressInfo(Offset = 0x90)]
-	public string OsuFileName { get; set; }
+	[MemoryAddressInfo(Offset = 0x80)]
+	public string MapString { get; set; }
 
 	/// <summary>
 	/// MapString with unicode chars if there are any (eg "{Song name} [{diff name}]")
@@ -36,20 +42,14 @@ public class CurrentBeatmap {
 	public string ShortMapString { get; set; }
 
 	/// <summary>
-	/// MD5 hash of currently loaded .osu file (including extension)
+	/// File name of currently loaded .osu file (including extension)
 	/// </summary>
-	[MemoryAddressInfo(Offset = 0x6C)]
-	public string MD5FileHash { get; set; }
+	[MemoryAddressInfo(Offset = 0x90)]
+	public string OsuFileName { get; set; }
 
-	[MemoryAddressInfo(Offset = 0x2C)]
-	public float Ar { get; set; }
+	[MemoryAddressInfo(Offset = 0xC8)]
+	public int Id { get; set; }
 
-	[MemoryAddressInfo(Offset = 0x30)]
-	public float Cs { get; set; }
-
-	[MemoryAddressInfo(Offset = 0x34)]
-	public float Hp { get; set; }
-
-	[MemoryAddressInfo(Offset = 0x38)]
-	public float Od { get; set; }
+	[MemoryAddressInfo(Offset = 0xCC)]
+	public int SetId { get; set; }
 }
