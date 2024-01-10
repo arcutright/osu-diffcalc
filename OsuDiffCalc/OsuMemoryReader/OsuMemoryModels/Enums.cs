@@ -131,3 +131,17 @@ public enum SlotStatus {
 	HasPlayer = 0x7C,
 	Quit = 0x80
 }
+
+// reverse engineered, couldn't find in source code anywhere
+// part of CurrentBeatmap's memory
+public enum BeatmapRankedStatus { // might be : short, byte
+	Unknown      = -1, // doesn't actually happen
+	NeedsUpdate  = 0, // map has update
+	NotSubmitted = 1,
+	Pending      = 2, // pending / WIP / graveyard (incl. my maps)
+	// 3 = ?
+	Ranked       = 4,
+	Approved     = 5, // checkmark status instead of ^^, only seen in ancient "ranked" maps
+	Qualified    = 6,
+	Loved        = 7,
+}
