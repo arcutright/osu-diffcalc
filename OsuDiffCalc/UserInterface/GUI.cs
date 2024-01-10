@@ -1066,7 +1066,6 @@
 				var selectedFileNames = (string[])Invoke(() => UX.GetFilenamesFromDialog(searchDirectory)); 
 				Mapset set = MapsetManager.BuildSet(selectedFileNames);
 				if (set is null || set.Count == 0) {
-					set?.Dispose();
 					return;
 				}
 				SetFindActiveBeatmapTime($"0 ms");
@@ -1550,6 +1549,7 @@
 					else if (_currentOsuState.MapString != _prevOsuState.MapString || _currentOsuState.OsuFileName != _prevOsuState.OsuFileName) { // || _currentOsuState.Mods != _prevOsuState.Mods) {
 						// missing map added to present set
 						// TODO: re-parse when selected mods changed, if we support parsing maps with those mods added
+						// TODO: this is infinite loop for taiko maps, which are never stored...
 						needsReanalyze = true;
 						_displayedMapset = null;
 						Invoke(() => {
@@ -1564,7 +1564,7 @@
 					Mapset set = MapsetManager.AnalyzeMapset(_currentMapsetDirectory, this, true, EnableXmlCache);
 					sw.Stop();
 					SetParseAndAnalyzeTime($"{sw.ElapsedMilliseconds} ms");
-					if (set is null)
+					if (set is null || !set.Any())
 						return;
 
 					// show on GUI

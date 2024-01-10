@@ -15,10 +15,14 @@
 	class MapsetManager {
 		private static readonly LRUCache<string, Mapset> _allMapsets = new(20, autoDispose: true);
 		private static readonly Regex _titleRegex = new(@"(.*)\s*\[\s*(.*)\s*\]");
+		private static string[] _prevMapFilesInDir = Array.Empty<string>();
+		private static string _prevMapsetDirectory = "";
 
 		/// <inheritdoc cref="LRUCache{TKey, TValue}.Clear(bool?, IList{TValue})"/>
 		public static void Clear(bool? autoDispose = null, IList<Mapset> exceptions = null) {
 			_allMapsets.Clear(autoDispose, exceptions);
+			_prevMapFilesInDir = Array.Empty<string>();
+			_prevMapsetDirectory = "";
 			GC.Collect();
 			GC.WaitForPendingFinalizers();
 			GC.Collect();
@@ -102,10 +106,20 @@
 				if (Directory.Exists(directory)) {
 					//parse the mapset by iterating on the directory's .osu files
 					var mapPaths = Directory.GetFiles(directory, "*.osu", SearchOption.TopDirectoryOnly);
-					Console.WriteLine("got osu files");
+
+					// avoid lots of work on unchanged empty directories
+					if (mapPaths is null)
+						return null;
+					if (mapPaths.Length == 0 && _prevMapsetDirectory == directory && (_prevMapFilesInDir is null || _prevMapFilesInDir.Length == 0))
+						return null;
+
+					_prevMapFilesInDir = mapPaths;
+					if (mapPaths.Length != 0 && _prevMapsetDirectory != directory)
+						Console.WriteLine($"got {mapPaths.Length} .osu files");
 
 					Mapset set = BuildSet(mapPaths);
-					Console.WriteLine("set built");
+					if (mapPaths.Length != 0 && (set.Count != 0 || _prevMapsetDirectory != directory))
+						Console.WriteLine($"set built: {set.Count} supported maps");
 
 					if (set.Any()) {
 						void onUIThread(Action action) {
@@ -115,17 +129,24 @@
 								action();
 						}
 						set = AnalyzeMapset(set, clearLists, enableXml, onUIThread);
-						Console.WriteLine("mapset analyzed");
+						Console.WriteLine($"mapset analyzed: {set.Count} supported maps");
 					}
 					return set;
 				}
+				else {
+					_prevMapFilesInDir = Array.Empty<string>();
+				}
 			}
 			catch (Exception e) {
+				_prevMapFilesInDir = Array.Empty<string>();
 				Console.WriteLine("!!-- Error: could not analyze set");
 				Console.WriteLine(e.GetBaseException());
 #if DEBUG
 				System.Diagnostics.Debugger.Break();
 #endif
+			}
+			finally {
+				_prevMapsetDirectory = directory;
 			}
 			return null;
 		}
