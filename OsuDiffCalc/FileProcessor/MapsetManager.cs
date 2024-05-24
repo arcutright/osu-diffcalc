@@ -103,8 +103,9 @@
 		//entry point from GUI.cs
 		public static Mapset AnalyzeMapset(string directory, UserInterface.GUI gui, bool clearLists, bool enableXml) {
 			try {
+				// TODO: may need logic to avoid infinite loops here...
 				if (Directory.Exists(directory)) {
-					//parse the mapset by iterating on the directory's .osu files
+					// parse the mapset by iterating on the directory's .osu files
 					var mapPaths = Directory.GetFiles(directory, "*.osu", SearchOption.TopDirectoryOnly);
 
 					// avoid lots of work on unchanged empty directories

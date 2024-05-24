@@ -29,8 +29,10 @@
 		#endregion
 
 		/// <inheritdoc cref="TrySetUseImmersiveDarkMode(IntPtr, bool)"/>
-		public static bool TrySetUseImmersiveDarkMode(Process process, bool enabled)
-			=> TrySetUseImmersiveDarkMode(process.MainWindowHandle, enabled);
+		public static bool TrySetUseImmersiveDarkMode(Process process, bool enabled) {
+			if (process is null) return false;
+			return TrySetUseImmersiveDarkMode(process.MainWindowHandle, enabled);
+		}
 
 		/// <summary>
 		/// Try to set 'use immersive dark mode' on the window for recent versions of Windows.
@@ -125,7 +127,7 @@
 		}
 
 		public static bool GetWindowRect(IntPtr hWnd, out Rectangle lpRect) {
-			if (NativeMethods.GetWindowRect(hWnd, out RECT rect)) {
+			if (hWnd != IntPtr.Zero && NativeMethods.GetWindowRect(hWnd, out RECT rect)) {
 				lpRect = new Rectangle(
 					x: rect.Left,
 					y: rect.Top,
@@ -216,6 +218,7 @@
 		/// works but constantly captures mouse/kb
 		/// </summary>
 		public static void MakeForegroundWindow(IntPtr hWnd) {
+			if (hWnd == IntPtr.Zero) return;
 			IntPtr fgWindow = GetForegroundWindow();
 			if (hWnd == fgWindow) return;
 
@@ -239,6 +242,7 @@
 		/// "works" but glitches in and out (only shows for a fraction of a second)
 		/// </summary>
 		public static void MakeForegroundWindow2(IntPtr hWnd) {
+			if (hWnd == IntPtr.Zero) return;
 			uint fgThread = GetWindowThreadProcessId(GetForegroundWindow());
 			uint appThread = GetWindowThreadProcessId(hWnd);
 			if (fgThread == appThread) return;
@@ -267,6 +271,7 @@
 
 		/// <inheritdoc cref="MakeForegroundWindow3(IntPtr)"/>
 		public static void MakeForegroundWindow3(Process process) {
+			if (process is null) return;
 			MakeForegroundWindow3(process.MainWindowHandle);
 		}
 
@@ -274,6 +279,7 @@
 		/// "works" but glitches in and out (only shows for a fraction of a second)
 		/// </summary>
 		public static void MakeForegroundWindow3(IntPtr hWnd) {
+			if (hWnd == IntPtr.Zero) return;
 			uint fgPid = GetWindowThreadProcessId(GetForegroundWindow());
 			uint appPid = GetWindowThreadProcessId(hWnd);
 			var swpFlags = SetWindowPosFlags.SWP_NOMOVE | SetWindowPosFlags.SWP_NOSIZE
@@ -295,6 +301,7 @@
 		/// works but captures mouse/kb, can't find an easy way to forward inputs...
 		/// </summary>
 		public static void ForceForegroundWindow(Process processToMove, Process processToDrawOver) {
+			if (processToMove is null) return;
 			IntPtr hWnd = processToMove.MainWindowHandle;
 			IntPtr actualFgWnd = GetForegroundWindow();
 			IntPtr baseWnd = processToDrawOver?.MainWindowHandle ?? actualFgWnd;

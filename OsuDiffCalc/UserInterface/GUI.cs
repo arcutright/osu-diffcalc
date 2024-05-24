@@ -461,107 +461,120 @@
 		private Point? _chartMousePrevPosition = null;
 
 		private void Chart_MouseMove(object sender, MouseEventArgs e) {
-			if (sender is not Chart chart || e is null || !chart.Enabled)
-				return;
-			var pos = e.Location;
-			if (_chartMousePrevPosition.HasValue && pos == _chartMousePrevPosition.Value)
-				return;
-			// reset tooltip
-			_basicChartToolTip.RemoveAll();
-			_customChartToolTip.RemoveAll();
-			_chartToolTipSb.Clear();
-			_chartMousePrevPosition = pos;
+			try {
+				if (sender is not Chart chart || e is null || !chart.Enabled)
+					return;
+				var pos = e.Location;
+				if (_chartMousePrevPosition.HasValue && pos == _chartMousePrevPosition.Value)
+					return;
+				// reset tooltip
+				_basicChartToolTip.RemoveAll();
+				_customChartToolTip.RemoveAll();
+				_chartToolTipSb.Clear();
+				_chartMousePrevPosition = pos;
 
-			const double marginX = 1.5; // time in seconds
+				const double marginX = 1.5; // time in seconds
 
-			// find nearest series x-value to our cursor (that we have data for) and build a tooltip from each of the series' points
-			var results = chart.HitTest(pos.X, pos.Y, false, ChartElementType.PlottingArea);
-			foreach (var result in results) {
-				if (result.Object is null) continue;
-				double pointX = result.ChartArea.AxisX.PixelPositionToValue(pos.X);
+				// find nearest series x-value to our cursor (that we have data for) and build a tooltip from each of the series' points
+				var results = chart.HitTest(pos.X, pos.Y, false, ChartElementType.PlottingArea);
+				foreach (var result in results) {
+					if (result.Object is null) continue;
+					double pointX = result.ChartArea.AxisX.PixelPositionToValue(pos.X);
 
-				int guessIndex = -1; // used to cache the point index that we are "nearest". will only be calculated for the first series
-				foreach (var series in chart.Series) {
-					if (series is null || series.Points is null || !series.Enabled) continue;
-					int n = series.Points.Count;
-					if (n == 0) continue;
-					if (guessIndex == -1) {
-						double bestDelta = double.MaxValue;
-						// TODO: could probably make a better starting guess than 0, but x-spacing of points is not guaranteed
-						for (int i = 0; i < n; ++i) {
-							var point = series.Points[i];
-							if (point is null) continue;
-							double delta = Math.Abs(pointX - point.XValue);
-							if (point.XValue < pointX || delta < bestDelta) {
-								if (delta < bestDelta) {
-									bestDelta = delta;
-									guessIndex = i;
+					int guessIndex = -1; // used to cache the point index that we are "nearest". will only be calculated for the first series
+					foreach (var series in chart.Series) {
+						if (series is null || series.Points is null || !series.Enabled) continue;
+						int n = series.Points.Count;
+						if (n == 0) continue;
+						if (guessIndex == -1) {
+							double bestDelta = double.MaxValue;
+							// TODO: could probably make a better starting guess than 0, but x-spacing of points is not guaranteed
+							for (int i = 0; i < n; ++i) {
+								var point = series.Points[i];
+								if (point is null) continue;
+								double delta = Math.Abs(pointX - point.XValue);
+								if (point.XValue < pointX || delta < bestDelta) {
+									if (delta < bestDelta) {
+										bestDelta = delta;
+										guessIndex = i;
+									}
+								}
+								else if (delta > bestDelta) {
+									break;
 								}
 							}
-							else if (delta > bestDelta) {
-								break;
-							}
+							// don't show anything when no points within margin
+							if (bestDelta > marginX)
+								return;
 						}
-						// don't show anything when no points within margin
-						if (bestDelta > marginX)
-							return;
-					}
-					if (guessIndex != -1) {
-						// find the closest non-zero rating within our margin
-						int i = guessIndex;
-						bool found = false;
+						if (guessIndex != -1) {
+							// find the closest non-zero rating within our margin
+							int i = guessIndex;
+							bool found = false;
 
-						// try to find first non-zero rating at or to the right of guessIndex, within our margin
-						for (; i < n; ++i) {
-							var pt = series.Points[i];
-							double delta = Math.Abs(pt.XValue - pointX);
-							if (delta > marginX) {
-								// don't search outside our margin
-								break;
-							}
-							else if (pt.YValues[0] != 0) {
-								// found non-zero point i >= guessIndex
-								found = true;
-								break;
-							}
-						}
-						if (!found) {
-							// if we didn't find a non-zero point to the right of guessIndex, check to the left
-							for (i = guessIndex - 1; i >= 0; --i) {
+							// try to find first non-zero rating at or to the right of guessIndex, within our margin
+							for (; i < n; ++i) {
 								var pt = series.Points[i];
-								double delta = Math.Abs(pointX - pt.XValue);
+								double delta = Math.Abs(pt.XValue - pointX);
 								if (delta > marginX) {
 									// don't search outside our margin
 									break;
 								}
 								else if (pt.YValues[0] != 0) {
-									// found non-zero point i < guessIndex
+									// found non-zero point i >= guessIndex
+									found = true;
 									break;
 								}
 							}
+							if (!found) {
+								// if we didn't find a non-zero point to the right of guessIndex, check to the left
+								for (i = guessIndex - 1; i >= 0; --i) {
+									var pt = series.Points[i];
+									double delta = Math.Abs(pointX - pt.XValue);
+									if (delta > marginX) {
+										// don't search outside our margin
+										break;
+									}
+									else if (pt.YValues[0] != 0) {
+										// found non-zero point i < guessIndex
+										break;
+									}
+								}
+							}
+							double xValue = pointX;
+							double yValue = 0;
+							if (i >= 0 && i < n) {
+								var point = series.Points[i];
+								xValue = point.XValue;
+								yValue = point.YValues[0];
+							}
+							if (_chartToolTipSb.Length == 0)
+								_chartToolTipSb.AppendLine($"Time: {xValue:0.#}");
+							if (yValue == 0)
+								_chartToolTipSb.AppendLine($"{series.Name,8}:");
+							else
+								_chartToolTipSb.AppendLine($"{series.Name,8}: {yValue,4:0.0}");
 						}
-						double xValue = pointX;
-						double yValue = 0;
-						if (i >= 0 && i < n) {
-							var point = series.Points[i];
-							xValue = point.XValue;
-							yValue = point.YValues[0];
-						}
-						if (_chartToolTipSb.Length == 0)
-							_chartToolTipSb.AppendLine($"Time: {xValue:0.#}");
-						if (yValue == 0)
-							_chartToolTipSb.AppendLine($"{series.Name,8}:");
-						else
-							_chartToolTipSb.AppendLine($"{series.Name,8}: {yValue,4:0.0}");
 					}
 				}
-			}
-			// show tooltip
-			var tooltip = SeriesChartType is SeriesChartType.SplineArea or SeriesChartType.SplineRange
+				// show tooltip
+				var tooltip = SeriesChartType is SeriesChartType.SplineArea or SeriesChartType.SplineRange
 				? _basicChartToolTip
 				: _customChartToolTip;
-			if (_chartToolTipSb.Length != 0)
-				tooltip.Show(_chartToolTipSb.ToString(), chart, pos.X + 8, pos.Y - 15);
+				if (_chartToolTipSb.Length != 0)
+					tooltip.Show(_chartToolTipSb.ToString(), chart, pos.X + 8, pos.Y - 15);
+			}
+			catch (Exception ex) {
+				// this can happen (rarely)
+				//   for example, chart.HitTest() can throw
+				//   System.InvalidOperationException: 'Axis object – Auto interval error due to invalid point values or axis minimum/maximum.'
+				Console.WriteLine($"{nameof(Chart_MouseMove)}: Unhandled chart exception!");
+				Console.WriteLine($"  Sender [{sender?.GetType()}]: '{sender}'");
+				Console.WriteLine($"  ex [{ex?.GetType()}]: '{ex}'");
+#if DEBUG
+				// System.Diagnostics.Debugger.Break();
+#endif
+			}
 		}
 
 		#endregion
@@ -705,7 +718,7 @@
 				//}
 				ChartedMapDropdown.Items.Clear();
 				ChartedMapDropdown.Update();
-				Chart.Update();
+				UpdateChart();
 				RebuildCustomChartLegend();
 			});
 		}
@@ -737,10 +750,11 @@
 						if (!Chart.Series.Contains(series))
 							Chart.Series.Add(series);
 						series.ChartType = SeriesChartType;
+						//series.IsXValueIndexed = false;
 					}
 					// refresh the chart
 					Chart.Visible = true;
-					Chart.Update();
+					UpdateChart();
 
 					RebuildCustomChartLegend();
 				});
@@ -748,6 +762,40 @@
 			finally {
 				_pauseAllTasks = prevPauseAllTasks;
 			}
+		}
+
+		private int _updateChartRetryCount = 0;
+
+		/// <summary>
+		/// Chart.Update() with some extra logic to swap tabs when a previous chart update broke the chart
+		/// (can happen when series has invalid values -- NaN, +-inf, etc.)
+		/// </summary>
+		private void UpdateChart() {
+			// TODO: test me! this code is untested
+
+			if (Chart.HadUpdateError && _updateChartRetryCount < 2) {
+				// toggle tabs back and forth to refresh... painting can't always recover on its own
+				bool shouldToggleChartsTab = _prevOsuState != OsuMemoryState.Invalid && !_prevOsuState.IsInGame && MainTabControl.SelectedTab == chartsTab;
+				if (shouldToggleChartsTab) {
+					bool didUserChangeTab = _didUserChangeTab;
+					_isChangingTab = true;
+					var prevFgWindow = WindowHelper.GetForegroundWindow();
+					MainTabControl.SelectTab(resultsTab);
+					MainTabControl.SelectTab(chartsTab);
+					WindowHelper.MakeForegroundWindow(prevFgWindow);
+					_isChangingTab = false;
+					_didUserChangeTab = didUserChangeTab;
+
+					_updateChartRetryCount++;
+				}
+			}
+
+			// refresh the chart
+			Chart.Update();
+			//Chart.Invalidate();
+			//Chart.PerformLayout();
+			if (!Chart.HadUpdateError)
+				_updateChartRetryCount = 0;
 		}
 
 		private int[] _seriesIndexToLegendIndex = null;
@@ -1244,6 +1292,8 @@
 					// osu found and we may be in-game
 					_isOsuPresent = true;
 
+					// TODO: reset the retry counter and try again after song changes via title checks
+
 					// read osu state to get in-game/in-editor, etc.
 					couldReadState = OsuStateReader.TryReadCurrentOsuState(_osuProcess, out _currentOsuState);
 					if (!couldReadState) {
@@ -1316,7 +1366,7 @@
 							_isOnSameScreen = thisScreenBounds == osuScreenBounds;
 						}
 						catch { }
-						
+
 						if (!_isInGame && !_isInEditor) {
 							// not in game
 							// unminimize if it was auto-minimized, change back to prev user tab if we auto-changed to the charts tab
@@ -1372,9 +1422,9 @@
 						catch { }
 
 						// if we are in-game, switch to charts tab if we aren't on it
+						bool didChangeTab = false;
 						if (_isInGame || _isInEditor) {
 							// TODO: only change 1x in-editor/in-game (need to store 
-							bool didChangeTab = false;
 							bool shouldChangeToCharts = _prevOsuState != OsuMemoryState.Invalid && !_prevOsuState.IsInGame && !_prevOsuState.IsInEditor;
 							if ((!_didUserChangeTab || shouldChangeToCharts) && MainTabControl.SelectedTab != chartsTab) {
 								_isChangingTab = true;
@@ -1385,7 +1435,9 @@
 								_didUserChangeTab = false;
 								didChangeTab = true;
 							}
-
+						}
+						
+						if (didChangeTab) {
 							// try to figure out what map is being played. This work will only happen once
 							_inGameBeatmap = GetInGameBeatmap(_displayedMapset, _isInGame || _isInEditor ? windowTitle : "");
 

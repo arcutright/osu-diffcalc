@@ -119,12 +119,26 @@
 			}
 		}
 
+		public bool HadUpdateError { get; private set; } = false;
+
+		/// <inheritdoc cref="Control.Update"/>
+		public new void Update() {
+			try {
+				base.Update();
+				HadUpdateError = false;
+			}
+			catch {
+				HadUpdateError = true;
+				throw;
+			}
+		}
+
 		private static void HandleException(object sender, Exception ex) {
 			Console.WriteLine($"Unhandled chart exception!");
 			Console.WriteLine($"  Sender [{sender?.GetType()}]: '{sender}'");
 			Console.WriteLine($"  ex [{ex?.GetType()}]: '{ex}'");
 #if DEBUG
-			System.Diagnostics.Debugger.Break();
+			// System.Diagnostics.Debugger.Break();
 #endif
 		}
 	}
