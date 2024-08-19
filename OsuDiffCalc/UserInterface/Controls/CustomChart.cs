@@ -125,7 +125,13 @@
 		public new void Update() {
 			try {
 				base.Update();
-				HadUpdateError = false;
+				// force refresh usually avoids the state where it gets stuck as a black screen
+				// try map 'preparing for te shakedown' by '[Toy]' and switch between the higher diffs / taiko / mania to trigger the bug without it
+				base.Refresh();
+				if (HadUpdateError) {
+					base.PerformLayout();
+				}
+				HadUpdateError = false; // not reliable on its own -- black screen gets "stuck" and .Update() no longer throws errors
 			}
 			catch {
 				HadUpdateError = true;
@@ -133,13 +139,14 @@
 			}
 		}
 
-		private static void HandleException(object sender, Exception ex) {
+		private void HandleException(object sender, Exception ex) {
 			Console.WriteLine($"Unhandled chart exception!");
 			Console.WriteLine($"  Sender [{sender?.GetType()}]: '{sender}'");
 			Console.WriteLine($"  ex [{ex?.GetType()}]: '{ex}'");
 #if DEBUG
 			// System.Diagnostics.Debugger.Break();
 #endif
+			HadUpdateError = true;
 		}
 	}
 }

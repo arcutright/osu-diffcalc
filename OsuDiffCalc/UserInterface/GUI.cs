@@ -777,6 +777,9 @@
 				// toggle tabs back and forth to refresh... painting can't always recover on its own
 				bool shouldToggleChartsTab = _prevOsuState != OsuMemoryState.Invalid && !_prevOsuState.IsInGame && MainTabControl.SelectedTab == chartsTab;
 				if (shouldToggleChartsTab) {
+					// clear the update error flag since we are changing tabs (forces a re-paint)
+					// Chart.HadUpdateError = false;
+
 					bool didUserChangeTab = _didUserChangeTab;
 					_isChangingTab = true;
 					var prevFgWindow = WindowHelper.GetForegroundWindow();
@@ -792,8 +795,6 @@
 
 			// refresh the chart
 			Chart.Update();
-			//Chart.Invalidate();
-			//Chart.PerformLayout();
 			if (!Chart.HadUpdateError)
 				_updateChartRetryCount = 0;
 		}
